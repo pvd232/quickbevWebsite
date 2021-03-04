@@ -3,7 +3,7 @@
 import uuid
 import os
 # from models import Drink, Order, Order_Drink, Customer, Business, Tab, Stripe_Customer, Stripe_Account
-from .models import *
+from models import *
 import stripe
 from datetime import date
 import requests

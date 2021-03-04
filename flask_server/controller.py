@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, Response, request, redirect, url_for, render_template
 import requests
-from .models import app
-from .service import *
+from models import app
+from service import *
 import json
 import time
 import uuid
@@ -98,7 +98,7 @@ def login():
     if customer:
         serialized_customer = customer.serialize()
         jwt_token = jwt.encode(
-            {"sub": f'{serialized_customer["id"]}'}, key=secret, algorithm="HS256")
+            {"sub": {serialized_customer["id"]}}, key=secret, algorithm="HS256")
         headers["authorization-token"] = jwt_token
         return Response(status=200, response=json.dumps(serialized_customer), headers=headers)
     else:

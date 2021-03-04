@@ -9,6 +9,7 @@
 /coverage
 
 # production
+/build
 
 # misc
 .DS_Store
@@ -31,7 +32,7 @@ instance/*
 
 ### Flask.Python Stack ###
 # Byte-compiled / optimized / DLL files
-__pycache__/~
+__pycache__/
 *.py[cod]
 *$py.class
 
@@ -40,6 +41,7 @@ __pycache__/~
 
 # Distribution / packaging
 .Python
+build/
 develop-eggs/
 dist/
 downloads/
@@ -88,6 +90,8 @@ coverage.xml
 # Scrapy stuff:
 .scrapy
 
+# Sphinx documentation
+docs/_build/
 
 # PyBuilder
 target/
