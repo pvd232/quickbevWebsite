@@ -1,1 +1,1 @@
-from flask_server.controller import app
+from flask_server import app
