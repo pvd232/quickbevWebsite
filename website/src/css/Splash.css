@@ -1,0 +1,81 @@
+@import url("https://fonts.googleapis.com/css2?family=Barlow:wght@500&display=swap");
+
+.splashBody .col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.splashBody .solutionDescription {
+  font-size: 16px;
+  line-height: 24px;
+  color: #525f7f;
+}
+
+.splashBody h4 {
+  margin-bottom: 30px;
+}
+.ipad-icon {
+  transform: scale(0.6);
+}
+.time-icon {
+  transform: scale(0.6);
+}
+.dollar-icon {
+  transform: scale(0.6);
+}
+.star-icon {
+  transform: scale(1);
+}
+.health-icon {
+  transform: scale(0.9);
+}
+.splashHeader {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+  background: #8682e6;
+  color: white;
+}
+.splashBody .col {
+  flex-wrap: wrap;
+}
+.splashHeader h1 {
+  font-family: "Barlow", sans-serif;
+  font-weight: 500;
+  font-size: 42px;
+  line-height: 45px;
+  letter-spacing: 0.01em;
+}
+.splashHeader h4 {
+  font-weight: 500;
+  font-size: 20px;
+  line-height: 28px;
+  letter-spacing: 0.05em;
+}
+.splashBody {
+  height: 100%;
+  display: flex;
+  background-color: white;
+  padding-right: 0;
+  padding-left: 0;
+}
+.action-button {
+  width: max-content;
+  font-weight: bolder !important;
+  letter-spacing: 1.5px;
+  color: white;
+  border: 0 none;
+  border-radius: 7px;
+  cursor: pointer;
+  padding: 10px 10px;
+  margin: 0px;
+  height: fit-content;
+  font-size: calc(3px + 2vmin) !important;
+}
+.row {
+  margin-top: 20px;
+  margin-bottom: 20px;
+  align-items: center;
+  justify-content: center;
+}

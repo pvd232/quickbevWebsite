@@ -1,0 +1,28 @@
+[
+  {
+    "merchant_id": "a",
+    "name": "Maggie Maes",
+    "street": "323 E 6th St",
+    "city": "Austin",
+    "state": "TX",
+    "zipcode": 78701,
+    "date_joined": null,
+    "phone_number": 5126999121,
+    "sales_tax_rate": 0.0625,
+    "classification": "bar",
+    "tablet": true
+  },
+  {
+    "merchant_id": "a",
+    "name": "Cain & Abel's",
+    "street": "2313 Rio Grande St",
+    "phone_number": 5125731975,
+    "city": "Austin",
+    "state": "TX",
+    "zipcode": 78705,
+    "date_joined": null,
+    "sales_tax_rate": 0.0625,
+    "classification": "bar",
+    "tablet": true
+  }
+]

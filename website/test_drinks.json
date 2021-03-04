@@ -1,0 +1,26 @@
+[
+  {
+    "id": null,
+    "name": "IPA",
+    "description": "Bitter.",
+    "price": 39.99
+  },
+  {
+    "id": null,
+    "name": "Reds",
+    "description": "Taste like apple juice!",
+    "price": 29.99
+  },
+  {
+    "id": null,
+    "name": "Water",
+    "description": "HYDRATION",
+    "price": 29.99
+  },
+  {
+    "id": null,
+    "name": "Vodka",
+    "description": "Gross",
+    "price": 29.99
+  }
+]

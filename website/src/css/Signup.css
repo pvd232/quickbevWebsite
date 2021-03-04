@@ -1,0 +1,207 @@
+/*custom font*/
+@import url(https://fonts.googleapis.com/css?family=Montserrat);
+
+/*basic reset*/
+* {
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: none;
+  box-sizing: border-box;
+}
+#payoutSetup .icon {
+  margin-bottom: 30px;
+  height: 32px;
+}
+#payoutSetup .box {
+  width: 80%;
+  max-width: 300px;
+  max-height: 400px;
+}
+#payoutSetup h3 {
+  font-weight: 600;
+}
+#payoutSetup p {
+  line-height: 22px;
+}
+#payoutSetup .box .btn {
+  width: 100%;
+  margin-bottom: 20px;
+  margin-top: 16px;
+}
+#payoutSetup .box .notice {
+  font-size: 16px;
+  line-height: 1.5;
+}
+#payoutSetup .box h3 {
+  margin-bottom: 20px;
+}
+.signupBody {
+  /*Image only BG fallback*/
+
+  /*background = gradient + image pattern combo*/
+  /* font-family: montserrat, arial, verdana; */
+  /* background: linear-gradient(rgba(196, 102, 70, 0.6), rgba(155, 89, 182, 0.6)); */
+  min-height: 100vh;
+  min-width: 100vw;
+  position: relative;
+  font-family: "Barlow";
+}
+
+/* body {
+  font-family: montserrat, arial, verdana;
+} */
+/*form styles*/
+.row {
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+#msform label {
+  display: flex !important;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: left !important;
+}
+#custom-switch-col label {
+  color: rgb(39, 179, 4);
+}
+.col-6,
+.col-12 {
+  padding-left: 5px;
+  padding-right: 5px;
+}
+.navbar-dark .navbar-nav .nav-link {
+  color: rgba(255, 255, 255, 1);
+}
+#msform {
+  min-width: 360px;
+  width: 50vmax;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-top: 5vh;
+  margin-bottom: 10vh;
+  text-align: center;
+  position: relative;
+}
+#msform fieldset {
+  background: white;
+  border: 0 none;
+  border-radius: 3px;
+  box-shadow: 0 0 15px 1px rgba(0, 0, 0, 0.4);
+  padding: 20px 30px;
+  box-sizing: border-box;
+  width: 80%;
+  margin: 0 10%;
+
+  /*stacking fieldsets above each other*/
+  position: relative;
+}
+
+/*inputs*/
+#msform .custom-select,
+#msform .form-control,
+#msform textarea {
+  padding: 15px;
+  border: 1px solid rgba(146, 146, 146, 0.555);
+  border-radius: 3px;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: montserrat;
+  color: #2c3e50;
+  font-size: 14px;
+  /* i have to make this based on view height because some inputs are inside nested containers */
+  height: 4vh;
+}
+/*cards*/
+.card {
+  width: 100%;
+  border: 1px solid rgba(146, 146, 146, 0.555);
+}
+/*buttons*/
+#msform .action-button {
+  width: 27%;
+  background: #27ae60;
+  font-weight: bold;
+  color: white;
+  border: 0 none;
+  border-radius: 1px;
+  cursor: pointer;
+  padding: 10px 5px;
+  margin: 10px;
+  height: fit-content;
+  font-size: calc(2px + 2vmin);
+}
+#msform .action-button:hover,
+#msform .action-button:focus {
+  box-shadow: 0 0 0 2px white, 0 0 0 3px #27ae60;
+}
+/*headings*/
+.fs-title {
+  color: black;
+  margin-bottom: 8%;
+  margin-top: 20px;
+  font-weight: 500;
+  font-size: 2rem;
+}
+.fs-subtitle {
+  font-weight: 500;
+  font-size: 15px;
+  color: #666;
+  margin-bottom: 20px;
+  text-align: left;
+  line-height: 1.5em;
+}
+/*progressbar*/
+#progressbar {
+  margin-bottom: 30px;
+  overflow: hidden;
+  /*CSS counters to number the steps*/
+  counter-reset: step;
+  padding-left: 0;
+}
+#progressbar li {
+  list-style-type: none;
+  color: white;
+  text-transform: uppercase;
+  font-size: 13px;
+  width: 33.33%;
+  float: left;
+  position: relative;
+  font-weight: bold;
+}
+#progressbar li:before {
+  content: counter(step);
+  counter-increment: step;
+  width: 20px;
+  line-height: 20px;
+  display: block;
+  font-size: 10px;
+  color: #333;
+  background: white;
+  border-radius: 3px;
+  margin: 0 auto 5px auto;
+}
+/*progressbar connectors*/
+#progressbar li:after {
+  content: "";
+  width: 100%;
+  height: 2px;
+  background: white;
+  position: absolute;
+  left: -50%;
+  top: 9px;
+  z-index: -1; /*put it behind the numbers*/
+}
+#progressbar li:first-child:after {
+  /*connector not needed before the first step*/
+  content: none;
+}
+/*marking active/completed steps green*/
+/*The number of the step and the connector before it = green*/
+#progressbar li.active:before,
+#progressbar li.active:after {
+  background: #27ae60;
+  color: white;
+}
