@@ -163,7 +163,5 @@ pip-selfcheck.json
 .vscode
 # Mac Folder Meta Data Files
 .DS_Store
-package.json
 node_modules/
 .eslintrc.json
-package-lock.json

@@ -600,6 +600,6 @@ def add_menu():
 #     p_flask.join()
 
 print(__name__)
-# if __name__ == '__name__':
-# app.run(host="192.168.86.42", port=5000, debug=True)
-app.run()
+if __name__ == 'flask_server.controller':
+    # app.run(host="192.168.86.42", port=5000, debug=True)
+    app.run()
