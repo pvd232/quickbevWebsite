@@ -9,7 +9,6 @@
 /coverage
 
 # production
-# /build
 
 # misc
 .DS_Store
@@ -41,7 +40,6 @@ __pycache__/
 
 # Distribution / packaging
 .Python
-build/
 develop-eggs/
 dist/
 downloads/
@@ -90,8 +88,6 @@ coverage.xml
 # Scrapy stuff:
 .scrapy
 
-# Sphinx documentation
-docs/_build/
 
 # PyBuilder
 target/
