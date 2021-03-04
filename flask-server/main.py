@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, Response, request, redirect, url_for
+from flask import Flask, jsonify, Response, request, redirect, url_for, render_template
 import requests
 from models import app
 from service import *
@@ -10,7 +10,6 @@ import os
 from werkzeug.utils import secure_filename
 import base64
 import asyncio
-import websockets
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -63,6 +62,11 @@ def send_apn(device_token, action):
     #     title="Order Ready",
     #     category="order"
     # )
+
+
+@app.route("/")
+def my_index():
+    return render_template("index.html", flask_token="Hello   world")
 
 
 # this is called by the customer to update their device token after they have successfully logged in
