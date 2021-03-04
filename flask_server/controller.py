@@ -602,4 +602,4 @@ def add_menu():
 print(__name__)
 # if __name__ == '__name__':
 # app.run(host="192.168.86.42", port=5000, debug=True)
-app.run(host="0.0.0.0", port=5000, debug=True)
+app.run()
