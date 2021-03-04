@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, Response, request, redirect, url_for, render_template
 import requests
-from models import app
-from service import *
+from .models import app
+from .service import *
 import json
 import time
 import uuid
@@ -599,7 +599,7 @@ def add_menu():
 
 #     p_flask.join()
 
-
-if __name__ == '__main__':
+print(__name__)
+if __name__ == 'flask_server.main':
     # app.run(host="192.168.86.42", port=5000, debug=True)
     app.run(host="0.0.0.0", port=5000, debug=True)
