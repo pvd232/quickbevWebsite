@@ -5,10 +5,17 @@ runtime: python38
 env: standard
 entrypoint: gunicorn -b :$PORT main:app
 
-# handlers:
-#   - url: /.*
-#     script: auto
-#     secure: always
+handlers:
+  - url: /static
+    static_dir: build/static
+
+  - url: /(.*\.(json|ico|js))$
+    static_files: build/\1
+    upload: build/.*\.(json|ico|js)$
+
+  - url: .*
+    static_files: build/index.html
+    upload: build/index.html
 
 #[START env]
 env_variables:
