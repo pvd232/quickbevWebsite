@@ -66,8 +66,6 @@ def send_apn(device_token, action):
 
 @app.route("/")
 def my_index():
-    test_service = Test_Service()
-    test_service.test_connection()
     return render_template("index.html", flask_token="Hello world")
 
 
@@ -538,3 +536,5 @@ def add_menu():
 if __name__ == '__main__':
     # app.run(host="192.168.86.42", port=5000, debug=True)
     app.run(host='127.0.0.1', port=8080, debug=True)
+    test_service = Test_Service()
+    test_service.test_connection()
