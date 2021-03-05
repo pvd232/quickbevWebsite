@@ -1,6 +1,6 @@
-from domain import *
-from repository import *
-from models import db
+from .domain import *
+from .repository import *
+from .models import db
 import uuid
 import os
 from sqlalchemy.orm import scoped_session

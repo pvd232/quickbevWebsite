@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, Response, request, redirect, url_for, render_template
 import requests
-from models import app
-from service import *
+from .models import app
+from .service import *
 import json
 import time
 import uuid
@@ -66,7 +66,7 @@ def send_apn(device_token, action):
 
 @app.route("/")
 def my_index():
-    return render_template("index.html", flask_token="Hello   world")
+    return render_template("index.html", flask_token="Hello world")
 
 
 # this is called by the customer to update their device token after they have successfully logged in
