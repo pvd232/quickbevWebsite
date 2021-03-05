@@ -12,7 +12,7 @@ env_variables:
   # when configuring your Cloud SQL instance.
   # GOOGLE_APPLICATION_CREDENTIALS: ./CrepeNShake-8b4a0f7fb8c9.json
   DB_STRING: >-
-    postgresql+psycopg2://postgres:Iqopaogh23!@/postgres?host=/cloudsql/quickbev:us-central1:quckbevdb
+    postgresql+psycopg2://postgres:Iqopaogh23!@/postgres?host=/cloudsql/quickbev:us-central1:quickbevdb
 
 #[END env]
 
@@ -20,7 +20,7 @@ env_variables:
 # Replace project and instance with the values obtained  when configuring your
 # Cloud SQL instance.
 beta_settings:
-  cloud_sql_instances: quickbev:us-central1:quckbevdb
+  cloud_sql_instances: quickbev:us-central1:quickbevdb
 
 # This sample incurs costs to run on the App Engine flexible environment.
 # The settings below are to reduce costs during testing and are not appropriate
