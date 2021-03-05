@@ -66,6 +66,8 @@ def send_apn(device_token, action):
 
 @app.route("/")
 def my_index():
+    test_service = Test_Service()
+    test_service.test_connection()
     return render_template("index.html", flask_token="Hello world")
 
 
@@ -386,7 +388,7 @@ def get_businesss(session_token):
     return Response(status=200, response=json.dumps(response), headers=headers)
 
 
-@ app.route('/tabs', methods=['POST', 'GET'])
+@app.route('/tabs', methods=['POST', 'GET'])
 def tabs():
     if request.method == 'POST':
         response = {}
@@ -400,7 +402,7 @@ def tabs():
             return Response(status=500, response=json.dumps(response))
 
 
-@ app.route('/create-ephemeral-keys/<string:session_token>', methods=['POST'])
+@app.route('/create-ephemeral-keys/<string:session_token>', methods=['POST'])
 def ephemeral_keys(session_token):
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
@@ -414,7 +416,7 @@ def ephemeral_keys(session_token):
         return Response(status=200, response=json.dumps(key))
 
 
-@ app.route('/create-payment-intent/<string:session_token>', methods=['POST'])
+@app.route('/create-payment-intent/<string:session_token>', methods=['POST'])
 def create_payment_intent(session_token):
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
@@ -434,7 +436,7 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-@ app.route('/signup', methods=['POST'])
+@app.route('/signup', methods=['POST'])
 def signup():
     response = {"msg": ""}
     # check if the post request has the file part
@@ -474,7 +476,7 @@ def signup():
         return Response(status=500, response=json.dumps(response))
 
 
-@ app.route('/signup-redirect', methods=['POST'])
+@app.route('/signup-redirect', methods=['POST'])
 def signup_redirect():
     response = {"msg": ""}
     business_service = Business_Service()
@@ -488,7 +490,7 @@ def signup_redirect():
         return Response(status=500, response=json.dumps(response))
 
 
-@ app.route('/validate-merchant', methods=['POST'])
+@app.route('/validate-merchant', methods=['POST'])
 def validate_merchant():
     merchant_service = Merchant_Service()
     request_data = json.loads(request.data)
@@ -501,7 +503,7 @@ def validate_merchant():
         return jsonify(response), 400
 
 
-@ app.route('/create-stripe-account/<string:session_token>', methods=['GET'])
+@app.route('/create-stripe-account/<string:session_token>', methods=['GET'])
 def create_stripe_account(session_token):
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
@@ -521,7 +523,7 @@ def create_stripe_account(session_token):
     return response
 
 
-@ app.route('/add-menu', methods=['POST'])
+@app.route('/add-menu', methods=['POST'])
 def add_menu():
     drink_service = Drink_Service()
     menu = json.loads(request.data)
@@ -533,73 +535,6 @@ def add_menu():
     return response
 
 
-# @socketio.on_error_default
-# def default_error_handler(e):
-#     print(request.event["message"])  # "my error event"
-#     print(request.event["args"])    # (data,)
-
-
-# @socketio.on('connect')
-# def test_connect():
-#     print(request)
-#     emit('my response', {'data': 'Connected'})
-
-
-# @socketio.on('disconnect')
-# def test_disconnect():
-#     print('Client disconnected')
-
-
-# @socketio.on('json')
-# def handle_json(json):
-#     print('received json: ' + str(json))
-
-# async def hello(websocket, path):
-#     remote_ip = websocket.remote_address[0]
-#     remote_ip_list = websocket.remote_address
-#     print('remote_ip_list', remote_ip_list)
-
-#     print('remote_ip', remote_ip)
-
-#     name = await websocket.recv()
-#     # print(f"< {name}")
-#     print("data recieved", name)
-
-#     greeting = f"Hello {name}!"
-
-#     await websocket.send(greeting)
-#     print(f"> {greeting}")
-
-
-# app = Flask(__name__)
-# ws = WebSocket(app)
-
-
-# @ws.on('click')
-# def click(data):
-#     print(data)
-# def run_websocket():
-#     start_server = websockets.serve(hello, "localhost", 8765)
-#     asyncio.get_event_loop().run_until_complete(start_server)
-#     asyncio.get_event_loop().run_forever()
-
-
-# def run_flask_app():
-#     app.run(debug=True)
-
-
-# p_flask = multiprocessing.Process(target=run_flask_app)
-# p_ws = multiprocessing.Process(target=run_websocket)
-
-
-# def run_everything():
-#     p_ws.start()
-#     p_flask.start()
-#     p_ws.join()
-
-#     p_flask.join()
-
-print(__name__)
 if __name__ == '__main__':
     # app.run(host="192.168.86.42", port=5000, debug=True)
     app.run(host='127.0.0.1', port=8080, debug=True)

@@ -347,3 +347,24 @@ class ETag_Repository():
             return True
         else:
             return False
+
+
+class Test_Service(object):
+    def __init__(self):
+        self.username = "postgres"
+        self.password = "Iqopaogh23!"
+        self.connection_string_beginning = "postgres://"
+        self.connection_string_end = "@localhost:5432/crepenshakedb"
+        self.connection_string = self.connection_string_beginning + \
+            self.username + ":" + self.password + self.connection_string_end
+        self.test_engine = create_engine(
+            os.environ.get("DB_STRING", self.connection_string))
+
+    def test_connection(self):
+        inspector = inspect(self.test_engine)
+        # use this if you want to trigger a reset of the database in GCP
+        # if len(inspector.get_table_names()) > 0:
+        if len(inspector.get_table_names()) == 0:
+            instantiate_db_connection()
+            self.test_engine.dispose()
+            return

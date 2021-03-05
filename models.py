@@ -396,7 +396,7 @@ def create_everything():
     create_drink()
 
 
-# db.create_all()
-
-# create_everything()
-# create_etag()
+def instantiate_db_connection():
+    db.drop_all()
+    db.create_all()
+    create_everything()
