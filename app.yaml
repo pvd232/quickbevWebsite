@@ -16,7 +16,7 @@ handlers:
   - url: .*
     static_files: build/index.html
     upload: build/index.html
-
+    script: main.app
 #[START env]
 env_variables:
   # postgresql+psycopg2://USER:PASSWORD@/DATABASE?host=/cloudsql/INSTANCE_CONNECTION_NAME
