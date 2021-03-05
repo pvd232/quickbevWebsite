@@ -394,9 +394,8 @@ def create_everything():
     db.create_all()
     create_business()
     create_drink()
+    create_etag()
 
 
 def instantiate_db_connection():
-    db.drop_all()
-    db.create_all()
     create_everything()
