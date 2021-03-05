@@ -9,8 +9,8 @@ from sqlalchemy import create_engine
 from contextlib import contextmanager
 
 
-username = os.environ.get("USER", "")
-password = os.environ.get("PASSWORD", "")
+username = "postgres"
+password = "Iqopaogh23!"
 connection_string_beginning = "postgres://"
 connection_string_end = "@localhost:5432/quickbevdb"
 connection_string = connection_string_beginning + \
