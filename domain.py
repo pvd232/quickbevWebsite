@@ -236,7 +236,7 @@ class Merchant_Domain(object):
             self.password = merchant_object.password
             self.first_name = merchant_object.first_name
             self.last_name = merchant_object.last_name
-            self.phone_number = merchant_object.phone_numberß
+            self.phone_number = merchant_object.phone_number
             self.number_of_businesses = merchant_object.number_of_businesses
             # stripe ID is in an associative table now
             if 'stripe_id' in merchant_object:
