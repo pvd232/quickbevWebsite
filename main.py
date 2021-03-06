@@ -20,8 +20,6 @@ from pushjack_http2 import APNSHTTP2SandboxClient, APNSAuthToken
 from werkzeug.security import generate_password_hash, check_password_hash
 
 
-app = Flask(__name__)
-
 merchant_menu_upload_folder = os.getcwd() + "/files"
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 app.config['UPLOAD_FOLDER'] = merchant_menu_upload_folder
