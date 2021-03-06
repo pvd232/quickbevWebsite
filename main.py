@@ -482,12 +482,15 @@ def signup():
 @app.route('/signup-redirect', methods=['POST'])
 def signup_redirect():
     response = {"msg": ""}
+    header = {}
     business_service = Business_Service()
     request_json = json.loads(request.data)
     business_to_update = request_json["business"]
     if business_service.update_business(business_to_update):
+        header["jwt_token"] = jwt.encode(
+            {"sub": {business_to_update["id"]}}, key=secret, algorithm="HS256")
         response["msg"] = "Business sucessfully updated"
-        return Response(status=200, response=json.dumps(response))
+        return Response(status=200, response=json.dumps(response), headers=header)
     else:
         response["msg"] = "Failed to update business"
         return Response(status=500, response=json.dumps(response))
@@ -506,10 +509,8 @@ def validate_merchant():
         return jsonify(response), 400
 
 
-@app.route('/create-stripe-account/<string:session_token>', methods=['GET'])
-def create_stripe_account(session_token):
-    if not jwt.decode(session_token, secret, algorithms=["HS256"]):
-        return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
+@app.route('/create-stripe-account', methods=['GET'])
+def create_stripe_account():
     merchant_service = Merchant_Service()
     new_account = merchant_service.create_stripe_account()
     account_links = stripe.AccountLink.create(

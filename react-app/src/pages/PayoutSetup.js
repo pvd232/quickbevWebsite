@@ -8,10 +8,7 @@ const PayoutSetup = (props) => {
   const [redirect, setRedirect] = useState(null);
   var redirectUrl = null;
   const getRedirectInfo = async () => {
-    return API.makeRequest(
-      "GET",
-      `/create-stripe-account`
-    );
+    return API.makeRequest("GET", `/create-stripe-account`);
   };
   const onSubmit = async (event, merchantStripeId) => {
     console.log("merchantStripeId", merchantStripeId);
@@ -105,7 +102,7 @@ const PayoutSetup = (props) => {
                 props
                   .onSubmit(event, merchantStripeId, false)
                   .then((result) => {
-                    // setRedirect(redirectUrl);
+                    setRedirect(redirectUrl);
                   })
               );
             }}
