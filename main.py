@@ -61,13 +61,17 @@ def send_apn(device_token, action):
     # )
 
 
+@app.route("/")
+def my_index():
+    return render_template("index.html", flask_token="Hello world")
+
+
 @app.route("/b")
 def b():
-    # test_service = Test_Service()
-    # test_service.test_connection()
-    instantiate_db_connection()
+    test_service = Test_Service()
+    test_service.test_connection()
     return Response(status=200)
-# this is called by the customer to update their device token after they have successfully logged in
+# this s called by the customer to update their device token after they have successfully logged in
 
 
 @app.route('/apn-token/<string:customer_id>/<string:session_token>', methods=["POST"])
