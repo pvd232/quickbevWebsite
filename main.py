@@ -213,9 +213,9 @@ def send_confirmation_email(jwt_token, customer, url):
 def send_password_reset_email(jwt_token, customer):
     print('jwt_token', jwt_token)
     # host = request.headers.get('Host')
-    host = "localhost:3000"
+    host = "quickbev.uc.r.appspot.com"
 
-    button_url = f"http://{host}/reset-password/{jwt_token}"
+    button_url = f"https://{host}/reset-password/{jwt_token}"
 
     logo = os.path.join(os.path.dirname(os.path.abspath(
         __file__)), "./src/static/landscape-logo-purple.png")
@@ -498,10 +498,12 @@ def signup_redirect():
 
 @app.route('/validate-merchant', methods=['POST'])
 def validate_merchant():
-    merchant_service = Merchant_Service()
     request_data = json.loads(request.data)
-    requested_merchant = request_data['merchant']
-    response = merchant_service.validate_merchant(requested_merchant)
+    username = request.headers.get('username')
+    password = request.headers.get('password')
+    # TODO: finish merchant login
+    response = {"msg": "customer not found"}
+    response = Merchant_Service().validate_merchant(requested_merchant)
     # if the merchant exists it will return False, if it doesn't it will return True
     if response:
         return jsonify(response), 200
@@ -511,12 +513,11 @@ def validate_merchant():
 
 @app.route('/create-stripe-account', methods=['GET'])
 def create_stripe_account():
-    merchant_service = Merchant_Service()
-    new_account = merchant_service.create_stripe_account()
+    new_account = Merchant_Service().create_stripe_account()
     account_links = stripe.AccountLink.create(
         account=new_account.id,
-        refresh_url='http://localhost:3000/payout-setup-callback',
-        return_url='http://localhost:3000/home',
+        refresh_url='https://quickbev.uc.r.appspot.com/payout-setup-callback',
+        return_url='https://quickbev.uc.r.appspot.com/home',
         type='account_onboarding',
     )
     header = {}

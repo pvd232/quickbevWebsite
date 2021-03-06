@@ -306,13 +306,12 @@ class Merchant_Repository(object):
         session.add(new_stripe_account_id)
         return new_account
 
-    def validate_merchant(self, session, requested_merchant):
-        merchant = session.query(Merchant).filter(
-            Merchant.id == requested_merchant.id).first()
-        if merchant:
-            return False
+    def validate_merchant(self, session, email, password):
+        for merchant in session.query(merchant):
+            if merchant.id == email and check_password_hash(merchant.password, password):
+                return merchant
         else:
-            return True
+            return False
 
     def add_merchant(self, session, requested_merchant):
         new_merchant = Merchant(id=requested_merchant.id, password=requested_merchant.password, first_name=requested_merchant.first_name,

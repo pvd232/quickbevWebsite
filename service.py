@@ -175,11 +175,16 @@ class Merchant_Service(object):
             return Merchant_Repository().create_stripe_account(session)
 
     def validate_merchant(self, merchant):
-        with session_scope() as session:
-            requested_new_merchant = Merchant_Domain(merchant_json=merchant)
-            registered_merchant_status = Merchant_Repository().validate_merchant(
-                session, requested_new_merchant)
-            return registered_merchant_status
+        def authenticate_merchant(self, email, password):
+            with session_scope() as session:
+                merchant_object = Merchant_Repository().authenticate_merchant(
+                    session, email, password)
+                if merchant_object:
+                    merchant_domain = Merchant_Domain(
+                        merchant_object=merchant_object)
+                    return merchant_domain
+                else:
+                    return False
 
     def add_merchant(self, merchant):
         with session_scope() as session:
