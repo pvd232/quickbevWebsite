@@ -2,7 +2,7 @@ import { Merchant } from "../Models.js";
 
 class Client {
   constructor() {
-    this.baseUrl = "http://0.0.0.0:5000";
+    this.baseUrl = "";
     this.url = "";
   }
   async makeRequest(method, path, data, headersParam = false, isForm = false) {
