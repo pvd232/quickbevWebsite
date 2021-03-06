@@ -2,7 +2,7 @@ import { Merchant } from "../Models.js";
 
 class Client {
   constructor() {
-    this.baseUrl = "";
+    this.baseUrl = "https://quickbev.uc.r.appspot.com";
     this.url = "";
   }
   async makeRequest(method, path, data, headersParam = false, isForm = false) {
