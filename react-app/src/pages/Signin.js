@@ -2,14 +2,11 @@ import React, { useState, useReducer, useEffect } from 'react';
 import { Merchant, Business, setLocalStorage } from '../Models.js';
 import API from '../helpers/Api.js';
 import Navbar from '../Navbar.js';
-// import logo from "../static/landscapeLogo.svg";
-// import SearchLocationInput from "../SearchLocationInput.js";
-// import PayoutSetup from "./PayoutSetup";
+
 import Form from 'react-bootstrap/Form';
 import Row from 'react-bootstrap/Row';
 import Button from 'react-bootstrap/Button';
 import Col from 'react-bootstrap/Col';
-// import Card from "react-bootstrap/Card";
 import '../css/Signup.css';
 
 const Signin = () => {
@@ -45,10 +42,16 @@ const Signin = () => {
 		event.preventDefault();
 		const form = event.target;
 		if (validate(form)) {
-			API.makeRequest('POST', '/validate-merchant', false, authorization).then((response) => {
+			API.makeRequest('GET', '/merchant', false, authorization).then((response) => {
 				if (response) {
 					// if the username is available the response from the API will be true
+					const loggedInMerchant = new Merchant('json', response);
+					setLocalStorage('merchant', loggedInMerchant);
+					console.log('response.headers.jwt_token', response.headers.jwt_token);
+
+					setLocalStorage('sessionToken', response.headers.jwt_token);
 					setRedirect('/home');
+					// return false;
 				} else {
 					const newErrorMsgState = {};
 					// otherwise it will be false

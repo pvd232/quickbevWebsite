@@ -9,7 +9,6 @@ import stripe
 import os
 from werkzeug.utils import secure_filename
 import base64
-import asyncio
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -62,15 +61,11 @@ def send_apn(device_token, action):
     # )
 
 
-@app.route("/")
-def my_index():
-    return render_template("index.html", flask_token="Hello world")
-
-
 @app.route("/b")
 def b():
-    test_service = Test_Service()
-    test_service.test_connection()
+    # test_service = Test_Service()
+    # test_service.test_connection()
+    instantiate_db_connection()
     return Response(status=200)
 # this is called by the customer to update their device token after they have successfully logged in
 
@@ -496,17 +491,20 @@ def signup_redirect():
         return Response(status=500, response=json.dumps(response))
 
 
-@app.route('/validate-merchant', methods=['POST'])
-def validate_merchant():
-    request_data = json.loads(request.data)
-    username = request.headers.get('username')
+@app.route('/merchant', methods=['GET'])
+def authenticate_merchant():
+    header = {}
+    username = request.headers.get('email')
     password = request.headers.get('password')
-    # TODO: finish merchant login
     response = {"msg": "customer not found"}
-    response = Merchant_Service().validate_merchant(requested_merchant)
+    merchant = Merchant_Service().authenticate_merchant(username, password)
     # if the merchant exists it will return False, if it doesn't it will return True
-    if response:
-        return jsonify(response), 200
+    if merchant:
+        header["jwt_token"] = jwt.encode(
+            {"sub": merchant.id}, key=secret, algorithm="HS256")
+        header["Access-Control-Expose-Headers"] = "jwt_token"
+        print('header', header)
+        return Response(status=200, response=json.dumps(merchant.dto_serialize()), headers=header)
     else:
         return jsonify(response), 400
 

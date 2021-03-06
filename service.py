@@ -174,17 +174,16 @@ class Merchant_Service(object):
         with session_scope() as session:
             return Merchant_Repository().create_stripe_account(session)
 
-    def validate_merchant(self, merchant):
-        def authenticate_merchant(self, email, password):
-            with session_scope() as session:
-                merchant_object = Merchant_Repository().authenticate_merchant(
-                    session, email, password)
-                if merchant_object:
-                    merchant_domain = Merchant_Domain(
-                        merchant_object=merchant_object)
-                    return merchant_domain
-                else:
-                    return False
+    def authenticate_merchant(self, email, password):
+        with session_scope() as session:
+            merchant_object = Merchant_Repository().authenticate_merchant(
+                session, email, password)
+            if merchant_object:
+                merchant_domain = Merchant_Domain(
+                    merchant_object=merchant_object)
+                return merchant_domain
+            else:
+                return False
 
     def add_merchant(self, merchant):
         with session_scope() as session:
@@ -258,4 +257,4 @@ class Test_Service(object):
         if len(inspector.get_table_names()) == 0:
             instantiate_db_connection()
             self.test_engine.dispose()
-            return
+        return
