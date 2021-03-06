@@ -6,6 +6,7 @@ class Client {
     this.url = "";
   }
   async makeRequest(method, path, data, headersParam = false, isForm = false) {
+    console.log("path", path);
     console.log("method", method);
     let requestData = data || {};
     console.log("data", data);
