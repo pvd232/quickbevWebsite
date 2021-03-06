@@ -69,7 +69,14 @@ def my_index():
     return render_template("index.html", flask_token="Hello world")
 
 
+@app.route("/b")
+def b():
+    test_service = Test_Service()
+    test_service.test_connection()
+    return Response(status=200)
 # this is called by the customer to update their device token after they have successfully logged in
+
+
 @app.route('/apn-token/<string:customer_id>/<string:session_token>', methods=["POST"])
 def apn_token(customer_id, session_token):
     device_token = request.headers.get("DeviceToken")
@@ -536,5 +543,3 @@ def add_menu():
 if __name__ == '__main__':
     # app.run(host="192.168.86.42", port=5000, debug=True)
     app.run(host='127.0.0.1', port=8080, debug=True)
-    test_service = Test_Service()
-    test_service.test_connection()
