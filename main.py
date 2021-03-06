@@ -68,8 +68,9 @@ def my_index():
 
 @app.route("/b")
 def b():
-    test_service = Test_Service()
-    test_service.test_connection()
+    # test_service = Test_Service()
+    # test_service.test_connection()
+    instantiate_db_connection()
     return Response(status=200)
 # this s called by the customer to update their device token after they have successfully logged in
 
