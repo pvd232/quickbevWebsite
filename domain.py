@@ -238,8 +238,9 @@ class Merchant_Domain(object):
             self.last_name = merchant_object.last_name
             self.phone_number = merchant_object.phone_number
             self.number_of_businesses = merchant_object.number_of_businesses
-            # stripe ID is in an associative table now
-            self.stripe_id = merchant_object.stripe_id
+            # stripe ID is in an associative table now so if a vanilla merchant object is returned then it wont have the stripe id
+            if 'stripe_id' in merchant_object.__dict__:
+                self.stripe_id = merchant_object.stripe_id
 
         elif merchant_json:
             print('merchant_json', merchant_json)
