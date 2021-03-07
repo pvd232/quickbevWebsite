@@ -4,18 +4,13 @@ steps:
       env: ['PROJECT_ROOT=backend']
       dir: 'react-app/src'
     - name: 'gcr.io/cloud-builders/npm'
-      args: ['i', 'fs-extra', '--save']
+      args: ['npm', 'run', 'build']
       env: ['PROJECT_ROOT=backend']
       dir: 'react-app/src'
-    - name: 'gcr.io/cloud-builders/npm'
-      args: ['run', 'build']
-      env: ['PROJECT_ROOT=backend']
-      dir: 'react-app/src'
-    - name: 'gcr.io/cloud-builders/'
+    - name: 'gcr.io/cloud-builders/go'
       args: ['rm', '-r', 'node_modules']
       env: ['PROJECT_ROOT=backend']
       dir: 'react-app/src'
     - name: 'gcr.io/cloud-builders/gcloud'
       args: ['app', 'deploy']
       env: ['PROJECT_ROOT=backend']
-      dir: '/'
