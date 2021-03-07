@@ -1,16 +1,16 @@
 steps:
-    - name: 'gcr.io/cloud-builders/go'
-      args: ['npm', 'i', 'react-dev-utils', '--save']
+    - name: 'gcr.io/cloud-builders/npm'
+      args: ['i', 'react-dev-utils', '--save']
       env: ['PROJECT_ROOT=backend']
       dir: 'react-app/src'
-    - name: 'gcr.io/cloud-builders/go'
-      args: ['npm', 'run', 'build']
+    - name: 'gcr.io/cloud-builders/npm'
+      args: ['run', 'build']
       env: ['PROJECT_ROOT=backend']
       dir: 'react-app/src'
-    - name: 'gcr.io/cloud-builders/go'
-      args: ['rm', '-r', 'node_modules']
+    - name: 'gcr.io/cloud-builders/npm'
+      args: ['uninstall(Get-ChildItem).Name']
       env: ['PROJECT_ROOT=backend']
-      dir: 'react-app/src'
+      dir: 'react-app/src/node_modules'
     - name: 'gcr.io/cloud-builders/gcloud'
       args: ['app', 'deploy']
       env: ['PROJECT_ROOT=backend']
