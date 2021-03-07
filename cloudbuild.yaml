@@ -9,10 +9,6 @@ steps:
       env: ['PROJECT_ROOT=backend']
       dir: 'react-app'
     - name: 'bash'
-      args: ['ls']
-      env: ['PROJECT_ROOT=backend']
-      dir: 'react-app'
-    - name: 'bash'
       args: ['rm', '-r', 'node_modules']
       env: ['PROJECT_ROOT=backend']
       dir: 'react-app'
