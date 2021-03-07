@@ -119,8 +119,7 @@ def inventory(session_token):
     headers = {}
     drinks = Drink_Service().get_drinks()
     client_etag = json.loads(request.headers.get("If-None-Match"))
-    print('ETag_Service().validate_etag(client_etag) for drinks',
-          ETag_Service().validate_etag(client_etag))
+
     if client_etag:
         if not ETag_Service().validate_etag(client_etag):
             for drink in drinks:
