@@ -13,3 +13,5 @@ steps:
       dir: 'react-app/src'
     - name: 'gcr.io/cloud-builders/gcloud'
       args: ['app', 'deploy']
+      env: ['PROJECT_ROOT=backend']
+      dir: '/'
