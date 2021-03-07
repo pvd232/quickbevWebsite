@@ -1,0 +1,15 @@
+steps:
+    - name: 'gcr.io/cloud-builders/go'
+      args: ['npm', 'i', 'react-dev-utils', '--save']
+      env: ['PROJECT_ROOT=backend']
+      dir: 'react-app/src'
+    - name: 'gcr.io/cloud-builders/go'
+      args: ['npm', 'run', 'build']
+      env: ['PROJECT_ROOT=backend']
+      dir: 'react-app/src'
+    - name: 'gcr.io/cloud-builders/go'
+      args: ['rm', '-r', 'node_modules']
+      env: ['PROJECT_ROOT=backend']
+      dir: 'react-app/src'
+    - name: 'gcr.io/cloud-builders/gcloud'
+      args: ['app', 'deploy']
