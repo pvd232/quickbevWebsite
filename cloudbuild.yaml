@@ -1,6 +1,6 @@
 steps:
     - name: 'gcr.io/cloud-builders/npm'
-      args: ['install', 'react-dev-utils']
+      args: ['install']
       env: ['PROJECT_ROOT=backend']
       dir: 'react-app/src'
     - name: 'gcr.io/cloud-builders/npm'
