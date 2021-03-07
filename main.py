@@ -108,7 +108,7 @@ def login():
     if customer:
         serialized_customer = customer.serialize()
         jwt_token = jwt.encode(
-            {"sub": {serialized_customer["id"]}}, key=secret, algorithm="HS256")
+            {"sub": serialized_customer["id"]}, key=secret, algorithm="HS256")
         headers["authorization-token"] = jwt_token
         return Response(status=200, response=json.dumps(serialized_customer), headers=headers)
     else:
@@ -263,7 +263,7 @@ def guest_device_token():
     print('device_token', device_token)
     Customer_Service().add_guest_device_token(device_token)
     jwt_token = jwt.encode(
-        {"sub": f'{device_token}'}, key=secret, algorithm="HS256")
+        {"sub": device_token}, key=secret, algorithm="HS256")
     headers["authorization-token"] = jwt_token
     return Response(status=200, headers=headers)
 
@@ -285,7 +285,7 @@ def customer():
             Customer_Service().update_device_token(
                 device_token, generated_new_customer.id)
             jwt_token = jwt.encode(
-                {"sub": f'{generated_new_customer.id}'}, key=secret, algorithm="HS256")
+                {"sub": generated_new_customer.id}, key=secret, algorithm="HS256")
             # send the hashed user ID as a crypted key embedded in the activation link for security
             headers["authorization-token"] = jwt_token
             send_confirmation_email(
@@ -301,7 +301,7 @@ def customer():
         customer = Customer_Domain(customer_json=json.loads(
             request.data))
         jwt_token = jwt.encode(
-            {"sub": f'{customer.id}'}, key=secret, algorithm="HS256")
+            {"sub": customer.id}, key=secret, algorithm="HS256")
         send_confirmation_email(
             jwt_token, customer, request.url)
         return Response(status=200)
@@ -492,7 +492,7 @@ def signup_redirect():
     business_to_update = request_json["business"]
     if business_service.update_business(business_to_update):
         header["jwt_token"] = jwt.encode(
-            {"sub": {business_to_update["id"]}}, key=secret, algorithm="HS256")
+            {"sub": business_to_update["id"]}, key=secret, algorithm="HS256")
         response["msg"] = "Business sucessfully updated"
         return Response(status=200, response=json.dumps(response), headers=header)
     else:
