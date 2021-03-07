@@ -204,7 +204,7 @@ def send_confirmation_email(jwt_token, customer, url):
     # Create SMTP session for sending the mail
     s = smtplib.SMTP_SSL('smtp.gmail.com', 465)
     # s.connect('smtp.gmail.com', 587)
-    s.starttls()
+    # s.starttls()
 
     s.login(user="patardriscoll@gmail.com", password="Iqopaogh23!")
     # s = smtplib.SMTP('smtp.mailgun.org', 587)
