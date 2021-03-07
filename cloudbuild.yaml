@@ -1,16 +1,17 @@
 steps:
     - name: 'gcr.io/cloud-builders/npm'
-      args: ['i', 'react-dev-utils', '--save']
+      args: ['install', 'react-dev-utils']
       env: ['PROJECT_ROOT=backend']
       dir: 'react-app/src'
     - name: 'gcr.io/cloud-builders/npm'
       args: ['run', 'build']
       env: ['PROJECT_ROOT=backend']
       dir: 'react-app/src'
-    - name: 'gcr.io/cloud-builders/npm'
-      args: ['i', '-g', 'remove-node-modules']
+    - name: 'gcr.io/cloud-builders/'
+      args: ['rm', '-r', 'node_modules']
       env: ['PROJECT_ROOT=backend']
       dir: 'react-app/src'
-    - name: 'gcr.io/cloud-builders/'
-      args: ['remove-node-modules']
+    - name: 'gcr.io/cloud-builders/gcloud'
+      args: ['app', 'deploy']
       env: ['PROJECT_ROOT=backend']
+      dir: '/'
