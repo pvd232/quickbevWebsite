@@ -68,6 +68,7 @@ def my_index():
 
 @app.errorhandler(404)
 def not_found(e):
+    print('error 404', e)
     return render_template('index.html')
 
 
