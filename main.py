@@ -188,8 +188,8 @@ def send_confirmation_email(jwt_token, customer, url):
     mail_body_text = f'<p style="margin-top: 15px;margin-bottom: 15px;">Hey {customer.first_name},</p><p style="margin-top: 15px;margin-bottom: 15px;">Welcome to QuickBev!</p><p style="margin-top: 15px;margin-bottom: 15px;">Please click the link below to verify your account</p><br /><p style="margin-top: 15px;margin-bottom: 15px;">Let the good times begin,</p><p style="margin-top: 15px;margin-bottom: 15px;">—The QuickBev Team</p></div><div style="width:100%">{verify_button}</div>'
     mail_body = f'<div style="height: 100%;"><div style="width: 100%;height: 100%;background-color: #e8e8e8;"><div style="width: 100%;max-width: 500px;margin-top: 0%;margin-bottom: 10%; margin-right:auto; margin-left:auto; background-color: #e8e8e8;"><tr style="width:100%;height:20vh;"></tr><div style="width:calc(100% - 30px); padding:30px 30px 30px 30px; background-color:white"><div  style="display: flex; width:100%; text-align:center;"><img src=""style="width:50%; height:12%" alt="img" /></div><div  style="margin-top: 30px;">{mail_body_text}</div></div></div></div>'
 
-    sender_address = 'patardriscoll@gmail.com'
-    email = 'patardriscoll@gmail.com'
+    sender_address = 'postmaster@sandbox471ef3a89bf64e819540bc75206062f2.mailgun.org'
+    email = customer.id
 
     # Setup the MIME
     message = MIMEMultipart()
@@ -202,14 +202,14 @@ def send_confirmation_email(jwt_token, customer, url):
     # The body and the attachments for the mail
     message.attach(MIMEText(mail_content, 'html'))
     # Create SMTP session for sending the mail
-    s = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+    # s = smtplib.SMTP('smtp.gmail.com', 587)
     # s.connect('smtp.gmail.com', 587)
     # s.starttls()
 
-    s.login(user="patardriscoll@gmail.com", password="Iqopaogh23!")
-    # s = smtplib.SMTP('smtp.mailgun.org', 587)
-    # s.login('postmaster@crepenshake.com',
-    #         '6695313d8a619bc44dce00ad7184960a-ba042922-f2a8cfbb')
+    # s.login(user="patardriscoll@gmail.com", password="Iqopaogh23!")
+    s = smtplib.SMTP('smtp.mailgun.org', 587)
+    s.login('postmaster@sandbox471ef3a89bf64e819540bc75206062f2.mailgun.org',
+            '44603d9d0e3864edd01989602e0db876-e49cc42c-7570439d')
     s.sendmail(message['From'], message['To'], message.as_string())
     s.quit()
 
