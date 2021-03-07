@@ -4,6 +4,6 @@ steps:
       env: ['PROJECT_ROOT=backend']
       dir: 'react-app/src'
     - name: 'gcr.io/cloud-builders/npm'
-      args: ['npm', 'run', 'build']
+      args: ['run', 'build']
       env: ['PROJECT_ROOT=backend']
       dir: 'react-app/src'
