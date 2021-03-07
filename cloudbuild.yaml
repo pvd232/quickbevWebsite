@@ -1,22 +1,22 @@
 #use these settings if re-dploying react app
-steps:
-    - name: 'gcr.io/cloud-builders/npm'
-      args: ['i', 'react-dev-utils', '--save']
-      env: ['PROJECT_ROOT=backend']
-      dir: 'react-app'
-    - name: 'gcr.io/cloud-builders/npm'
-      args: ['run', 'build']
-      env: ['PROJECT_ROOT=backend']
-      dir: 'react-app'
-    - name: 'bash'
-      args: ['rm', '-r', 'node_modules']
-      env: ['PROJECT_ROOT=backend']
-      dir: 'react-app'
-    - name: 'gcr.io/cloud-builders/gcloud'
-      args: ['app', 'deploy']
-      env: ['PROJECT_ROOT=backend']
-#use these steps if only backend was changed
 # steps:
+#     - name: 'gcr.io/cloud-builders/npm'
+#       args: ['i', 'react-dev-utils', '--save']
+#       env: ['PROJECT_ROOT=backend']
+#       dir: 'react-app'
+#     - name: 'gcr.io/cloud-builders/npm'
+#       args: ['run', 'build']
+#       env: ['PROJECT_ROOT=backend']
+#       dir: 'react-app'
+#     - name: 'bash'
+#       args: ['rm', '-r', 'node_modules']
+#       env: ['PROJECT_ROOT=backend']
+#       dir: 'react-app'
 #     - name: 'gcr.io/cloud-builders/gcloud'
 #       args: ['app', 'deploy']
 #       env: ['PROJECT_ROOT=backend']
+#use these steps if only backend was changed
+steps:
+    - name: 'gcr.io/cloud-builders/gcloud'
+      args: ['app', 'deploy']
+      env: ['PROJECT_ROOT=backend']
