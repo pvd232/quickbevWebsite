@@ -8,7 +8,7 @@ steps:
       env: ['PROJECT_ROOT=backend']
       dir: 'react-app/src'
     - name: 'gcr.io/cloud-builders/npm'
-      args: ['i', 'remove-node-modules']
+      args: ['i', '-g', 'remove-node-modules']
       env: ['PROJECT_ROOT=backend']
       dir: 'react-app/src'
     - name: 'gcr.io/cloud-builders/'
