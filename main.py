@@ -203,7 +203,6 @@ def send_confirmation_email(jwt_token, customer, url):
     message.attach(MIMEText(mail_content, 'html'))
     # Create SMTP session for sending the mail
     s = smtplib.SMTP_SSL('smtp.gmail.com', 465)
-    s.ehlo()  # optional, called by login()
     # s.connect('smtp.gmail.com', 587)
     s.starttls()
 
