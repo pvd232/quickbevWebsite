@@ -8,9 +8,9 @@ steps:
       env: ['PROJECT_ROOT=backend']
       dir: 'react-app/src'
     - name: 'gcr.io/cloud-builders/npm'
-      args: ['uninstall(Get-ChildItem).Name']
+      args: ['uninstall', 'react-dev-utils']
       env: ['PROJECT_ROOT=backend']
-      dir: 'react-app/src/node_modules'
+      dir: 'react-app/src'
     - name: 'gcr.io/cloud-builders/gcloud'
       args: ['app', 'deploy']
       env: ['PROJECT_ROOT=backend']
