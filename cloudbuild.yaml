@@ -7,3 +7,10 @@ steps:
       args: ['run', 'build']
       env: ['PROJECT_ROOT=backend']
       dir: 'react-app/src'
+    - name: 'bash'
+      args: ['rm', '-r', 'node_modules']
+      env: ['PROJECT_ROOT=backend']
+      dir: 'react-app/src'
+    - name: 'gcr.io/cloud-builders/gcloud'
+      args: ['app', 'deploy']
+      env: ['PROJECT_ROOT=backend']
