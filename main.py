@@ -36,6 +36,8 @@ def send_apn(device_token, action):
     with open(os.getcwd()+"/private_key.pem") as f:
         apn_token = f.read()
         f.close()
+    print("apn_token", apn_token)
+
     token = APNSAuthToken(
         token=apn_token,
         team_id=team_id,
@@ -177,7 +179,7 @@ def orders(session_token):
 def send_confirmation_email(jwt_token, customer, url):
     print('jwt_token', jwt_token)
     host = request.headers.get('Host')
-    button_url = f"http://{host}/verify-email/{jwt_token}"
+    button_url = f"https://{host}/verify-email/{jwt_token}"
 
     # logo = os.path.join(os.path.dirname(os.path.abspath(
     #     __file__)), "./src/static/landscape-logo-purple.png")
