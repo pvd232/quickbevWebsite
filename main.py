@@ -15,7 +15,7 @@ from email.mime.text import MIMEText
 from flask import Flask
 import jwt
 import calendar
-from pushjack_http2 import APNSHTTP2SandboxClient, APNSAuthToken
+from pushjack_http2_mod import APNSHTTP2SandboxClient, APNSAuthToken
 from werkzeug.security import generate_password_hash, check_password_hash
 
 
