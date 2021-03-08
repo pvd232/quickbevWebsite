@@ -23,7 +23,7 @@ Jinja2==2.11.2
 MarkupSafe==1.1.1
 ndg-httpsclient==0.5.1
 psycopg2==2.8.6
-pushjack-http2-mod
+pushjack-http2-mod==1.0.0
 pyasn1==0.4.8
 pycodestyle==2.6.0
 pycparser==2.20
