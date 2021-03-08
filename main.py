@@ -43,7 +43,7 @@ def send_apn(device_token, action):
         team_id=team_id,
         key_id="9KCZ66FCHF")
 
-    client = APNSHTTP2SandboxClient(
+    client = APNSHTTP2Client(
         token=token,
         bundle_id='com.theQuickCompany.QuickBev')
 
