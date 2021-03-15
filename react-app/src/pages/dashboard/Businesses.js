@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { makeStyles } from "@material-ui/core/styles";
 import Table from "@material-ui/core/Table";
 import TableBody from "@material-ui/core/TableBody";
@@ -38,13 +38,13 @@ const Businesses = (props) => {
       switch (value) {
         case typeof value === "string":
           businessData.push(value.replace("_", ""));
-          break;
+          return value;
         case value === true:
           businessData.push("yes");
-          break;
+          return value;
         default:
           businessData.push(value);
-          break;
+          return value;
       }
     });
     return businessData;

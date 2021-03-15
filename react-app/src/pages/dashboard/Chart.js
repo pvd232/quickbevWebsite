@@ -1,4 +1,4 @@
-import { React, useState, useReducer, useEffect } from "react";
+import { React, useReducer, useEffect } from "react";
 import { useTheme, makeStyles } from "@material-ui/core/styles";
 import {
   LineChart,

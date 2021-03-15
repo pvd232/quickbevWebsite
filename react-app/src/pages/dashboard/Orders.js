@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { makeStyles } from "@material-ui/core/styles";
 import Table from "@material-ui/core/Table";
 import TableBody from "@material-ui/core/TableBody";
@@ -53,11 +53,13 @@ const Orders = (props) => {
     Object.values(order).map((key) => {
       if (key instanceof OrderDrink) {
         Object.values(key.orderDrink).map((drink) => {
-          orderData.push(String(drink.quantity) + "x" + " " + drink.name);
+          const drinkString = String(drink.quantity) + "x" + " " + drink.name;
+          orderData.push(drinkString);
         });
       } else {
         orderData.push(key);
       }
+      return key;
     });
     return orderData;
   });

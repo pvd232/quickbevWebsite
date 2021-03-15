@@ -1,5 +1,5 @@
 import React, { useState, useReducer, useEffect } from "react";
-import { Merchant, Business, setLocalStorage } from "../Models.js";
+import { Merchant, setLocalStorage } from "../Models.js";
 import API from "../helpers/Api.js";
 import Navbar from "../Navbar.js";
 
@@ -10,8 +10,6 @@ import Col from "react-bootstrap/Col";
 import "../css/Signup.css";
 
 const Signin = () => {
-  const [merchant, setMerchant] = useState(null);
-  const [business, setBusiness] = useState(null);
   const [redirect, setRedirect] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
   const [authorization, setAuthorization] = useReducer(
