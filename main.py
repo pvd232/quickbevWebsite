@@ -68,7 +68,6 @@ def b():
     # test_service.test_connection()
     instantiate_db_connection()
     return Response(status=200)
-# this s called by the customer to update their device token after they have successfully logged in
 
 
 @app.route('/apn-token/<string:customer_id>/<string:session_token>', methods=["POST"])
