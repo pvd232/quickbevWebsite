@@ -126,7 +126,7 @@ export default function Chart(props) {
         // if a matching date hasn't been added to the array then we append it to the list
         dataGroupedByDate.push({
           date: date,
-          dateTime: new Date(date),
+          dateTime: new Date(orderDateTime),
           amount: amount,
           businessName: orderBusiness.name,
           businessAddress: orderBusiness.address,
@@ -151,7 +151,7 @@ export default function Chart(props) {
       ) {
         dataGroupedByDate.push({
           date: date,
-          dateTime: new Date(date),
+          dateTime: new Date(orderDateTime),
           amount: amount,
           businessName: orderBusiness.name,
           businessAddress: orderBusiness.address,
