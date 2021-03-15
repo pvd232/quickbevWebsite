@@ -1,22 +1,43 @@
 import Dashboard from "./dashboard/Dashboard.js";
 import { useState, useEffect } from "react";
 import API from "../helpers/Api.js";
+import { setLocalStorage } from "../Models.js";
 
 const Home = () => {
-  const [list, setList] = useState(null);
-
+  const [orders, setOrders] = useState(null);
+  const [customers, setCustomers] = useState(null);
+  const [businesses, setBusinesses] = useState(null);
   useEffect(() => {
     let mounted = true;
     API.getOrders().then((items) => {
-      console.log("items", items);
+      setLocalStorage("orders", items.orders);
       if (mounted) {
-        setList(items);
+        setOrders(items.orders);
+      }
+    });
+    API.getCustomers().then((items) => {
+      setLocalStorage("customers", items.customers);
+      if (mounted) {
+        setCustomers(items.customers);
+      }
+    });
+    API.getBusinesses().then((items) => {
+      setLocalStorage("businesses", items.businesses);
+      if (mounted) {
+        setBusinesses(items.businesses);
       }
     });
     return () => (mounted = false);
   }, []);
-  if (list) {
-    return <Dashboard orderArray={list}></Dashboard>;
+
+  if (orders && customers && businesses) {
+    return (
+      <Dashboard
+        orders={orders}
+        customers={customers}
+        businesses={businesses}
+      ></Dashboard>
+    );
   } else {
     return <></>;
   }

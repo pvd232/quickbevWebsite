@@ -1,19 +1,19 @@
 {
   "files": {
-    "main.css": "/static/react/css/main.ca7034cc.chunk.css",
-    "main.js": "/static/react/js/main.d337489b.chunk.js",
-    "main.js.map": "/static/react/js/main.d337489b.chunk.js.map",
-    "runtime-main.js": "/static/react/js/runtime-main.e6bd3740.js",
-    "runtime-main.js.map": "/static/react/js/runtime-main.e6bd3740.js.map",
-    "css/2.ae9f1eb3.chunk.css": "/static/react/css/2.ae9f1eb3.chunk.css",
-    "js/2.92e8f3e6.chunk.js": "/static/react/js/2.92e8f3e6.chunk.js",
-    "js/2.92e8f3e6.chunk.js.map": "/static/react/js/2.92e8f3e6.chunk.js.map",
-    "js/3.d2824b7f.chunk.js": "/static/react/js/3.d2824b7f.chunk.js",
-    "js/3.d2824b7f.chunk.js.map": "/static/react/js/3.d2824b7f.chunk.js.map",
+    "main.css": "/static/react/css/main.3cd6bea6.chunk.css",
+    "main.js": "/static/react/js/main.1662256c.chunk.js",
+    "main.js.map": "/static/react/js/main.1662256c.chunk.js.map",
+    "runtime-main.js": "/static/react/js/runtime-main.7a81e9e0.js",
+    "runtime-main.js.map": "/static/react/js/runtime-main.7a81e9e0.js.map",
+    "css/2.c56f1cbb.chunk.css": "/static/react/css/2.c56f1cbb.chunk.css",
+    "js/2.4eec3016.chunk.js": "/static/react/js/2.4eec3016.chunk.js",
+    "js/2.4eec3016.chunk.js.map": "/static/react/js/2.4eec3016.chunk.js.map",
+    "js/3.2773942d.chunk.js": "/static/react/js/3.2773942d.chunk.js",
+    "js/3.2773942d.chunk.js.map": "/static/react/js/3.2773942d.chunk.js.map",
     "../../templates/index.html": "/static/react/../../templates/index.html",
-    "css/2.ae9f1eb3.chunk.css.map": "/static/react/css/2.ae9f1eb3.chunk.css.map",
-    "css/main.ca7034cc.chunk.css.map": "/static/react/css/main.ca7034cc.chunk.css.map",
-    "js/2.92e8f3e6.chunk.js.LICENSE.txt": "/static/react/js/2.92e8f3e6.chunk.js.LICENSE.txt",
+    "css/2.c56f1cbb.chunk.css.map": "/static/react/css/2.c56f1cbb.chunk.css.map",
+    "css/main.3cd6bea6.chunk.css.map": "/static/react/css/main.3cd6bea6.chunk.css.map",
+    "js/2.4eec3016.chunk.js.LICENSE.txt": "/static/react/js/2.4eec3016.chunk.js.LICENSE.txt",
     "media/dollar-icon.cbe5ac7d.png": "/static/react/media/dollar-icon.cbe5ac7d.png",
     "media/icon-bank.e0c5b721.svg": "/static/react/media/icon-bank.e0c5b721.svg",
     "media/ipad-icon.e55f6ae6.png": "/static/react/media/ipad-icon.e55f6ae6.png",
@@ -21,10 +21,10 @@
     "media/time-icon.27b84715.png": "/static/react/media/time-icon.27b84715.png"
   },
   "entrypoints": [
-    "js/runtime-main.e6bd3740.js",
-    "css/2.ae9f1eb3.chunk.css",
-    "js/2.92e8f3e6.chunk.js",
-    "css/main.ca7034cc.chunk.css",
-    "js/main.d337489b.chunk.js"
+    "js/runtime-main.7a81e9e0.js",
+    "css/2.c56f1cbb.chunk.css",
+    "js/2.4eec3016.chunk.js",
+    "css/main.3cd6bea6.chunk.css",
+    "js/main.1662256c.chunk.js"
   ]
 }

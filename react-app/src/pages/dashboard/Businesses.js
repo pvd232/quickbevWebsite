@@ -10,7 +10,7 @@ import Paper from "@material-ui/core/Paper";
 import Title from "./Title";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
-import { Customer } from "../../Models";
+import { Business } from "../../Models";
 import { CSVLink } from "react-csv";
 
 const useStyles = makeStyles({
@@ -26,37 +26,47 @@ const toCapitalizedWords = (name) => {
 
   return words.map(capitalize).join(" ");
 };
-const nonCamelCaseWords = (name) => {
-  var words = name.match(/[A-Za-z][a-z]*/g) || [];
-  return words.join(" ");
-};
-const Customers = (props) => {
+
+const Businesses = (props) => {
   const classes = useStyles();
-  const mappedCustomers = props.customers.map((customerJSON) => {
-    return new Customer(customerJSON);
+  const mappedBusinesses = props.businesses.map((businessJSON) => {
+    return new Business(businessJSON, false, true);
   });
-  var csvData = mappedCustomers.map((customer) => {
-    const customerData = [customer.id, customer.firstName, customer.lastName];
-    return customerData;
+  var csvData = mappedBusinesses.map((business) => {
+    var businessData = [];
+    Object.values(business).map((value) => {
+      switch (value) {
+        case typeof value === "string":
+          businessData.push(value.replace("_", ""));
+          break;
+        case value === true:
+          businessData.push("yes");
+          break;
+        default:
+          businessData.push(value);
+          break;
+      }
+    });
+    return businessData;
   });
+
   // add row headers
   csvData.unshift(
-    Object.keys(mappedCustomers[0]).map((key) =>
-      // if the key is "id" than we want to display an email label
+    Object.keys(mappedBusinesses[0]).map((key) =>
       toCapitalizedWords(
         // the object keys are the objects private properties so we have to remove the underscores
-        key === "_id" ? "email" : key.replace("_", "")
+        key.replace("_", "")
       )
     )
   );
-  if (mappedCustomers) {
+  if (mappedBusinesses) {
     return (
       <TableContainer>
         <Paper className={props.classes.paper}>
           <Row style={{ width: "100%", height: "fit-content" }}>
             <Col xs={9}>
               <Title style={{ marginLeft: "auto", maxWidth: "15%" }}>
-                Customers
+                Businesses
               </Title>
             </Col>
             <Col
@@ -78,26 +88,27 @@ const Customers = (props) => {
                 <TableCell align="left" key={"row #"}>
                   Row
                 </TableCell>
-                {Object.keys(mappedCustomers[0]).map((key, i) => (
+                {Object.keys(mappedBusinesses[0]).map((key, i) => (
                   <TableCell align="left" key={i}>
-                    {
-                      // if the key is "id" than we want to display an email label
-                      toCapitalizedWords(
-                        // the object keys are the objects private properties so we have to remove the underscores
-                        key === "_id" ? "email" : key.replace("_", "")
-                      )
-                    }
+                    {toCapitalizedWords(
+                      // the object keys are the objects private properties so we have to remove the underscores
+                      key.replace("_", "")
+                    )}
                   </TableCell>
                 ))}
               </TableRow>
             </TableHead>
             <TableBody>
-              {mappedCustomers.map((row, i) => (
-                <TableRow key={i}>
+              {mappedBusinesses.map((business, i) => (
+                <TableRow key={business.id}>
                   <TableCell>{i}</TableCell>
-                  {Object.values(row).map((key, i) => (
+                  {Object.values(business).map((value, i) => (
                     <TableCell align="left" key={i}>
-                      {nonCamelCaseWords(key.replace("_", ""))}
+                      {typeof value === "string"
+                        ? value.replace("_", "")
+                        : value === true
+                        ? "yes"
+                        : value}
                     </TableCell>
                   ))}
                 </TableRow>
@@ -111,4 +122,4 @@ const Customers = (props) => {
     return <></>;
   }
 };
-export default Customers;
+export default Businesses;

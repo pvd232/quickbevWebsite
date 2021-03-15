@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, Response, request, redirect, url_for, render_template
 import requests
-from models import app
+from models import app, instantiate_db_connection
 from service import *
 import json
 import time
@@ -37,8 +37,6 @@ def send_apn(device_token, action):
     with open(os.getcwd()+"/private_key.pem") as f:
         apn_token = f.read()
         f.close()
-    print("apn_token", apn_token)
-
     token = APNSAuthToken(
         token=apn_token,
         team_id=team_id,
@@ -62,17 +60,6 @@ def send_apn(device_token, action):
     #     title="Order Ready",
     #     category="order"
     # )
-
-
-@app.route("/")
-def my_index():
-    return render_template("index.html", flask_token="Hello world")
-
-
-@app.errorhandler(404)
-def not_found(e):
-    print('error 404', e)
-    return render_template('index.html')
 
 
 @app.route("/b")
@@ -150,6 +137,7 @@ def inventory(session_token):
 
 @app.route('/order/<string:session_token>', methods=['POST', 'GET', 'OPTIONS'])
 def orders(session_token):
+    headers = {}
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
     response = {}
@@ -161,24 +149,43 @@ def orders(session_token):
         response['msg'] = 'you good bruh'
         return Response(status=200, response=json.dumps(response))
     if request.method == 'OPTIONS':
-        header = {}
-        header["Access-Control-Allow-Credentials"] = "true"
-        return Response(status=200, headers=header)
+        headers["Access-Control-Allow-Origin"] = request.origin
+        headers["Access-Control-Allow-Headers"] = request.headers.get(
+            'Access-Control-Request-Headers')
+        headers["Access-Control-Allow-Credentials"] = "true"
+
+        headers["Access-Control-Expose-Headers"] = "Access-Control-Allow-Origin"
+        headers["Access-Control-Expose-Headers"] = "Access-Control-Allow-Credentials"
+        headers["Access-Control-Expose-Headers"] = "Access-Control-Allow-Headers"
+
+        return Response(status=200, headers=headers)
     if request.method == "GET":
-        header = {}
-        header["Access-Control-Expose-Headers"] = "authorization"
-        header["Access-Control-Allow-Credentials"] = "true"
+        headers["Access-Control-Allow-Origin"] = request.origin
+        headers["Access-Control-Allow-Headers"] = request.headers.get(
+            'Access-Control-Request-Headers')
+        headers["Access-Control-Allow-Credentials"] = "true"
+
+        headers["Access-Control-Expose-Headers"] = "Access-Control-Allow-Origin"
+        headers["Access-Control-Expose-Headers"] = "Access-Control-Allow-Credentials"
+        headers["Access-Control-Expose-Headers"] = "Access-Control-Allow-Headers"
+
+        headers["Access-Control-Expose-Headers"] = "authorization"
+        headers["Access-Control-Allow-Credentials"] = "true"
         username = base64.b64decode(
             request.headers.get(
                 "Authorization").split(" ")[1]).decode("utf-8").split(":")[0]
-        merchant_orders = order_service.get_orders(username=username)
-        print('customer_orders', merchant_orders)
-        response = {"orders": merchant_orders}
-        return Response(status=200, response=json.dumps(response), headers=header)
+        filter_orders_by = request.headers.get('filterBy')
+        orders = []
+        if filter_orders_by == 'merchant':
+            orders = order_service.get_merchant_orders(username=username)
+
+        elif filter_orders_by == 'customer':
+            orders = order_service.get_merchant_orders(username=username)
+        response['orders'] = orders
+        return Response(status=200, response=json.dumps(response), headers=headers)
 
 
 def send_confirmation_email(jwt_token, customer, url):
-    print('jwt_token', jwt_token)
     host = request.headers.get('Host')
     button_url = f"https://{host}/verify-email/{jwt_token}"
 
@@ -212,7 +219,6 @@ def send_confirmation_email(jwt_token, customer, url):
 
 
 def send_password_reset_email(jwt_token, customer):
-    print('jwt_token', jwt_token)
     # host = request.headers.get('Host')
     host = "quickbev.uc.r.appspot.com"
 
@@ -257,7 +263,6 @@ def send_password_reset_email(jwt_token, customer):
 def guest_device_token():
     headers = {}
     device_token = request.headers.get("DeviceToken")
-    print('device_token', device_token)
     Customer_Service().add_guest_device_token(device_token)
     jwt_token = jwt.encode(
         {"sub": device_token}, key=secret, algorithm="HS256")
@@ -269,7 +274,20 @@ def guest_device_token():
 def customer():
     response = {}
     headers = {}
-    print(json.loads(request.data))
+    if request.method == 'OPTIONS':
+        session_token = request.args.get('sessionToken')
+        if not jwt.decode(session_token, secret, algorithms=["HS256"]):
+            return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
+        headers["Access-Control-Allow-Origin"] = request.origin
+        headers["Access-Control-Allow-Headers"] = request.headers.get(
+            'Access-Control-Request-Headers')
+        headers["Access-Control-Allow-Credentials"] = "true"
+
+        headers["Access-Control-Expose-Headers"] = "Access-Control-Allow-Origin"
+        headers["Access-Control-Expose-Headers"] = "Access-Control-Allow-Credentials"
+        headers["Access-Control-Expose-Headers"] = "Access-Control-Allow-Headers"
+
+        return Response(status=200, headers=headers)
     if request.method == 'POST':
         requested_new_customer = json.loads(
             request.data)
@@ -302,21 +320,24 @@ def customer():
         send_confirmation_email(
             jwt_token, customer, request.url)
         return Response(status=200)
-    elif request.method == 'OPTIONS':
-        header = {}
-        header["Access-Control-Allow-Credentials"] = 'true'
-        return Response(status=200, headers=header)
+        return Response(status=200, headers=headers)
     elif request.method == "GET":
-        header = {}
-        header["Access-Control-Expose-Headers"] = "authorization"
-        # header["Access-Control-Allow-Origin"] = "http://localhost:3000"
-        header["Access-Control-Allow-Credentials"] = 'true'
+        headers["Access-Control-Allow-Headers"] = request.headers.get(
+            'Access-Control-Request-Headers')
+        headers["Access-Control-Expose-Headers"] = "authorization"
+        headers["Access-Control-Allow-Origin"] = request.origin
+        headers["Access-Control-Allow-Credentials"] = 'true'
+        headers["Access-Control-Expose-Headers"] = "Access-Control-Allow-Origin"
+        headers["Access-Control-Expose-Headers"] = "Access-Control-Allow-Credentials"
+        headers["Access-Control-Expose-Headers"] = "Access-Control-Allow-Headers"
+
         merchant_id = base64.b64decode(
             request.headers.get(
                 "Authorization").split(" ")[1]).decode("utf-8")
-        customers = Customer_Service().get_customers(merchant_id=merchant_id)
+        customers = [x.dto_serialize() for x in Customer_Service(
+        ).get_customers(merchant_id=merchant_id)]
         response = {"customers": customers}
-        return Response(status=200, response=json.dumps(response), headers=header)
+        return Response(status=200, response=json.dumps(response), headers=headers)
 
 
 # strongly typed url argument ;)
@@ -358,38 +379,66 @@ def reset_password(customer_id):
             return Response(status=400, response=json.dumps({"msg": "error"}))
 
 
-@app.route('/business/<string:session_token>', methods=['GET'])
-def get_businesss(session_token):
+@app.route('/business/<string:session_token>', methods=['GET', 'OPTIONS'])
+def business(session_token):
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
     response = {}
     headers = {}
-    business_list = []
-    businesss = Business_Service().get_businesss()
-    client_etag = json.loads(request.headers.get("If-None-Match"))
-    print()
-    print('client_etag', client_etag)
-    print()
+    if request.method == 'OPTIONS':
+        headers["Access-Control-Allow-Origin"] = request.origin
+        headers["Access-Control-Allow-Headers"] = request.headers.get(
+            'Access-Control-Request-Headers')
+        headers["Access-Control-Allow-Credentials"] = "true"
 
-    if client_etag:
-        print('ETag_Service().validate_etag(client_etag)',
-              ETag_Service().validate_etag(client_etag))
-        if not ETag_Service().validate_etag(client_etag):
-            for business in businesss:
-                # turn into dictionaries
-                businessDTO = {}
-                businessDTO['business'] = business.dto_serialize()
-                business_list.append(businessDTO)
-                response['businesses'] = business_list
+        headers["Access-Control-Expose-Headers"] = "Access-Control-Allow-Origin"
+        headers["Access-Control-Expose-Headers"] = "Access-Control-Allow-Credentials"
+        headers["Access-Control-Expose-Headers"] = "Access-Control-Allow-Headers"
+        return Response(status=200, headers=headers)
+    elif request.method == 'GET':
+        headers["Access-Control-Allow-Headers"] = request.headers.get(
+            'Access-Control-Request-Headers')
+        headers["Access-Control-Expose-Headers"] = "authorization"
+        headers["Access-Control-Allow-Origin"] = request.origin
+        headers["Access-Control-Allow-Credentials"] = 'true'
+        headers["Access-Control-Expose-Headers"] = "Access-Control-Allow-Origin"
+        headers["Access-Control-Expose-Headers"] = "Access-Control-Allow-Credentials"
+        headers["Access-Control-Expose-Headers"] = "Access-Control-Allow-Headers"
 
+        business_list = []
+        if request.headers.get('merchantId'):
+            merchant_id = request.headers.get('merchantId')
+            merchant_businesses = [x.dto_serialize(
+            ) for x in Business_Service().get_merchant_business(merchant_id)]
+            response["businesses"] = merchant_businesses
+            if merchant_businesses:
+                print("merchant_businesses", merchant_businesses)
+
+                return Response(status=200, response=json.dumps(response), headers=headers)
+            else:
+                response["msg"] = "businesses for the requested merchant_id were not found"
+                return Response(status=404, response=json.dumps(response), headers=headers)
+
+        businesss = Business_Service().get_businesses()
+        client_etag = json.loads(request.headers.get("If-None-Match"))
+
+        if client_etag:
+            if not ETag_Service().validate_etag(client_etag):
+                for business in businesss:
+                    # turn into dictionaries
+                    businessDTO = {}
+                    businessDTO['business'] = business.dto_serialize()
+                    business_list.append(businessDTO)
+                    response['businesses'] = business_list
+
+                etag = ETag_Service().get_etag("business")
+                headers["E-tag-category"] = etag.category
+                headers["E-tag-id"] = str(etag.id)
+        else:
             etag = ETag_Service().get_etag("business")
             headers["E-tag-category"] = etag.category
             headers["E-tag-id"] = str(etag.id)
-    else:
-        etag = ETag_Service().get_etag("business")
-        headers["E-tag-category"] = etag.category
-        headers["E-tag-id"] = str(etag.id)
-    return Response(status=200, response=json.dumps(response), headers=headers)
+        return Response(status=200, response=json.dumps(response), headers=headers)
 
 
 @app.route('/tabs', methods=['POST', 'GET'])
@@ -411,7 +460,6 @@ def ephemeral_keys(session_token):
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
     request_data = json.loads(request.data)
-    print('request_data', request_data)
     order_service = Order_Service()
     key, header = order_service.create_stripe_ephemeral_key(request_data)
     if key and header:
@@ -426,12 +474,9 @@ def create_payment_intent(session_token):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
     response = {}
     request_data = json.loads(request.data)
-    print('request_data payment intent', request_data)
     order_service = Order_Service()
     client_secret = order_service.stripe_payment_intent(request_data)
-    print('client_secret', client_secret)
     response["secret"] = client_secret
-    print("r", response)
     return Response(status=200, response=json.dumps(response))
 
 
@@ -445,12 +490,7 @@ def signup():
     response = {"msg": ""}
     # check if the post request has the file part
     requested_merchant = json.loads(request.form.get("merchant"))
-
-    print('requested_merchant', requested_merchant)
-
     requested_business = json.loads(request.form.get("business"))
-
-    print('requested_business', requested_business)
 
     merchant_service = Merchant_Service()
     business_service = Business_Service()
@@ -483,36 +523,48 @@ def signup():
 @app.route('/signup-redirect', methods=['POST'])
 def signup_redirect():
     response = {"msg": ""}
-    header = {}
+    headers = {}
     business_service = Business_Service()
     request_json = json.loads(request.data)
     business_to_update = request_json["business"]
     if business_service.update_business(business_to_update):
-        header["jwt_token"] = jwt.encode(
+        headers["jwt_token"] = jwt.encode(
             {"sub": business_to_update["id"]}, key=secret, algorithm="HS256")
         response["msg"] = "Business sucessfully updated"
-        return Response(status=200, response=json.dumps(response), headers=header)
+        return Response(status=200, response=json.dumps(response), headers=headers)
     else:
         response["msg"] = "Failed to update business"
         return Response(status=500, response=json.dumps(response))
 
 
-@app.route('/merchant', methods=['GET'])
+@app.route('/merchant', methods=['GET', 'OPTIONS'])
 def authenticate_merchant():
-    header = {}
-    username = request.headers.get('email')
-    password = request.headers.get('password')
-    response = {"msg": "customer not found"}
-    merchant = Merchant_Service().authenticate_merchant(username, password)
-    # if the merchant exists it will return False, if it doesn't it will return True
-    if merchant:
-        header["jwt_token"] = jwt.encode(
-            {"sub": merchant.id}, key=secret, algorithm="HS256")
-        header["Access-Control-Expose-Headers"] = "jwt_token"
-        print('header', header)
-        return Response(status=200, response=json.dumps(merchant.dto_serialize()), headers=header)
-    else:
-        return jsonify(response), 400
+    headers = {}
+    if request.method == 'OPTIONS':
+        headers["Access-Control-Allow-Origin"] = request.origin
+        headers["Access-Control-Allow-Headers"] = request.headers.get(
+            'Access-Control-Request-Headers')
+        headers["Access-Control-Expose-Headers"] = "Access-Control-Allow-Origin"
+        headers["Access-Control-Expose-Headers"] = "Access-Control-Allow-Headers"
+
+        return Response(status=200, headers=headers)
+    if request.method == "GET":
+        headers["Access-Control-Allow-Origin"] = request.origin
+        headers["Access-Control-Expose-Headers"] = "Access-Control-Allow-Origin"
+
+        username = request.headers.get('email')
+        password = request.headers.get('password')
+
+        response = {"msg": "customer not found"}
+        merchant = Merchant_Service().authenticate_merchant(username, password)
+        # if the merchant exists it will return False, if it doesn't it will return True
+        if merchant:
+            headers["jwt_token"] = jwt.encode(
+                {"sub": merchant.id}, key=secret, algorithm="HS256")
+            headers["Access-Control-Expose-Headers"] = "jwt_token"
+            return Response(status=200, response=json.dumps(merchant.dto_serialize()), headers=headers)
+        else:
+            return Response(status=404, response=json.dumps(response), headers=headers)
 
 
 @app.route('/create-stripe-account', methods=['GET'])
@@ -524,11 +576,11 @@ def create_stripe_account():
         return_url='https://quickbev.uc.r.appspot.com/home',
         type='account_onboarding',
     )
-    header = {}
-    header["Access-Control-Expose-Headers"] = "*"
-    header["stripe_id"] = new_account.id
+    headers = {}
+    headers["Access-Control-Expose-Headers"] = "*"
+    headers["stripe_id"] = new_account.id
     response = Response(status=200, response=json.dumps(
-        account_links), headers=header)
+        account_links), headers=headers)
     return response
 
 
@@ -536,9 +588,7 @@ def create_stripe_account():
 def add_menu():
     drink_service = Drink_Service()
     menu = json.loads(request.data)
-    print('menu', menu)
     business_id = request.headers.get("business_id")
-    print('business_id', business_id)
     response = Response(status=200, response=json.dumps(
         drink_service.add_drinks(business_id, menu)))
     return response

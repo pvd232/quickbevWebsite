@@ -7,7 +7,7 @@ from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 from contextlib import contextmanager
-
+from models import instantiate_db_connection
 
 username = "postgres"
 password = "Iqopaogh23!"
@@ -72,15 +72,25 @@ class Drink_Service(object):
 class Order_Service(object):
     def create_order(self, order):
         with session_scope() as session:
-            print('order JSON', order)
             new_order_domain = Order_Domain(order_json=order)
             Order_Repository().post_order(session, new_order_domain)
             return
 
-    def get_orders(self, username):
+    def get_customer_orders(self, username):
         response = []
         with session_scope() as session:
-            orders, drinks = Order_Repository().get_orders(
+            orders, drinks = Order_Repository().get_customer_orders(
+                session, username)
+            for order in orders:
+                order_domain = Order_Domain(order_object=order, drinks=drinks)
+                order_dto = order_domain.dto_serialize()
+                response.append(order_dto)
+            return response
+
+    def get_merchant_orders(self, username):
+        response = []
+        with session_scope() as session:
+            orders, drinks = Order_Repository().get_merchant_orders(
                 session, username)
             for order in orders:
                 order_domain = Order_Domain(order_object=order, drinks=drinks)
@@ -127,8 +137,6 @@ class Customer_Service(object):
             if registered_new_customer:
                 registered_new_customer_domain = Customer_Domain(
                     customer_object=registered_new_customer)
-                print('registered_new_customer_domain',
-                      registered_new_customer_domain.serialize())
                 return registered_new_customer_domain
             else:
                 return False
@@ -136,9 +144,15 @@ class Customer_Service(object):
     def get_customers(self, merchant_id):
         with session_scope() as session:
             # pheew this is sexy. list comprehension while creating a customer dto
-            customers = [Customer_Domain(customer_object=x).dto_serialize() for x in Customer_Repository().get_customers(
+            customers = [Customer_Domain(customer_object=x) for x in Customer_Repository().get_customers(
                 session, merchant_id)]
-            return customers
+            customers_without_passswords = []
+            for customer in customers:
+                new_customer_without_password = customer
+                new_customer_without_password.password = None
+                customers_without_passswords.append(
+                    new_customer_without_password)
+            return customers_without_passswords
 
     def update_device_token(self, device_token, customer_id):
         with session_scope() as session:
@@ -193,10 +207,10 @@ class Merchant_Service(object):
 
 
 class Business_Service(object):
-    def get_businesss(self):
+    def get_businesses(self):
         with session_scope() as session:
             response = []
-            for business in Business_Repository().get_businesss(session):
+            for business in Business_Repository().get_businesess(session):
                 business_domain = Business_Domain(business_object=business)
                 response.append(business_domain)
             return response
@@ -216,6 +230,14 @@ class Business_Service(object):
         with session_scope() as session:
             business_domain = Business_Domain(business_json=business)
             return Business_Repository().update_business(session, business_domain)
+
+    def get_merchant_business(self, merchant_id):
+        with session_scope() as session:
+            response = []
+            for business in Business_Repository().get_merchant_businesses(session, merchant_id):
+                business_domain = Business_Domain(business_object=business)
+                response.append(business_domain)
+            return response
 
 
 class Tab_Service(object):
@@ -244,7 +266,7 @@ class Test_Service(object):
         self.username = "postgres"
         self.password = "Iqopaogh23!"
         self.connection_string_beginning = "postgres://"
-        self.connection_string_end = "@localhost:5432/crepenshakedb"
+        self.connection_string_end = "@localhost: 5432/quickbevdb"
         self.connection_string = self.connection_string_beginning + \
             self.username + ":" + self.password + self.connection_string_end
         self.test_engine = create_engine(

@@ -43,10 +43,10 @@ class Order_Repository(object):
         subtotal = round(subtotal, 2)
         tip_amount = round(order.tip_percentage * subtotal, 2)
         sales_tax = round(subtotal * order.sales_tax_percentage, 2)
-        cost = int(round(subtotal+tip_amount+sales_tax, 2) * 100)
+        pre_fee_cost = int(round(subtotal+tip_amount+sales_tax, 2) * 100)
         merchant_stripe_id = order.merchant_stripe_id
         service_fee = int(round(.1 * cost, 2) * 100)
-
+        cost = pre_fee_cost + service_fee
         new_order = Order(id=order.id, customer_id=order.customer_id, merchant_stripe_id=order.merchant_stripe_id,
                           business_id=order.business_id, cost=cost, subtotal=subtotal, tip_percentage=order.tip_percentage, tip_amount=tip_amount, sales_tax=sales_tax, sales_tax_percentage=order.sales_tax_percentage, date_time=order.date_time, service_fee=service_fee)
         session.add(new_order)
@@ -59,9 +59,16 @@ class Order_Repository(object):
                 session.add(new_order_drink)
         return True
 
-    def get_orders(self, session, username):
+    def get_customer_orders(self, session, username):
         orders = session.query(Order, Business.id.label("business_id"),  # select from allows me to pull the entire Order from the database so I can get the Order_Drink relationship values
                                Business.address.label("business_address"), Business.name.label("business_name")).select_from(Order).join(Business, Order.business_id == Business.id).filter(Order.customer_id == username).all()
+        drinks = session.query(Drink)
+        return orders, drinks
+
+    def get_merchant_orders(self, session, username):
+        orders = session.query(Order, Business.id.label("business_id"),  # select from allows me to pull the entire Order from the database so I can get the Order_Drink relationship values
+                               Business.address.label("business_address"), Business.name.label("business_name")).select_from(Order).join(Business, Order.business_id == Business.id).filter(Business.merchant_id == username).all()
+
         drinks = session.query(Drink)
         return orders, drinks
 
@@ -147,8 +154,6 @@ class Customer_Repository(object):
             return False
 
     def register_new_customer(self, session, customer):
-        print('customer', customer.serialize())
-        print('customer.id', customer.id)
         test_customer = session.query(Customer).filter(
             Customer.id == customer.id).first()
         test_stripe_id = session.query(Stripe_Customer).filter(
@@ -189,36 +194,22 @@ class Customer_Repository(object):
             return False
 
     def get_customers(self, session, merchant_id):
-        customers = session.query(Customer.id, Customer.first_name, Customer.last_name).join(Order, Order.customer_id == Customer.id).join(Business, Business.id == Order.business_id).join(
-            Merchant, Merchant.id == Business.merchant_id).filter(Business.merchant_id == merchant_id).distinct()
+        # this is probably a super inefficient query lol, should work from merchant list filtered by merchant ID to wittle down initial subset not work from entire dataset and wittle it with merchant_id ? idk maybe this is just as bad because you still have to compare all the businesses
+        customers = session.query(Customer).join(Order, Order.customer_id == Customer.id).join(Business, Business.id == Order.business_id).join(
+            Merchant, Merchant.id == Business.merchant_id).filter(Business.merchant_id == merchant_id).distinct().all()
         return customers
 
     def update_device_token(self, session, device_token, customer_id):
         customer_to_update = session.query(Customer).filter(
             Customer.id == customer_id).first()
         if customer_to_update:
-            print()
-            print('customer_to_update before token update',
-                  customer_to_update.serialize)
-            print()
-
-            customer_to_update.device_token = device_token
-
-            print('customer_to_update after token update',
-                  customer_to_update.serialize)
-            print()
-
             return True
         else:
             return False
 
     def get_device_token(self, session, customer_id):
-        print('customer_id', customer_id)
         requested_customer = session.query(Customer).filter(
             Customer.id == customer_id).first()
-        print('requested_customer', requested_customer)
-        print('requested_customer.serialize', requested_customer.serialize)
-
         if requested_customer:
             device_token = requested_customer.device_token
             return device_token
@@ -263,7 +254,7 @@ class Customer_Repository(object):
 
 
 class Business_Repository(object):
-    def get_businesss(self, session):
+    def get_businesses(self, session):
         businesses = session.query(Business).all()
         return businesses
 
@@ -281,6 +272,14 @@ class Business_Repository(object):
         if business_database_object_to_update:
             business_database_object_to_update.stripe_id = business.stripe_id
             return True
+        else:
+            return False
+
+    def get_merchant_businesses(self, session, merchant_id):
+        businesses = session.query(Business).filter(
+            Business.merchant_id == merchant_id).all()
+        if businesses:
+            return businesses
         else:
             return False
 

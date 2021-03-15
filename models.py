@@ -1,3 +1,4 @@
+
 # beginning of Models.py
 # note that at this point you should have created "quickbev" database (see install_postgres.txt).
 from flask import Flask
@@ -13,6 +14,8 @@ from datetime import date
 import stripe
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.ext.hybrid import hybrid_method
+from random import randrange
+from datetime import datetime
 #   https://stackoverflow.com/questions/38678336/sqlalchemy-how-to-implement-drop-table-cascade
 
 stripe.api_key = "sk_test_51I0xFxFseFjpsgWvh9b1munh6nIea6f5Z8bYlIDfmKyNq6zzrgg8iqeKEHwmRi5PqIelVkx4XWcYHAYc1omtD7wz00JiwbEKzj"
@@ -24,8 +27,8 @@ def _compile_drop_table(element, compiler, **kwargs):
 
 
 app = Flask(__name__)
-username = "postgres"
-password = "Iqopaogh23!"
+username = os.environ.get("USER", "postgres")
+password = os.environ.get("PASSWORD", "Iqopaogh23!")
 connection_string_beginning = "postgres://"
 connection_string_end = "@localhost:5432/quickbevdb"
 connection_string = connection_string_beginning + \
@@ -155,6 +158,7 @@ class Customer(db.Model):
 
 
 class Order(db.Model):
+    __tablename__ = 'order'
     id = db.Column(UUID(as_uuid=True), primary_key=True,
                    unique=True, nullable=False)
     customer_id = db.Column(db.String(200), db.ForeignKey(
@@ -171,7 +175,8 @@ class Order(db.Model):
     tip_amount = db.Column(db.Float(), nullable=False)
     service_fee = db.Column(db.Float(), nullable=False)
     date_time = db.Column(db.Date, nullable=False)
-    order_drink = relationship('Order_Drink', lazy=True, backref="order")
+    order_drink = relationship(
+        "Order_Drink", lazy=True, backref="order", uselist=True)
 
     @property
     def serialize(self):
@@ -313,7 +318,7 @@ def create_business():
     )
     new_stripe_account = Stripe_Account(id=new_account.id)
     db.session.add(new_stripe_account)
-    new_merchant = Merchant(id="a", password=generate_password_hash('a'), first_name="peter",
+    new_merchant = Merchant(id="a", password=generate_password_hash("a"), first_name="peter",
                             last_name="driscoll", phone_number=5126456898, number_of_businesses=2)
     new_merchant_stripe = Merchant_Stripe(
         merchant_id=new_merchant.id, stripe_id=new_stripe_account.id)
@@ -346,7 +351,7 @@ def create_business():
     # id = generate_password_hash("a", "sha256")
     password = generate_password_hash("a", "sha256")
     new_customer = Customer(id="a", password=password,
-                            first_name="peter", last_name="driscoll", stripe_id=new_stripe_customer.id, email_verified=True, has_registered=False)
+                            first_name="peter", last_name="driscoll", stripe_id=new_stripe_customer.id, email_verified=False, has_registered=False)
     db.session.add(new_stripe_customer_id)
     db.session.add(new_customer)
     # commit the session to my DB.
@@ -379,6 +384,61 @@ def create_drink():
     db.session.commit()
 
 
+def create_orders_and_customers():
+    businesses = db.session.query(Business)
+    drinks = db.session.query(Drink)
+
+    customer_id_list = ['b', 'c', 'd', 'e', 'f', 'g']
+    customer_password_list = ['b', 'c', 'd', 'e', 'f', 'g']
+    customer_first_name_list = ['Sally', 'Johnny',
+                                'Blaise', 'Alfred', 'Aris', 'Daniel']
+    customer_last_name_list = ['Smith', 'Terry',
+                               'Bucey', 'Driscoll', 'Sevastianos', 'Noorily']
+
+    # create 6 new customers for testing
+    for i in range(len(customer_first_name_list)):
+        new_stripe_customer = stripe.Customer.create()
+        new_my_table_stripe_customer = Stripe_Customer(
+            id=new_stripe_customer.id)
+        db.session.add(new_my_table_stripe_customer)
+        new_customer = Customer(id=customer_id_list[i], stripe_id=new_my_table_stripe_customer.id, password=generate_password_hash(
+            customer_password_list[i]), first_name=customer_first_name_list[i], last_name=customer_last_name_list[i], email_verified=True, has_registered=False)
+        db.session.add(new_customer)
+    db.session.commit()
+
+    # create 50 new orders for testing
+    for i in range(151):
+        day = randrange(1, 29)
+        print("day", day)
+        month = randrange(1, 4)
+        date = datetime(2021, month, day)
+        customer_index = randrange(6)
+        test_customer_id = customer_id_list[customer_index]
+        drink_index = randrange(2)
+        num_drinks = randrange(10)
+        drink = drinks[drink_index]
+        subtotal = drink.price * num_drinks
+        tip_percentage = .1
+        sales_tax_percentage = .0625
+        tip_amount = tip_percentage * subtotal
+        sales_tax = subtotal * sales_tax_percentage
+        pre_service_fee_cost = subtotal + tip_amount + sales_tax
+        service_fee = .1 * pre_service_fee_cost
+        cost = pre_service_fee_cost + service_fee
+        order_id = uuid.uuid4()
+        business_where_order_occured = [
+            x for x in businesses if x.id == drink.business_id][0]
+
+        test_order = Order(id=order_id, customer_id=test_customer_id, business_id=drink.business_id, merchant_stripe_id=business_where_order_occured.merchant_stripe_id, cost=cost,
+                           subtotal=subtotal, sales_tax=sales_tax, sales_tax_percentage=sales_tax_percentage, tip_percentage=tip_percentage, tip_amount=tip_amount, service_fee=service_fee, date_time=date)
+        db.session.add(test_order)
+        for i in range(num_drinks):
+            order_drink = Order_Drink(drink_id=drink.id, order_id=order_id)
+            db.session.add(order_drink)
+
+    db.session.commit()
+
+
 def create_etag():
     db.create_all()
     new_etag = ETag(id=0, category="business")
@@ -394,8 +454,11 @@ def create_everything():
     db.create_all()
     create_business()
     create_drink()
-    create_etag()
+    create_orders_and_customers()
 
 
 def instantiate_db_connection():
     create_everything()
+
+
+# instantiate_db_connection()

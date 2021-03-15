@@ -10,19 +10,18 @@ import List from "@material-ui/core/List";
 import Typography from "@material-ui/core/Typography";
 import Divider from "@material-ui/core/Divider";
 import IconButton from "@material-ui/core/IconButton";
-import Badge from "@material-ui/core/Badge";
 import Container from "@material-ui/core/Container";
 import Grid from "@material-ui/core/Grid";
 import Link from "@material-ui/core/Link";
 import MenuIcon from "@material-ui/icons/Menu";
 import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
-import NotificationsIcon from "@material-ui/icons/Notifications";
 
-// import { mainListItems, secondaryListItems } from "./listItems";
 import MainListItems from "./listItems";
 import Customers from "./Customers";
+import Orders from "./Orders";
+import Businesses from "./Businesses";
+
 import HomeSplash from "./HomeSplash";
-// import Deposits from "./Deposits";
 
 function Copyright() {
   return (
@@ -112,9 +111,12 @@ const useStyles = makeStyles((theme) => ({
     display: "flex",
     overflow: "auto",
     flexDirection: "column",
+    height: "115vh",
+    maxHeight: "800px",
   },
   fixedHeight: {
-    height: "60vh",
+    height: "115vh",
+    maxHeight: "800px",
   },
 }));
 
@@ -128,11 +130,28 @@ const Dashboard = (props) => {
   };
   const pages = [
     <HomeSplash
-      orderArray={props.orderArray}
+      orders={props.orders}
+      businesses={props.businesses}
       fixedHeightPaper={fixedHeightPaper}
       classes={classes}
     />,
-    <Customers fixedHeightPaper={fixedHeightPaper} classes={classes} />,
+    <Customers
+      customers={props.customers}
+      fixedHeightPaper={fixedHeightPaper}
+      classes={classes}
+    />,
+    <Orders
+      orders={props.orders}
+      businesses={props.businesses}
+      fixedHeightPaper={fixedHeightPaper}
+      classes={classes}
+    />,
+    <></>,
+    <Businesses
+      businesses={props.businesses}
+      fixedHeightPaper={fixedHeightPaper}
+      classes={classes}
+    />,
   ];
   const handleDrawerOpen = () => {
     setOpen(true);
@@ -171,11 +190,11 @@ const Dashboard = (props) => {
           >
             Dashboard
           </Typography>
-          <IconButton color="inherit">
+          {/* <IconButton color="inherit">
             <Badge badgeContent={4} color="secondary">
               <NotificationsIcon />
             </Badge>
-          </IconButton>
+          </IconButton> */}
         </Toolbar>
       </AppBar>
       <Drawer
@@ -203,7 +222,7 @@ const Dashboard = (props) => {
       </Drawer>
       <main className={classes.content}>
         <div className={classes.appBarSpacer} />
-        <Container maxWidth="lg" className={classes.container}>
+        <Container maxWidth="xl" className={classes.container}>
           <Grid container spacing={3}>
             {/* Chart */}
             {pages[currentPageIndex]}

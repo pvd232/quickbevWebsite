@@ -44,7 +44,6 @@ const ResetPassword = () => {
     const form = event.target;
     if (validate(form)) {
       if (formValue.password !== formValue.confirmPassword) {
-        console.log("passwords dont match");
         setErrorMsg("* Your passwords don't match");
         return false;
       } else {
