@@ -2,7 +2,7 @@
 # you must include the package.json in the git push or the build will fail
 steps:
     - name: 'gcr.io/cloud-builders/npm'
-      args: ['i', 'react-dev-utils', '--save']
+      args: ['i']
       env: ['PROJECT_ROOT=backend']
       dir: 'react-app'
     - name: 'gcr.io/cloud-builders/npm'
