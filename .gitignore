@@ -165,3 +165,4 @@ pip-selfcheck.json
 .DS_Store
 node_modules/
 .eslintrc.json
+package-lock.json
