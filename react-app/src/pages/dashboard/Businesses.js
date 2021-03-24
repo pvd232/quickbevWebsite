@@ -30,7 +30,7 @@ const toCapitalizedWords = (name) => {
 const Businesses = (props) => {
   const classes = useStyles();
   const mappedBusinesses = props.businesses.map((businessJSON) => {
-    return new Business(businessJSON, false, true);
+    return new Business(businessJSON, true, false, true);
   });
   var csvData = mappedBusinesses.map((business) => {
     var businessData = [];

@@ -4,99 +4,38 @@ export const setLocalStorage = (key, object) => {
 
 export class Customer {
   constructor(customerObject) {
-    this._id = customerObject.id;
-    this._firstName = customerObject.first_name;
-    this._lastName = customerObject.last_name;
-  }
-
-  get id() {
-    return this._id;
-  }
-  get firstName() {
-    return this._firstName;
-  }
-  get lastName() {
-    return this._lastName;
-  }
-  set id(value) {
-    this._id = value;
-  }
-  set firstName(value) {
-    this._firstName = value;
-  }
-  set lastName(value) {
-    this._lastName = value;
+    this.id = customerObject.id;
+    this.firstName = customerObject.first_name;
+    this.lastName = customerObject.last_name;
   }
   toJSON() {
     const data = {
-      id: this._id,
-      first_name: this._firstName,
-      last_name: this._lastName,
+      id: this.id,
+      first_name: this.firstName,
+      last_name: this.lastName,
     };
     return data;
   }
 }
 export class Drink {
   constructor(drinkObject) {
-    this._id = drinkObject.id;
-    this._name = drinkObject.name;
-    this._price = drinkObject.price;
-    this._quantity = drinkObject.quantity;
-    this._description = drinkObject.description;
-    this._orderDrinkId = drinkObject.order_drink_id;
-    this._businessId = drinkObject.business_id;
-  }
-  get id() {
-    return this._id;
-  }
-  get name() {
-    return this._name;
-  }
-  get price() {
-    return this._price;
-  }
-  get quantity() {
-    return this._quantity;
-  }
-  get description() {
-    return this._description;
-  }
-  get orderDrinkId() {
-    return this._orderDrinkId;
-  }
-  get businessId() {
-    return this._businessId;
-  }
-  set id(value) {
-    this._id = value;
-  }
-  set name(value) {
-    this._name = value;
-  }
-  set price(value) {
-    this._price = value;
-  }
-  set quantity(value) {
-    this._quantity = value;
-  }
-  set description(value) {
-    this._description = value;
-  }
-  set orderDrinkId(value) {
-    this._orderDrinkId = value;
-  }
-  set businessId(value) {
-    this._businessId = value;
+    this.id = drinkObject.id;
+    this.name = drinkObject.name;
+    this.price = drinkObject.price;
+    this.quantity = drinkObject.quantity;
+    this.description = drinkObject.description;
+    this.orderDrinkId = drinkObject.order_drink_id;
+    this.businessId = drinkObject.business_id;
   }
   toJSON() {
     const data = {
-      id: this._id,
-      name: this._name,
-      price: this._price,
-      quantity: this._quantity,
-      description: this._description,
-      orderDrinkId: this._orderDrinkId,
-      businessId: this._businessId,
+      id: this.id,
+      name: this.name,
+      price: this.price,
+      quantity: this.quantity,
+      description: this.description,
+      orderDrinkId: this.orderDrinkId,
+      businessId: this.businessId,
     };
     return data;
   }
@@ -118,115 +57,38 @@ export class OrderDrink {
 
 export class Order {
   constructor(order_object) {
-    this._id = order_object.id;
-    this._customerId = order_object.customer_id;
-    this._cost = order_object.cost;
-    this._subtotal = order_object.subtotal;
-    this._tipPercentage = order_object.tip_percentage;
-    this._tipAmount = order_object.tip_amount;
-    this._salesTax = order_object.sales_tax;
-    this._businessId = order_object.business_id;
+    this.id = order_object.id;
+    this.customerId = order_object.customer_id;
+    this.cost = order_object.cost;
+    this.subtotal = order_object.subtotal;
+    this.tipPercentage = order_object.tip_percentage;
+    this.tipAmount = order_object.tip_amount;
+    this.salesTax = order_object.sales_tax;
+    this.businessId = order_object.business_id;
     // this property will be extracted from the business in the front end and set after the business is initialized
-    this._businessName = "";
+    this.businessName = "";
 
-    this._businessAddress = order_object.business_address;
-    this._dateTime = order_object.date_time;
-    this._serviceFee = parseFloat(order_object.service_fee);
-    this._orderDrink = new OrderDrink(order_object.order_drink);
-    this._orderDrink.orderId = this._id;
+    this.businessAddress = order_object.business_address;
+    this.dateTime = order_object.date_time;
+    this.serviceFee = parseFloat(order_object.service_fee);
+    this.orderDrink = new OrderDrink(order_object.order_drink);
+    this.orderDrink.orderId = this.id;
   }
-  get id() {
-    return this._id;
-  }
-  get customerId() {
-    return this._userId;
-  }
-  get cost() {
-    return this._cost;
-  }
-  get subtotal() {
-    return this._subtotal;
-  }
-  get tipPercentage() {
-    return this._tipPercentage;
-  }
-  get tipAmount() {
-    return this._tipAmount;
-  }
-  get salesTax() {
-    return this._salesTax;
-  }
-  get businessId() {
-    return this._businessId;
-  }
-  get businessName() {
-    return this._businessName;
-  }
-  get businessAddress() {
-    return this._address;
-  }
-  get orderDrink() {
-    return this._orderDrink;
-  }
-  get dateTime() {
-    return this._dateTime;
-  }
-  get serviceFee() {
-    return this._serviceFee;
-  }
-  set id(value) {
-    this._id = value;
-  }
-  set customerId(value) {
-    this._userId = value;
-  }
-  set cost(value) {
-    this._cost = value;
-  }
-  set subtotal(value) {
-    this._subtotal = value;
-  }
-  set tipPercentage(value) {
-    this._tipPercentage = value;
-  }
-  set tipAmount(value) {
-    this._tipAmount = value;
-  }
-  set salesTax(value) {
-    this._salesTax = value;
-  }
-  set businessId(value) {
-    this._businessId = value;
-  }
-  set businessName(value) {
-    this._businessName = value;
-  }
-  set businessAddress(value) {
-    this._businessAddress = value;
-  }
-  set orderDrink(value) {
-    this._orderDrink = value;
-  }
-  set dateTime(value) {
-    this._dateTime = value;
-  }
-  set serviceFee(value) {
-    this._serviceFee = value;
-  }
+
   toJSON() {
     const data = {
-      id: this._id,
-      customer_id: this._userId,
-      cost: this._cost,
-      subtotal: this._subtotal,
-      tip_percentage: this._tipPercentage,
-      tip_amount: this._tipAmount,
-      sales_tax: this._salesTax,
-      business_id: this._businessId,
-      address: this._businessAddress,
-      order_drink: this._orderDrink,
-      date_time: this._dateTime,
-      service_fee: this._serviceFee,
+      id: this.id,
+      customer_id: this.userId,
+      cost: this.cost,
+      subtotal: this.subtotal,
+      tip_percentage: this.tipPercentage,
+      tip_amount: this.tipAmount,
+      sales_tax: this.salesTax,
+      business_id: this.businessId,
+      address: this.businessAddress,
+      order_drink: this.orderDrink,
+      date_time: this.dateTime,
+      service_fee: this.serviceFee,
     };
     return data;
   }
@@ -234,259 +96,150 @@ export class Order {
 
 export class Merchant {
   constructor(objectType, object) {
+    console.log("objectType", objectType)
+    
+    console.log("object", object)
+    
     if (objectType === "json") {
       // the merchant object will be pre-populated with values from the form thus it will use camelCase notation
-      this._id = object.id;
-      this._password = object.password;
-      this._firstName = object.first_name;
-      this._lastName = object.last_name;
-      this._phoneNumber = object.phone_number;
-      this._numberOfBusinesses = object.number_of_businesses;
+      this.id = object.id;
+      this.password = object.password;
+      this.firstName = object.first_name;
+      this.lastName = object.last_name;
+      this.phoneNumber = object.phone_number;
+      this.numberOfBusinesses = object.number_of_businesses;
     } else if (objectType === "merchantStateObject") {
       // the merchant stripe id is created on submission those wont exist during the sign up process when the merchant state object is relevant
-      this._id = object._id;
-      this._password = object._password;
-      this._firstName = object._firstName;
-      this._lastName = object._lastName;
-      this._phoneNumber = object._phoneNumber;
+      this.id = object.id;
+      this.password = object.password;
+      this.firstName = object.firstName;
+      this.lastName = object.lastName;
+      this.phoneNumber = object.phoneNumber;
     } else if (objectType === "localStorage") {
       // number of businessess and stripe id is set extraneously after object initialization so it will only need to be recalled from local storage
       const data = JSON.parse(object);
-      this._id = data.id;
-      this._password = data.password;
-      this._firstName = data.first_name;
-      this._lastName = data.last_name;
-      this._phoneNumber = data.phone_number;
-      this._numberOfBusinesses = data.number_of_businesses;
-      this._stripeId = data.stripe_id;
+      this.id = data.id;
+      this.password = data.password;
+      this.firstName = data.first_name;
+      this.lastName = data.last_name;
+      this.phoneNumber = data.phone_number;
+      this.numberOfBusinesses = data.number_of_businesses;
+      this.stripeId = data.stripe_id;
     } else {
-      this._id = null;
-      this._password = null;
-      this._firstName = null;
-      this._lastName = null;
-      this._phoneNumber = null;
-      this._stripeId = null;
+      this.id = null;
+      this.password = null;
+      this.firstName = null;
+      this.lastName = null;
+      this.phoneNumber = null;
+      this.stripeId = null;
     }
-  }
-
-  get id() {
-    return this._id;
-  }
-  get password() {
-    return this._password;
-  }
-  get firstName() {
-    return this._firstName;
-  }
-  get lastName() {
-    return this._lastName;
-  }
-  get phoneNumber() {
-    return this._phoneNumber;
-  }
-  get numberOfBusinesses() {
-    return this._numberOfBusinesses;
-  }
-  get stripeId() {
-    return this._stripeId;
-  }
-  set id(value) {
-    this._id = value;
-  }
-  set password(value) {
-    this._password = value;
-  }
-
-  set firstName(value) {
-    this._firstName = value;
-  }
-  set lastName(value) {
-    this._lastName = value;
-  }
-  set phoneNumber(value) {
-    this._phoneNumber = value;
-  }
-  set numberOfBusinesses(value) {
-    this._numberOfBusinesses = value;
-  }
-  set stripeId(value) {
-    this._stripeId = value;
   }
   toJSON() {
     const data = {
-      id: this._id,
-      password: this._password,
-      first_name: this._firstName,
-      last_name: this._lastName,
-      phone_number: this._phoneNumber,
-      number_of_businesses: this._numberOfBusinesses,
-      stripe_id: this._stripeId,
+      id: this.id,
+      password: this.password,
+      first_name: this.firstName,
+      last_name: this.lastName,
+      phone_number: this.phoneNumber,
+      number_of_businesses: this.numberOfBusinesses,
+      stripe_id: this.stripeId,
     };
     return data;
   }
 }
 export class Business {
-  constructor(businessObject, isJSON = false, tableDisplay = false) {
-    if (businessObject && !isJSON && !tableDisplay) {
-      this._id = businessObject.id;
-      this._name = businessObject.name;
-      this._merchantId = businessObject.merchant_id;
-      this._merchantStripeId = businessObject.merchant_stripe_id;
-      this._address = businessObject.address;
-      this._street = businessObject.street;
-      this._city = businessObject.city;
-      this._state = businessObject.state;
-      this._zipcode = businessObject.zipcode;
-      this._phoneNumber = businessObject.phone_number;
-      this._tablet = businessObject.tablet;
-      this._menuUrl = businessObject.menu_url;
-      this._classification = businessObject.classification;
-      this._salesTaxRate = businessObject.sales_tax_rate;
-    } else if (businessObject && isJSON) {
+  constructor(businessObject, isCamelCase = false, isJSON = false, tableDisplay = false) {
+    if (businessObject && !isCamelCase && !isJSON && !tableDisplay) {
+      this.id = businessObject.id;
+      this.name = businessObject.name;
+      this.merchantId = businessObject.merchantId;
+      this.merchantStripeId = businessObject.merchantStripeId;
+      this.address = businessObject.address;
+      this.street = businessObject.street;
+      this.city = businessObject.city;
+      this.state = businessObject.state;
+      this.zipcode = businessObject.zipcode;
+      this.phoneNumber = businessObject.phoneNumber;
+      this.tablet = businessObject.tablet;
+      this.menuUrl = businessObject.menuUrl;
+      this.classification = businessObject.classification;
+      this.salesTaxRate = businessObject.salesTaxRate;
+    } else if (businessObject && isCamelCase && !isJSON && !tableDisplay) {
+      this.id = businessObject.id;
+      this.name = businessObject.name;
+      this.merchantId = businessObject.merchant_id;
+      this.merchantStripeId = businessObject.merchant_stripe_id;
+      this.address = businessObject.address;
+      this.street = businessObject.street;
+      this.city = businessObject.city;
+      this.state = businessObject.state;
+      this.zipcode = businessObject.zipcode;
+      this.phoneNumber = businessObject.phone_number;
+      this.tablet = businessObject.tablet;
+      this.menuUrl = businessObject.menu_url;
+      this.classification = businessObject.classification;
+      this.salesTaxRate = businessObject.sales_tax_rate;
+    } else if (businessObject && isJSON && isCamelCase) {
       const businessJson = JSON.parse(businessObject);
-      this._id = businessJson.id;
-      this._name = businessJson.name;
-      this._merchantId = businessJson.merchant_id;
-      this._merchantStripeId = businessJson.merchant_stripe_id;
-      this._address = businessJson.address;
-      this._street = businessJson.street;
-      this._city = businessJson.city;
-      this._state = businessJson.state;
-      this._zipcode = businessJson.zipcode;
-      this._phoneNumber = businessJson.phone_number;
-      this._tablet = businessJson.tablet;
-      this._menuUrl = businessJson.menu_url;
-      this._classification = businessJson.classification;
-      this._salesTaxRate = businessJson.sales_tax_rate;
+      this.id = businessJson.id;
+      this.name = businessJson.name;
+      this.merchantId = businessJson.merchant_id;
+      this.merchantStripeId = businessJson.merchant_stripe_id;
+      this.address = businessJson.address;
+      this.street = businessJson.street;
+      this.city = businessJson.city;
+      this.state = businessJson.state;
+      this.zipcode = businessJson.zipcode;
+      this.phoneNumber = businessJson.phone_number;
+      this.tablet = businessJson.tablet;
+      this.menuUrl = businessJson.menu_url;
+      this.classification = businessJson.classification;
+      this.salesTaxRate = businessJson.sales_tax_rate;
     } else if (businessObject && !isJSON && tableDisplay) {
-      this._id = businessObject.id;
-      this._name = businessObject.name;
-      this._address = businessObject.address;
-      this._phoneNumber = businessObject.phone_number;
-      this._tablet = businessObject.tablet;
-      this._classification = businessObject.classification;
-      this._salesTaxRate = businessObject.sales_tax_rate;
+      this.id = businessObject.id;
+      this.name = businessObject.name;
+      this.address = businessObject.address;
+      this.phoneNumber = businessObject.phone_number;
+      this.tablet = businessObject.tablet;
+      this.classification = businessObject.classification;
+      this.salesTaxRate = businessObject.sales_tax_rate;
     } else {
-      this._id = null;
-      this._name = null;
-      this._merchantId = null;
-      this._merchantStripeId = null;
-      this._stripeId = null;
-      this._address = null;
-      this._street = null;
-      this._city = null;
-      this._state = null;
-      this._zipcode = null;
-      this._phoneNumber = null;
-      this._numberOfBusinesses = null;
-      this._tablet = null;
-      this._menuUrl = null;
-      this._classification = null;
-      this._salesTaxRate = null;
+      this.id = null;
+      this.name = null;
+      this.merchantId = null;
+      this.merchantStripeId = null;
+      this.stripeId = null;
+      this.address = null;
+      this.street = null;
+      this.city = null;
+      this.state = null;
+      this.zipcode = null;
+      this.phoneNumber = null;
+      this.numberOfBusinesses = null;
+      this.tablet = null;
+      this.menuUrl = null;
+      this.classification = null;
+      this.salesTaxRate = null;
     }
   }
 
-  get id() {
-    return this._id;
-  }
-  get name() {
-    return this._name;
-  }
-  get merchantId() {
-    return this._merchantId;
-  }
-  get merchantStripeId() {
-    return this._merchantStripeId;
-  }
-  get address() {
-    return this._address;
-  }
-  get street() {
-    return this._street;
-  }
-  get city() {
-    return this._city;
-  }
-  get state() {
-    return this._state;
-  }
-  get zipcode() {
-    return this._zipcode;
-  }
-  get phoneNumber() {
-    return this._phoneNumber;
-  }
-  get tablet() {
-    return this._tablet;
-  }
-  get menuUrl() {
-    return this._menuUrl;
-  }
-  get classification() {
-    return this._classification;
-  }
-  get salesTaxRate() {
-    return this._salesTaxRate;
-  }
-  set id(value) {
-    this._id = value;
-  }
-  set name(value) {
-    this._name = value;
-  }
-  set merchantId(value) {
-    this._merchantId = value;
-  }
-  set merchantStripeId(value) {
-    this._merchantStripeId = value;
-  }
-  set address(value) {
-    this._address = value;
-  }
-  set street(value) {
-    this._street = value;
-  }
-  set city(value) {
-    this._city = value;
-  }
-  set state(value) {
-    this._state = value;
-  }
-  set zipcode(value) {
-    this._zipcode = value;
-  }
-  set phoneNumber(value) {
-    this._phoneNumber = value;
-  }
-  set tablet(value) {
-    this._tablet = value;
-  }
-  set menuUrl(value) {
-    this._menuUrl = value;
-  }
-  set classification(value) {
-    this._classification = value;
-  }
-  set salesTaxRate(value) {
-    this._salesTaxRate = value;
-  }
   toJSON() {
     const data = {
-      id: this._id,
-      name: this._name,
-      merchant_id: this._merchantId,
-      merchant_stripe_id: this._merchantStripeId,
-      address: this._address,
-      street: this._street,
-      city: this._city,
-      state: this._state,
-      zipcode: this._zipcode,
-      phone_number: this._phoneNumber,
-      number_of_businesses: this._numberOfBusinesses,
-      tablet: this._tablet,
-      menu_url: this._menuUrl,
-      classification: this._classification,
-      sales_tax: this._salesTaxRate,
+      id: this.id,
+      name: this.name,
+      merchant_id: this.merchantId,
+      merchant_stripe_id: this.merchantStripeId,
+      address: this.address,
+      street: this.street,
+      city: this.city,
+      state: this.state,
+      zipcode: this.zipcode,
+      phone_number: this.phoneNumber,
+      number_of_businesses: this.numberOfBusinesses,
+      tablet: this.tablet,
+      menu_url: this.menuUrl,
+      classification: this.classification,
+      sales_tax: this.salesTaxRate,
     };
     return data;
   }

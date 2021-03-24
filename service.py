@@ -27,7 +27,7 @@ session_factory = sessionmaker(bind=drink_engine)
 # create a Session
 Session = scoped_session(session_factory)
 
-
+#TODO add error message to tell user if they tried to upload a word doc or another doc to either convert it to a pdf or email the docuement to quickbev
 @contextmanager
 def session_scope():
     session = Session()
@@ -280,3 +280,68 @@ class Test_Service(object):
             instantiate_db_connection()
             self.test_engine.dispose()
         return
+
+class PDF_Reader(object):
+    import base64
+    def encode(self, data):
+        """
+        Return base-64 encoded value of binary data.
+        """
+        return base64.b64encode(data)
+
+    def decode(self, data):
+        """
+        Return decoded value of a base-64 encoded string.
+        """
+        return base64.b64decode(data.encode())
+
+    def get_pdf_data(self, file):
+        """
+        Open pdf file in binary mode,
+        return a string encoded in base-64.
+        """
+        with open(file.filename, 'rb') as file:
+            return encode(file.read())
+
+class Google_Cloud_Storage_API(object):
+    def __init__(self):
+        super().__init__()
+          # Imports the Google Cloud client library
+        from google.cloud import storage
+        app.config['GOOGLE_APPLICATION_CREDENTIALS'] = os.path.join(os.getcwd(),"quickbev-60da4e7ea092.json")
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = app.config['GOOGLE_APPLICATION_CREDENTIALS']
+        self.bucket_name = "my-new-quickbev-bucket" 
+          # Instantiates a client
+        self.storage_client = storage.Client()
+
+        self.bucket = self.storage_client.bucket(self.bucket_name)
+       
+    def create_bucket(self):
+        # The name for the new bucket
+        bucket_name = "new-bucket"
+
+        # Creates the new bucket
+        bucket = self.storage_client.create_bucket(bucket_name)
+
+        print("Bucket {} created.".format(bucket.name))
+
+    def upload_blob(self, file, destination_blob_name):
+        """Uploads a file to the bucket."""
+        # bucket_name = "your-bucket-name"
+        # file = "local/path/to/file" this will be the business folder, with a folder named after the business' unique id, which will have the menu file in it
+        # destination_blob_name = "storage-object-name" this will be the business uuid
+        from werkzeug.utils import secure_filename
+
+        file_type = file.filename.rsplit('.', 1)[1].lower()
+        destination_blob_name = "business/" + str(destination_blob_name) + "/menu" + "." + file_type
+        # file.save(os.path.join(app.config['UPLOAD_FOLDER'], "tmp"))
+        # file_location = os.path.join(app.config['UPLOAD_FOLDER'], "tmp")
+        # if file_type == 'doc' or file_type == 'docx' or file_type == 'ppt' or file_type == 'pptx':
+        #     print('docx')
+        #     file.filename = destination_blob_name + "." + file_type
+        #     filename = secure_filename(file.filename)
+        #     file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        # else:
+        blob = self.bucket.blob(destination_blob_name)
+        blob.upload_from_file(file)
+        return True

@@ -64,7 +64,7 @@ class Drink(db.Model):
 
 class Business(db.Model):
     __tablename__ = 'business'
-    id = db.Column(UUID(as_uuid=True), primary_key=True,  # https://stackoverflow.com/questions/55917056/how-to-prevent-uuid-primary-key-for-new-sqlalchemy-objects-being-created-with-th
+    id = db.Column(UUID(as_uuid=True), primary_key=True, 
                    unique=True, nullable=False)
     merchant_stripe_id = db.Column(db.String(80), db.ForeignKey(
         'stripe_account.id'), nullable=False)
@@ -80,11 +80,10 @@ class Business(db.Model):
     phone_number = db.Column(db.BigInteger(), nullable=False)
     # not all businesses will have a menu URL or file upload, but they could be specific to each business
     menu_url = db.Column(db.String(80), nullable=True)
-    menu_file_path = db.Column(db.String(180), nullable=True)
     street = db.Column(db.String(80), nullable=False)
     city = db.Column(db.String(80), nullable=False)
     state = db.Column(db.String(80), nullable=False)
-    zipcode = db.Column(db.Integer, nullable=False)
+    zipcode = db.Column(db.Integer, nullable=True)
     suite = db.Column(db.String(80), nullable=True)
     address = db.Column(db.String(80), nullable=False)
     drink = relationship('Drink', lazy=True, backref="business")

@@ -45,7 +45,7 @@ export default function Chart(props) {
     return new Order(orderJSON);
   });
   const businesses = props.businesses.map((businessJSON) => {
-    return new Business(businessJSON);
+    return new Business(businessJSON, true);
   });
 
   const monthsLookup = [
@@ -115,7 +115,7 @@ export default function Chart(props) {
     var filterBusiness = "";
     // the first filtration will be done by business, because this will affect the normalization of the order dates
     if (formValue.business !== "all") {
-      filterBusiness = new Business(formValue.business, true);
+      filterBusiness = new Business(formValue.business, true, true);
       if (orderBusinessId !== filterBusiness.id) {
         return;
       }
@@ -276,7 +276,7 @@ export default function Chart(props) {
   const getTimeIntervalAndBusiness = () => {
     var businessName = "";
     if (formValue.business !== "all") {
-      const filterBusiness = new Business(formValue.business, true);
+      const filterBusiness = new Business(formValue.business, true, true);
       businessName = filterBusiness.name;
       businessName += " ";
     }

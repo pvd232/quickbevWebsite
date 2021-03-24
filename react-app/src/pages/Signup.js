@@ -44,7 +44,7 @@ const CreateYourAccountFieldset = (props) => {
       firstName: "",
       lastName: "",
       phoneNumber: "",
-      email: "",
+      id: "",
       password: "",
       confirmPassword: "",
     }
@@ -82,9 +82,9 @@ const CreateYourAccountFieldset = (props) => {
         setErrorMsg(newErrorMsgState);
         return false;
       } else {
-        const newMerchant = new Merchant("json", formValue);
+        const newMerchant = new Merchant("merchantStateObject", formValue);
         const merchantData = { merchant: newMerchant };
-        API.makeRequest("POST", "/validate-merchant", merchantData).then(
+        API.makeRequest("GET", "/merchant", merchantData).then(
           (response) => {
             if (response) {
               // if the username is available the response from the API will be true
@@ -155,13 +155,13 @@ const CreateYourAccountFieldset = (props) => {
             </div>
             <Form.Label>Email</Form.Label>
             <Form.Control
-              type="email"
-              name="email"
+              type="id"
+              name="id"
               required
               onChange={(e) => {
                 formChangeHandler(e);
               }}
-              value={formValue.email}
+              value={formValue.id}
             />
           </Col>
         </Row>
@@ -600,16 +600,11 @@ const BusinessFieldset = (props) => {
     if (validate(form)) {
       // set all the values for the business
       // if the user comes back to this page before submitting to change stuff it will reset the values
-      const newBusiness = new Business();
-      newBusiness.name = formValue.name;
-      newBusiness.email = formValue.email;
-      newBusiness.phoneNumber = formValue.phoneNumber;
-      newBusiness.address = formValue.address;
-      newBusiness.street = formValue.street;
-      newBusiness.suite = formValue.suite;
-      newBusiness.city = formValue.city;
-      newBusiness.state = formValue.state;
-      newBusiness.zipcode = formValue.zipcode;
+      console.log("formValue", formValue)
+      
+      const newBusiness = new Business(formValue);
+      console.log("newBusiness", newBusiness)
+      
       const result = await props.onSubmit(newBusiness, merchantStripeId);
       console.log("result", result);
       return result;
@@ -687,10 +682,15 @@ const Signup = () => {
 
   const handleClick = (buttonType, objectType = null, objectData = null) => {
     if (objectType === "merchant") {
+      console.log("merchant data", merchant)
+      console.log("objectData", objectData)
+      
       setMerchant({ ...merchant, ...objectData });
     }
     // TODO: modify models class to allow a business to have a list of possible locations in step three of the form filling ? or maybe do this after the account has already been created. probably do this because we dont want to make this form too complicated and combersome to complete
     else if (objectType === "formDataObject") {
+      console.log("formDataObject", formDataObject)
+      
       setformDataObject({ ...formDataObject, ...objectData });
     }
     if (buttonType === "previous") {
@@ -724,6 +724,8 @@ const Signup = () => {
 
     // the merchant in state was being converted back to a regular object
     const newMerchant = new Merchant("merchantStateObject", merchant);
+    console.log("newMerchant", newMerchant)
+    
     newMerchant.numberOfBusinesses = formDataObject.numberOfBusinesses;
     newMerchant.stripeId = merchantStripeId;
 
@@ -732,21 +734,17 @@ const Signup = () => {
 
     // set the merchant id in business to be the same as the new merchant
     newBusiness.merchantId = newMerchant.id;
-    console.log("newBusiness", newBusiness);
     newForm.append("business", JSON.stringify(newBusiness));
 
     setLocalStorage("merchant", newMerchant);
     setLocalStorage("business", newBusiness);
-    console.log("localStorageMerchant", localStorage.getItem("merchant"));
     // set in local storage if user has multiple businesses so we can display a tab to add more businesses late
-    let response = await API.makeRequest("POST", "/signup", newForm, true);
-    const responseBody = response;
-    console.log(
-      "responseBody.confirmed_new_business",
-      responseBody.confirmed_new_business
-    );
+    let responseBody = await API.makeRequest("POST", "/signup", newForm, false, true);
+    console.log("responseBody", responseBody)
+    
+   
     const confirmed_new_business = new Business(
-      responseBody.confirmed_new_business,
+      responseBody.confirmed_new_business, true,
       false
     );
     setLocalStorage("business", confirmed_new_business);

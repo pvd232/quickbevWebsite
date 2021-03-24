@@ -302,18 +302,23 @@ class Business_Domain(object):
             self.address = business_json["address"]
 
             address_list = business_json["address"].split(",")
+            
+            try:
+                address_list = [x.strip() for x in business_json["address"].split(",")]
+                self.street = address_list[0]
+                self.city = address_list[1]
 
-            self.street = address_list[0]
-            self.city = address_list[1]
-
-            state_and_zipcode = address_list[2].split(" ")
-
-            self.state = state_and_zipcode[1]
-            self.zipcode = state_and_zipcode[2]
-            if "menu_file" in business_json:
-                self.menu_file = business_json["menu_file"]
-            else:
-                self.menu_file = None
+                state_and_zipcode = address_list[2].split(" ")
+                while "" in state_and_zipcode:
+                    state_and_zipcode.remove("")
+                if len(state_and_zipcode) > 1:
+                    self.state = state_and_zipcode[0]
+                    self.zipcode = state_and_zipcode[1]
+                elif len(state_and_zipcode) == 1:
+                    self.state = state_and_zipcode[0]
+                    self.zipcode = None
+            except Exception as e:
+                print('address exception', e)
             if "menu_url" in business_json:
                 self.menu_url = business_json["menu_url"]
             else:

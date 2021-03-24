@@ -10,11 +10,11 @@ const PayoutSetup = (props) => {
   const getRedirectInfo = async () => {
     return API.makeRequest("GET", `/create-stripe-account`);
   };
-  const onSubmit = async (event, merchantStripeId) => {
+  const onSubmit = async (event) => {
     event.preventDefault();
     if (localStorage.getItem("business")) {
       const currentBusiness = new Business(
-        localStorage.getItem("business"),
+        localStorage.getItem("business"), true,
         true
       );
       setLocalStorage("business", currentBusiness);
@@ -32,9 +32,10 @@ const PayoutSetup = (props) => {
     }
   };
   const handleConnect = async () => {
-    let responseBody = await getRedirectInfo();
-    const merchantStripeId = responseBody.stripe_id;
-    let url = responseBody.url;
+    let responseContent = await getRedirectInfo();
+    const merchantStripeId = responseContent.headers.stripe_id;
+    
+    let url = responseContent.url;
     if (url && merchantStripeId) {
       redirectUrl = url;
       return merchantStripeId;
@@ -44,7 +45,7 @@ const PayoutSetup = (props) => {
     //had to do this because memory leak due to component not unmounting properly
     let mount = true;
     if (mount && redirect) {
-      window.location.assign(redirect);
+      // window.location.assign(redirect);
     }
 
     return () => (mount = false);
@@ -69,7 +70,7 @@ const PayoutSetup = (props) => {
               // if this is the payout redirect then all values for business and merchant have been set in the backend and we dont need to propogate back upwards
               handleConnect().then((merchantStripeId) =>
                 onSubmit(event, merchantStripeId).then((result) => {
-                  // setRedirect(redirectUrl);
+                  setRedirect(redirectUrl);
                 })
               );
             }}
@@ -98,7 +99,7 @@ const PayoutSetup = (props) => {
             onClick={(event) => {
               handleConnect().then((merchantStripeId) =>
                 props
-                  .onSubmit(event, merchantStripeId, false)
+                  .onSubmit(event, merchantStripeId)
                   .then((result) => {
                     setRedirect(redirectUrl);
                   })

@@ -13,6 +13,7 @@ env_variables:
     # GOOGLE_APPLICATION_CREDENTIALS: ./CrepeNShake-8b4a0f7fb8c9.json
     DB_STRING: >-
         postgresql+psycopg2://postgres:Iqopaogh23!@/postgres?host=/cloudsql/quickbev:us-central1:quickbevdb
+    Google_Application_Credentials: quickbev-60da4e7ea092.json
 
 #[END env]
 
