@@ -84,20 +84,18 @@ const CreateYourAccountFieldset = (props) => {
       } else {
         const newMerchant = new Merchant("merchantStateObject", formValue);
         const merchantData = { merchant: newMerchant };
-        API.makeRequest("GET", "/merchant", merchantData).then(
-          (response) => {
-            if (response) {
-              // if the username is available the response from the API will be true
-              props.onClick("next", "merchant", newMerchant);
-            } else {
-              // otherwise it will be false
-              newErrorMsgState["emailErrorMsg"] = "* Username already claimed";
-              newErrorMsgState["emailDisplay"] = "inline-block";
-              setErrorMsg(newErrorMsgState);
-              return false;
-            }
+        API.makeRequest("GET", "/merchant", merchantData).then((response) => {
+          if (response) {
+            // if the username is available the response from the API will be true
+            props.onClick("next", "merchant", newMerchant);
+          } else {
+            // otherwise it will be false
+            newErrorMsgState["emailErrorMsg"] = "* Username already claimed";
+            newErrorMsgState["emailDisplay"] = "inline-block";
+            setErrorMsg(newErrorMsgState);
+            return false;
           }
-        );
+        });
       }
     } else {
       return false;
@@ -324,8 +322,8 @@ const PromoteYourMenuFieldset = (props) => {
         </p>
         <h2 className="fs-title">Promote your menu</h2>
         <h5 className="fs-subtitle">
-          Show off your business by uploading a link, image, or PDF of your
-          menu!
+          Show off your business by uploading a link, image, PDF, or any other
+          file with your menu!
         </h5>
         <Row>
           <Form.Group
@@ -600,11 +598,11 @@ const BusinessFieldset = (props) => {
     if (validate(form)) {
       // set all the values for the business
       // if the user comes back to this page before submitting to change stuff it will reset the values
-      console.log("formValue", formValue)
-      
+      console.log("formValue", formValue);
+
       const newBusiness = new Business(formValue);
-      console.log("newBusiness", newBusiness)
-      
+      console.log("newBusiness", newBusiness);
+
       const result = await props.onSubmit(newBusiness, merchantStripeId);
       console.log("result", result);
       return result;
@@ -682,15 +680,15 @@ const Signup = () => {
 
   const handleClick = (buttonType, objectType = null, objectData = null) => {
     if (objectType === "merchant") {
-      console.log("merchant data", merchant)
-      console.log("objectData", objectData)
-      
+      console.log("merchant data", merchant);
+      console.log("objectData", objectData);
+
       setMerchant({ ...merchant, ...objectData });
     }
     // TODO: modify models class to allow a business to have a list of possible locations in step three of the form filling ? or maybe do this after the account has already been created. probably do this because we dont want to make this form too complicated and combersome to complete
     else if (objectType === "formDataObject") {
-      console.log("formDataObject", formDataObject)
-      
+      console.log("formDataObject", formDataObject);
+
       setformDataObject({ ...formDataObject, ...objectData });
     }
     if (buttonType === "previous") {
@@ -724,8 +722,8 @@ const Signup = () => {
 
     // the merchant in state was being converted back to a regular object
     const newMerchant = new Merchant("merchantStateObject", merchant);
-    console.log("newMerchant", newMerchant)
-    
+    console.log("newMerchant", newMerchant);
+
     newMerchant.numberOfBusinesses = formDataObject.numberOfBusinesses;
     newMerchant.stripeId = merchantStripeId;
 
@@ -739,12 +737,18 @@ const Signup = () => {
     setLocalStorage("merchant", newMerchant);
     setLocalStorage("business", newBusiness);
     // set in local storage if user has multiple businesses so we can display a tab to add more businesses late
-    let responseBody = await API.makeRequest("POST", "/signup", newForm, false, true);
-    console.log("responseBody", responseBody)
-    
-   
+    let responseBody = await API.makeRequest(
+      "POST",
+      "/signup",
+      newForm,
+      false,
+      true
+    );
+    console.log("responseBody", responseBody);
+
     const confirmed_new_business = new Business(
-      responseBody.confirmed_new_business, true,
+      responseBody.confirmed_new_business,
+      true,
       false
     );
     setLocalStorage("business", confirmed_new_business);
