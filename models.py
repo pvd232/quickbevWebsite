@@ -453,6 +453,7 @@ def create_everything():
     db.create_all()
     create_business()
     create_drink()
+    create_etag()
     create_orders_and_customers()
 
 
