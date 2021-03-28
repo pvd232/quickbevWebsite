@@ -487,8 +487,8 @@ def create_payment_intent(session_token):
 #            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-@app.route('/signup', methods=['POST', 'OPTIONS'])
-def signup():
+@app.route('/create-account', methods=['POST', 'OPTIONS'])
+def create_account():
     response = {"msg": ""}
     headers = {}
     if request.method == 'OPTIONS':
@@ -536,8 +536,8 @@ def signup():
         return Response(status=500, response=json.dumps(response), headers=headers)
 
 
-@app.route('/signup-redirect', methods=['POST'])
-def signup_redirect():
+@app.route('/create-account-redirect', methods=['POST'])
+def create_account_redirect():
     response = {"msg": ""}
     headers = {}
     business_service = Business_Service()

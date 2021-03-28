@@ -14,7 +14,8 @@ const PayoutSetup = (props) => {
     event.preventDefault();
     if (localStorage.getItem("business")) {
       const currentBusiness = new Business(
-        localStorage.getItem("business"), true,
+        localStorage.getItem("business"),
+        true,
         true
       );
       setLocalStorage("business", currentBusiness);
@@ -22,8 +23,9 @@ const PayoutSetup = (props) => {
       const dataObject = { business: currentBusiness };
       let result = await API.makeRequest(
         "POST",
-        "/signup-redirect",
+        "/create-account-redirect",
         dataObject,
+        false,
         false
       );
       return true;
@@ -34,7 +36,7 @@ const PayoutSetup = (props) => {
   const handleConnect = async () => {
     let responseContent = await getRedirectInfo();
     const merchantStripeId = responseContent.headers.stripe_id;
-    
+
     let url = responseContent.url;
     if (url && merchantStripeId) {
       redirectUrl = url;
@@ -45,7 +47,7 @@ const PayoutSetup = (props) => {
     //had to do this because memory leak due to component not unmounting properly
     let mount = true;
     if (mount && redirect) {
-      // window.location.assign(redirect);
+      window.location.assign(redirect);
     }
 
     return () => (mount = false);
@@ -93,16 +95,15 @@ const PayoutSetup = (props) => {
             QuickBev partners with Stripe to transfer earnings to your bank
             account.
           </p>
-
           <Button
             className="btn btn-primary text-center"
             onClick={(event) => {
+              event.preventDefault();
+              const eventTarget = event.target;
               handleConnect().then((merchantStripeId) =>
-                props
-                  .onSubmit(event, merchantStripeId)
-                  .then((result) => {
-                    setRedirect(redirectUrl);
-                  })
+                props.onSubmit(eventTarget, merchantStripeId).then((result) => {
+                  setRedirect(redirectUrl);
+                })
               );
             }}
           >

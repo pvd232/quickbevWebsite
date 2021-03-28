@@ -591,20 +591,14 @@ const BusinessFieldset = (props) => {
     setFormValue({ [name]: value });
   };
 
-  const handleSubmit = async (event, merchantStripeId) => {
-    event.preventDefault();
+  const handleSubmit = async (eventTarget, merchantStripeId) => {
     // the event target is the button that was clicked inside the payout setup component inside the business fieldset
-    const form = event.target.closest("form");
+    const form = eventTarget.closest("form");
     if (validate(form)) {
       // set all the values for the business
       // if the user comes back to this page before submitting to change stuff it will reset the values
-      console.log("formValue", formValue);
-
       const newBusiness = new Business(formValue);
-      console.log("newBusiness", newBusiness);
-
       const result = await props.onSubmit(newBusiness, merchantStripeId);
-      console.log("result", result);
       return result;
     } else {
       return false;
@@ -652,8 +646,8 @@ const BusinessFieldset = (props) => {
             style={{ justifyContent: "center", display: "flex" }}
           >
             <PayoutSetup
-              onSubmit={(event, merchantStripeId, redirect) =>
-                handleSubmit(event, merchantStripeId, redirect)
+              onSubmit={(eventTarget, merchantStripeId) =>
+                handleSubmit(eventTarget, merchantStripeId)
               }
             ></PayoutSetup>
           </Col>
@@ -739,7 +733,7 @@ const Signup = () => {
     // set in local storage if user has multiple businesses so we can display a tab to add more businesses late
     let responseBody = await API.makeRequest(
       "POST",
-      "/signup",
+      "/create-account",
       newForm,
       false,
       true
