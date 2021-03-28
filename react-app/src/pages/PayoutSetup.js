@@ -11,7 +11,6 @@ const PayoutSetup = (props) => {
     return API.makeRequest("GET", `/create-stripe-account`);
   };
   const onSubmit = async (event) => {
-    event.preventDefault();
     if (localStorage.getItem("business")) {
       const currentBusiness = new Business(
         localStorage.getItem("business"),
@@ -28,7 +27,7 @@ const PayoutSetup = (props) => {
         false,
         false
       );
-      return true;
+      return result;
     } else {
       console.log("No user business found");
     }
@@ -70,8 +69,10 @@ const PayoutSetup = (props) => {
             className="btn btn-primary text-center"
             onClick={(event) => {
               // if this is the payout redirect then all values for business and merchant have been set in the backend and we dont need to propogate back upwards
+              event.preventDefault();
+              const eventTarget = event.target;
               handleConnect().then((merchantStripeId) =>
-                onSubmit(event, merchantStripeId).then((result) => {
+                onSubmit(eventTarget, merchantStripeId).then(() => {
                   setRedirect(redirectUrl);
                 })
               );
@@ -109,7 +110,6 @@ const PayoutSetup = (props) => {
           >
             Set up payouts
           </Button>
-
           <p className="text-center notice">
             You'll be redirected to Stripe to complete the onboarding proces.
           </p>
