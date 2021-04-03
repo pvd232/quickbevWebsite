@@ -1,5 +1,5 @@
 import React, { useState, useReducer, useEffect } from "react";
-import { Merchant, setLocalStorage } from "../Models.js";
+import { Merchant, Business, setLocalStorage } from "../Models.js";
 import API from "../helpers/Api.js";
 import Navbar from "../Navbar.js";
 
@@ -10,6 +10,8 @@ import Col from "react-bootstrap/Col";
 import "../css/Signup.css";
 
 const Signin = () => {
+  const [merchant, setMerchant] = useState(null);
+  const [business, setBusiness] = useState(null);
   const [redirect, setRedirect] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
   const [authorization, setAuthorization] = useReducer(
@@ -48,6 +50,8 @@ const Signin = () => {
           if (response) {
             // if the username is available the response from the API will be true
             const loggedInMerchant = new Merchant("json", response);
+            console.log("loggedInMerchant", loggedInMerchant);
+
             setLocalStorage("merchant", loggedInMerchant);
             console.log(
               "response.headers.jwt_token",
@@ -55,6 +59,8 @@ const Signin = () => {
             );
 
             setLocalStorage("sessionToken", response.headers.jwt_token);
+            setLocalStorage("firstLogin", true);
+
             setRedirect("/home");
             // return false;
           } else {

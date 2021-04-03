@@ -7,8 +7,8 @@ export default function Deposits(props) {
     <>
       <Title>
         {props.businessAndInterval === "Year"
-          ? props.businessAndInterval + " " + "to Date Sales"
-          : props.businessAndInterval + " " + "Sales"}
+          ? props.businessAndInterval + " to Date Sales"
+          : props.businessAndInterval + " Sales"}
       </Title>
       <Typography component="p" variant="h4">
         ${Math.round(props.sales)}

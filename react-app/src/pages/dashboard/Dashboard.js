@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import clsx from "clsx";
 import { makeStyles } from "@material-ui/core/styles";
 import CssBaseline from "@material-ui/core/CssBaseline";
@@ -10,9 +10,13 @@ import List from "@material-ui/core/List";
 import Typography from "@material-ui/core/Typography";
 import Divider from "@material-ui/core/Divider";
 import IconButton from "@material-ui/core/IconButton";
+import SmokeFreeIcon from "@material-ui/icons/SmokeFree";
+import HelpIcon from "@material-ui/icons/Help";
+import SettingsIcon from "@material-ui/icons/Settings";
 import Container from "@material-ui/core/Container";
 import Grid from "@material-ui/core/Grid";
-import Link from "@material-ui/core/Link";
+import { Link } from "react-router-dom";
+
 import MenuIcon from "@material-ui/icons/Menu";
 import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
 
@@ -20,16 +24,23 @@ import MainListItems from "./listItems";
 import Customers from "./Customers";
 import Orders from "./Orders";
 import Businesses from "./Businesses";
+import Menu from "./Menu";
 
 import HomeSplash from "./HomeSplash";
-
+import Modal from "@material-ui/core/Modal";
+import Button from "@material-ui/core/Button";
+import MenuItem from "@material-ui/core/MenuItem";
+import ClickAwayListener from "@material-ui/core/ClickAwayListener";
+import Grow from "@material-ui/core/Grow";
+import Paper from "@material-ui/core/Paper";
+import Popper from "@material-ui/core/Popper";
+import MenuList from "@material-ui/core/MenuList";
+import { setLocalStorage } from "../../Models";
 function Copyright() {
   return (
     <Typography variant="body2" color="textSecondary" align="center">
       {"Copyright © "}
-      <Link color="inherit" href="https://material-ui.com/">
-        Your Website
-      </Link>{" "}
+      <Link to="https://material-ui.com/">Your Website</Link>{" "}
       {new Date().getFullYear()}
       {"."}
     </Typography>
@@ -114,6 +125,18 @@ const useStyles = makeStyles((theme) => ({
     height: "115vh",
     maxHeight: "800px",
   },
+
+  modal: {
+    position: "absolute",
+    left: "50%",
+    top: "50%",
+    transform: "translateY(-50%) translateX(-50%)",
+    width: 400,
+    backgroundColor: theme.palette.background.paper,
+    border: "2px solid #000",
+    boxShadow: theme.shadows[5],
+    padding: theme.spacing(2, 4, 3),
+  },
   fixedHeight: {
     height: "115vh",
     maxHeight: "800px",
@@ -128,6 +151,53 @@ const Dashboard = (props) => {
   const handleDashboardButtonClick = (newIndex) => {
     setCurrentPageIndex(newIndex);
   };
+  const [modalOpen, setModalOpen] = useState(
+    localStorage.getItem("firstLogin") === "true" ? true : false
+  );
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
+
+  const modalHandleClose = () => {
+    setLocalStorage("firstLogin", false);
+    setModalOpen(false);
+  };
+  const settingsAnchorRef = useRef(null);
+  const helpAnchorRef = useRef(null);
+
+  const handleSettingsToggle = () => {
+    setSettingsOpen((prevSettingsOpen) => !prevSettingsOpen);
+  };
+  const handleHelpToggle = () => {
+    setHelpOpen((prevHelpOpen) => !prevHelpOpen);
+  };
+  const handleSettingsClose = (event) => {
+    if (
+      settingsAnchorRef.current &&
+      settingsAnchorRef.current.contains(event.target)
+    ) {
+      return;
+    }
+    setSettingsOpen(false);
+  };
+  const handleHelpClose = (event) => {
+    if (helpAnchorRef.current && helpAnchorRef.current.contains(event.target)) {
+      return;
+    }
+    setHelpOpen(false);
+  };
+  const prevSettingsOpen = useRef(settingsOpen);
+  const prevHelpOpen = useRef(settingsOpen);
+
+  useEffect(() => {
+    if (prevSettingsOpen.current === true && settingsOpen === false) {
+      settingsAnchorRef.current.focus();
+    }
+    if (prevHelpOpen.current === true && helpOpen === false) {
+      helpAnchorRef.current.focus();
+    }
+    prevSettingsOpen.current = settingsOpen;
+    prevHelpOpen.current = helpOpen;
+  }, [settingsOpen, helpOpen]);
   const pages = [
     <HomeSplash
       orders={props.orders}
@@ -146,7 +216,11 @@ const Dashboard = (props) => {
       fixedHeightPaper={fixedHeightPaper}
       classes={classes}
     />,
-    <></>,
+    <Menu
+      businesses={props.businesses}
+      fixedHeightPaper={fixedHeightPaper}
+      classes={classes}
+    ></Menu>,
     <Businesses
       businesses={props.businesses}
       fixedHeightPaper={fixedHeightPaper}
@@ -159,8 +233,47 @@ const Dashboard = (props) => {
   const handleDrawerClose = () => {
     setOpen(false);
   };
-  // i think this creates one CSS class by combining other CSS classes into multple properies within one unifying class
 
+  // i think this creates one CSS class by combining other CSS classes into multple properies within one unifying class
+  const modalBody = (
+    <div className={classes.modal}>
+      <h2 style={{ marginBottom: "10%" }}>Welcome to Quickbev!</h2>
+      <p>
+        This is your home base for <strong>managing</strong> your:
+      </p>
+      <ul style={{ marginLeft: "10%" }}>
+        <li>businesses</li>
+        <li>business menus</li>
+        <li>employee profiles</li>
+      </ul>
+      <p>
+        As well as for <strong>analyzing </strong>and <strong>exporting</strong>{" "}
+        your:
+      </p>
+
+      <ul style={{ marginLeft: "10%" }}>
+        <li>sales data</li>
+        <li>order data</li>
+        <li>customer data</li>
+      </ul>
+      <p>
+        You can access all these features by clicking the tabs on the left hand
+        side of the screen. If you have any questions or need any help, just
+        click the question mark button at the top right corner of the screen to
+        get in touch with our tech support!
+      </p>
+      <Button
+        style={{
+          textAlign: "center",
+          marginLeft: "47%",
+          transform: "translateX(-47%)",
+        }}
+        onClick={modalHandleClose}
+      >
+        Lets get started
+      </Button>
+    </div>
+  );
   return (
     <div className={classes.root}>
       <CssBaseline />
@@ -190,11 +303,83 @@ const Dashboard = (props) => {
           >
             Dashboard
           </Typography>
-          {/* <IconButton color="inherit">
-            <Badge badgeContent={4} color="secondary">
-              <NotificationsIcon />
-            </Badge>
-          </IconButton> */}
+          {JSON.parse(localStorage.getItem("merchant")).is_administrator ===
+          true ? (
+            <IconButton color="inherit" href="/menubuilder">
+              <SmokeFreeIcon></SmokeFreeIcon>
+            </IconButton>
+          ) : null}
+          <IconButton
+            color="inherit"
+            onClick={handleSettingsToggle}
+            ref={settingsAnchorRef}
+            aria-controls={settingsOpen ? "menu-list-grow" : undefined}
+            aria-haspopup="true"
+          >
+            <SettingsIcon></SettingsIcon>
+          </IconButton>
+          <Popper
+            open={settingsOpen}
+            anchorEl={settingsAnchorRef.current}
+            role={undefined}
+            transition
+            disablePortal
+          >
+            {({ TransitionProps, placement }) => (
+              <Grow
+                {...TransitionProps}
+                style={{
+                  transformOrigin:
+                    placement === "bottom" ? "center top" : "center bottom",
+                }}
+              >
+                <Paper>
+                  <ClickAwayListener onClickAway={handleSettingsClose}>
+                    <MenuList autoFocusItem={settingsOpen} id="menu-list-grow">
+                      <Link to="/">
+                        <MenuItem>Logout</MenuItem>
+                      </Link>
+                    </MenuList>
+                  </ClickAwayListener>
+                </Paper>
+              </Grow>
+            )}
+          </Popper>
+          <IconButton
+            color="inherit"
+            onClick={handleHelpToggle}
+            ref={helpAnchorRef}
+            aria-controls={helpOpen ? "menu-list-grow" : undefined}
+            aria-haspopup="true"
+          >
+            <HelpIcon />
+          </IconButton>
+          <Popper
+            open={helpOpen}
+            anchorEl={helpAnchorRef.current}
+            role={undefined}
+            transition
+            disablePortal
+          >
+            {({ TransitionProps, placement }) => (
+              <Grow
+                {...TransitionProps}
+                style={{
+                  transformOrigin:
+                    placement === "bottom" ? "center top" : "center bottom",
+                }}
+              >
+                <Paper>
+                  <ClickAwayListener onClickAway={handleHelpClose}>
+                    <MenuList autoFocusItem={helpOpen} id="menu-list-grow">
+                      <MenuItem>Phone: 713-256-5720</MenuItem>
+                      <MenuItem>Email: bbucey@utexas.edu</MenuItem>
+                    </MenuList>
+                  </ClickAwayListener>
+                </Paper>
+              </Grow>
+            )}
+          </Popper>
         </Toolbar>
       </AppBar>
       <Drawer
@@ -223,6 +408,13 @@ const Dashboard = (props) => {
       <main className={classes.content}>
         <div className={classes.appBarSpacer} />
         <Container maxWidth="xl" className={classes.container}>
+          <Modal
+            open={modalOpen}
+            aria-labelledby="simple-modal-title"
+            aria-describedby="simple-modal-description"
+          >
+            {modalBody}
+          </Modal>
           <Grid container spacing={3}>
             {/* Chart */}
             {pages[currentPageIndex]}

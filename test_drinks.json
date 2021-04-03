@@ -1,26 +1,30 @@
 [
   {
     "id": null,
-    "name": "IPA",
+    "name": "ipa",
     "description": "Bitter.",
-    "price": 39.99
+    "price": 39.99,
+    "has_image": true
   },
   {
     "id": null,
-    "name": "Reds",
+    "name": "reds",
     "description": "Taste like apple juice!",
-    "price": 29.99
+    "price": 29.99,
+    "has_image": true
   },
   {
     "id": null,
-    "name": "Water",
+    "name": "water",
     "description": "HYDRATION",
-    "price": 29.99
+    "price": 29.99,
+    "has_image": true
   },
   {
     "id": null,
-    "name": "Vodka",
+    "name": "vodka",
     "description": "Gross",
-    "price": 29.99
+    "price": 29.99,
+    "has_image": true
   }
 ]

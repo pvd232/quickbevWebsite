@@ -22,11 +22,10 @@ class Drink_Repository(object):
 
     def add_drinks(self, session, drink_list):
         for drink in drink_list:
-            id = uuid.uuid4().hex
-            new_drink = Drink(id=id, name=drink.name, description=drink.description,
-                              price=drink.price, business_id=drink.business_id)
+            new_drink = Drink(id=drink.id, name=drink.name, description=drink.description,
+                              price=drink.price, business_id=drink.business_id, has_image=drink.has_image)
             session.add(new_drink)
-        return True
+        return drink_list
 
 
 class Order_Repository(object):
@@ -283,6 +282,15 @@ class Business_Repository(object):
         else:
             return False
 
+    def get_menu(self, session, business_id):
+        business = session.query(Business).filter(
+            Business.id == business_id).first()
+        if business:
+            menu = business.drink
+            return menu
+        else:
+            return False
+
 
 class Tab_Repository(object):
     def post_tab(self, session, tab):
@@ -311,7 +319,7 @@ class Merchant_Repository(object):
             return False
 
     def add_merchant(self, session, requested_merchant):
-        new_merchant = Merchant(id=requested_merchant.id, password=requested_merchant.password, first_name=requested_merchant.first_name,
+        new_merchant = Merchant(id=requested_merchant.id, password=generate_password_hash(requested_merchant.password), first_name=requested_merchant.first_name,
                                 last_name=requested_merchant.last_name, phone_number=requested_merchant.phone_number, number_of_businesses=requested_merchant.number_of_businesses)
         new_merchant_stripe = Merchant_Stripe(
             merchant_id=requested_merchant.id, stripe_id=requested_merchant.stripe_id)

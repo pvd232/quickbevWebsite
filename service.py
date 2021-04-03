@@ -27,7 +27,9 @@ session_factory = sessionmaker(bind=drink_engine)
 # create a Session
 Session = scoped_session(session_factory)
 
-#TODO add error message to tell user if they tried to upload a word doc or another doc to either convert it to a pdf or email the docuement to quickbev
+# TODO add error message to tell user if they tried to upload a word doc or another doc to either convert it to a pdf or email the docuement to quickbev
+
+
 @contextmanager
 def session_scope():
     session = Session()
@@ -59,6 +61,8 @@ class Drink_Service(object):
                 drink_json=x, init=True) for x in drinks]
             for drink in new_drink_list:
                 drink.business_id = business_id
+                id = uuid.uuid4()
+                drink.id = id
             return Drink_Repository().add_drinks(session, new_drink_list)
 
     def get_drinks_etag(self):
@@ -94,8 +98,7 @@ class Order_Service(object):
                 session, username)
             for order in orders:
                 order_domain = Order_Domain(order_object=order, drinks=drinks)
-                order_dto = order_domain.dto_serialize()
-                response.append(order_dto)
+                response.append(order_domain)
             return response
 
     def create_stripe_ephemeral_key(self, request):
@@ -210,7 +213,7 @@ class Business_Service(object):
     def get_businesses(self):
         with session_scope() as session:
             response = []
-            for business in Business_Repository().get_businesses(session):
+            for business in Business_Repository().get_businesess(session):
                 business_domain = Business_Domain(business_object=business)
                 response.append(business_domain)
             return response
@@ -238,6 +241,13 @@ class Business_Service(object):
                 business_domain = Business_Domain(business_object=business)
                 response.append(business_domain)
             return response
+
+    def get_menu(self, business_id):
+        with session_scope() as session:
+            menu = Business_Repository().get_menu(session, business_id)
+            if menu:
+                menu = [Drink_Domain(drink_object=x) for x in menu]
+            return menu
 
 
 class Tab_Service(object):
@@ -281,8 +291,10 @@ class Test_Service(object):
             self.test_engine.dispose()
         return
 
+
 class PDF_Reader(object):
     import base64
+
     def encode(self, data):
         """
         Return base-64 encoded value of binary data.
@@ -303,19 +315,21 @@ class PDF_Reader(object):
         with open(file.filename, 'rb') as file:
             return encode(file.read())
 
+
 class Google_Cloud_Storage_API(object):
     def __init__(self):
         super().__init__()
-          # Imports the Google Cloud client library
+        # Imports the Google Cloud client library
         from google.cloud import storage
-        app.config['GOOGLE_APPLICATION_CREDENTIALS'] = os.path.join(os.getcwd(),"quickbev-60da4e7ea092.json")
+        app.config['GOOGLE_APPLICATION_CREDENTIALS'] = os.path.join(
+            os.getcwd(), "quickbev-60da4e7ea092.json")
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = app.config['GOOGLE_APPLICATION_CREDENTIALS']
-        self.bucket_name = "my-new-quickbev-bucket" 
-          # Instantiates a client
+        self.bucket_name = "my-new-quickbev-bucket"
+        # Instantiates a client
         self.storage_client = storage.Client()
 
         self.bucket = self.storage_client.bucket(self.bucket_name)
-       
+
     def create_bucket(self):
         # The name for the new bucket
         bucket_name = "new-bucket"
@@ -325,7 +339,7 @@ class Google_Cloud_Storage_API(object):
 
         print("Bucket {} created.".format(bucket.name))
 
-    def upload_blob(self, file, destination_blob_name):
+    def upload_menu_file(self, file, destination_blob_name):
         """Uploads a file to the bucket."""
         # bucket_name = "your-bucket-name"
         # file = "local/path/to/file" this will be the business folder, with a folder named after the business' unique id, which will have the menu file in it
@@ -333,15 +347,26 @@ class Google_Cloud_Storage_API(object):
         from werkzeug.utils import secure_filename
 
         file_type = file.filename.rsplit('.', 1)[1].lower()
-        destination_blob_name = "business/" + str(destination_blob_name) + "/menu" + "." + file_type
-        # file.save(os.path.join(app.config['UPLOAD_FOLDER'], "tmp"))
-        # file_location = os.path.join(app.config['UPLOAD_FOLDER'], "tmp")
-        # if file_type == 'doc' or file_type == 'docx' or file_type == 'ppt' or file_type == 'pptx':
-        #     print('docx')
-        #     file.filename = destination_blob_name + "." + file_type
-        #     filename = secure_filename(file.filename)
-        #     file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        # else:
+        destination_blob_name = "business/" + \
+            str(destination_blob_name) + "/menu/" + "menu" "." + file_type
         blob = self.bucket.blob(destination_blob_name)
         blob.upload_from_file(file)
+        return True
+
+    def upload_drink_image_file(self, drink):
+        print("drink", drink.dto_serialize())
+
+        """Uploads a file to the bucket."""
+        # bucket_name = "your-bucket-name"
+        # file = "local/path/to/file" this will be the business folder, with a folder named after the business' unique id, which will have the menu file in it
+        # destination_blob_name = "storage-object-name" this will be the business uuid
+        file = drink.file
+        file_type = file.filename.rsplit('.', 1)[1].lower()
+        destination_blob_name = "business/" + \
+            str(drink.business_id) + "/menu-images/" + \
+            str(drink.id) + "." + file_type
+        blob = self.bucket.blob(destination_blob_name)
+        blob.upload_from_file(file)
+        blob.make_public()
+
         return True

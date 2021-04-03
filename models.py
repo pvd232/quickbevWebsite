@@ -39,6 +39,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
 
 # to suppress a warning message
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
+
 db = SQLAlchemy(app)
 
 
@@ -48,6 +49,8 @@ class Drink(db.Model):
     name = db.Column(db.String(80), nullable=False)
     description = db.Column(db.String(80), nullable=False)
     price = db.Column(db.Float(), nullable=False)
+    has_image = db.Column(db.Boolean(), default=False, nullable=False)
+    is_active = db.Column(db.Boolean(), default=True, nullable=False)
     business_id = db.Column(UUID(as_uuid=True), db.ForeignKey(
         'business.id'), nullable=False)
     order_drink = relationship('Order_Drink', lazy=True)
@@ -64,7 +67,7 @@ class Drink(db.Model):
 
 class Business(db.Model):
     __tablename__ = 'business'
-    id = db.Column(UUID(as_uuid=True), primary_key=True, 
+    id = db.Column(UUID(as_uuid=True), primary_key=True,
                    unique=True, nullable=False)
     merchant_stripe_id = db.Column(db.String(80), db.ForeignKey(
         'stripe_account.id'), nullable=False)
@@ -75,7 +78,7 @@ class Business(db.Model):
     classification = db.Column(db.String(80), nullable=False)
     date_joined = db.Column(db.Date, nullable=False)
     sales_tax_rate = db.Column(db.Float(), nullable=False)
-
+    is_active = db.Column(db.Boolean(), default=True, nullable=False)
     tablet = db.Column(db.Boolean(), nullable=False)
     phone_number = db.Column(db.BigInteger(), nullable=False)
     # not all businesses will have a menu URL or file upload, but they could be specific to each business
@@ -108,6 +111,7 @@ class Merchant(db.Model):
     last_name = db.Column(db.String(80), nullable=False)
     phone_number = db.Column(db.BigInteger(), nullable=False)
     number_of_businesses = db.Column(db.Integer(), nullable=False)
+    is_active = db.Column(db.Boolean(), default=True, nullable=False)
     business = relationship(
         "Business", lazy=True, backref="merchant")
     merchant_stripe = relationship(
@@ -142,6 +146,7 @@ class Customer(db.Model):
     last_name = db.Column(db.String(80), nullable=False)
     email_verified = db.Column(db.Boolean(), nullable=False)
     has_registered = db.Column(db.Boolean(), nullable=False)
+    is_active = db.Column(db.Boolean(), default=True, nullable=False)
     device_token = db.Column(db.String(80), nullable=True)
     order = relationship('Order', lazy=True, backref="order")
     tab = relationship('Tab', lazy=True, backref="tab")
@@ -368,9 +373,9 @@ def create_drink():
         name = drink['name']
         description = drink['description']
         price = drink['price']
-
+        has_image = drink["has_image"]
         new_drink = Drink(id=id, name=name,
-                          description=description, price=price, business_id=businesses[business_counter].id)
+                          description=description, price=price, business_id=businesses[business_counter].id, has_image=has_image)
         # alternate between the two business address objects when assingning the drinks a business address id
         if business_counter == 0:
             business_counter = 1
@@ -453,8 +458,8 @@ def create_everything():
     db.create_all()
     create_business()
     create_drink()
-    create_etag()
     create_orders_and_customers()
+    create_etag()
 
 
 def instantiate_db_connection():

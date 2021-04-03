@@ -301,6 +301,9 @@ export default function Chart(props) {
     }
   };
   const prepareData = () => {
+    if (orders.length === 1 && orders[0].cost === 0) {
+      return;
+    }
     var dataGroupedByDate = [];
     if (formValue.month !== "all") {
       // if a month has been specified

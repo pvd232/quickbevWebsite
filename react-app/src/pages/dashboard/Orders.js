@@ -12,26 +12,23 @@ import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import { Order, OrderDrink } from "../../Models";
 import { CSVLink } from "react-csv";
+import { toCapitalizedWords } from "../../Models";
 
 const useStyles = makeStyles({
   table: {
     width: "100%",
   },
 });
-const capitalize = (word) => {
-  return word.charAt(0).toUpperCase() + word.substring(1);
-};
-const toCapitalizedWords = (name) => {
-  var words = name.match(/[A-Za-z][a-z]*/g) || [];
 
-  return words.map(capitalize).join(" ");
-};
 const Orders = (props) => {
   const classes = useStyles();
   const mappedOrders = props.orders.map((orderJSON) => {
     return new Order(orderJSON);
   });
+
   const formattedMappedOrders = mappedOrders.map((order) => {
+    console.log("order", order);
+
     order.cost = Math.round(order.cost);
     order.subtotal = Math.round(order.subtotal);
     order.tipAmount = Math.round(order.tipAmount);
@@ -40,7 +37,11 @@ const Orders = (props) => {
     const orderBusiness = props.businesses.filter(
       (business) => order.businessId === business.id
     );
-    order.businessName = orderBusiness[0].name;
+    if (orderBusiness.length > 0) {
+      console.log("orderBusiness", orderBusiness);
+
+      order.businessName = orderBusiness[0].name;
+    }
     return order;
   });
   formattedMappedOrders.sort((a, b) => {
@@ -53,13 +54,11 @@ const Orders = (props) => {
     Object.values(order).map((key) => {
       if (key instanceof OrderDrink) {
         Object.values(key.orderDrink).map((drink) => {
-          const drinkString = String(drink.quantity) + "x" + " " + drink.name;
-          orderData.push(drinkString);
+          orderData.push(String(drink.quantity) + "x " + drink.name);
         });
       } else {
         orderData.push(key);
       }
-      return key;
     });
     return orderData;
   });
@@ -68,11 +67,11 @@ const Orders = (props) => {
   csvData.unshift(
     Object.keys(formattedMappedOrders[0]).map((key) =>
       // if the key is "id" than we want to display an email label
-      key === "_tipPercentage"
+      key === "tipPercentage"
         ? "Tip %"
         : toCapitalizedWords(
             // the object keys are the objects private properties so we have to remove the underscores
-            key.replace("_", "")
+            key
           )
     )
   );
@@ -107,11 +106,11 @@ const Orders = (props) => {
                 </TableCell>
                 {Object.keys(formattedMappedOrders[0]).map((key, i) => (
                   <TableCell align="left" key={i}>
-                    {key === "_tipPercentage"
+                    {key === "tipPercentage"
                       ? "Tip %"
                       : toCapitalizedWords(
                           // the object keys are the objects private properties so we have to remove the underscores
-                          key.replace("_", "")
+                          key
                         )}
                   </TableCell>
                 ))}
@@ -126,9 +125,7 @@ const Orders = (props) => {
                       return (
                         <TableCell align="left" key={i}>
                           {Object.values(key.orderDrink).map((drink) => {
-                            return (
-                              String(drink.quantity) + "x" + " " + drink.name
-                            );
+                            return String(drink.quantity) + "x " + drink.name;
                           })}
                         </TableCell>
                       );

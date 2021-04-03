@@ -102,7 +102,8 @@ const PayoutSetup = (props) => {
               event.preventDefault();
               const eventTarget = event.target;
               handleConnect().then((merchantStripeId) =>
-                props.onSubmit(eventTarget, merchantStripeId).then((result) => {
+                props.onSubmit(eventTarget, merchantStripeId).then(() => {
+                  setLocalStorage("firstLogin", true);
                   setRedirect(redirectUrl);
                 })
               );

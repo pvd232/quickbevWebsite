@@ -2,7 +2,7 @@ import { Merchant } from "../Models.js";
 
 class Client {
   constructor() {
-    this.baseUrl = "";
+    this.baseUrl = "http://127.0.0.1:8080";
     this.url = "";
   }
   async makeRequest(
@@ -33,26 +33,32 @@ class Client {
         headers: headersParam ? requestHeaders : {},
       });
 
-      if (response.ok) {
+      if (response) {
+        if (response.status === 500) {
+          console.log(
+            "APIclient.makeRequest.response.notOkay",
+            response.statusText
+          );
+          return response.status;
+        }
+
         var responseContent = {};
         if (response.body) {
           try {
             responseContent = await response.json();
-          } catch (err) {}
+          } catch (err) {
+            console.log("err", err);
+          }
         }
         const headers = {};
         for (const [key, value] of response.headers.entries()) {
           headers[key] = value;
         }
         responseContent.headers = headers;
+        responseContent.status = response.status;
         return responseContent;
       } else {
-        let body = await response.text();
-        console.log(
-          "APIclient.makeRequest.response.notOkay",
-          response.statusText,
-          body
-        );
+        console.log("network error");
         return false;
       }
     } catch (err) {
@@ -60,6 +66,7 @@ class Client {
         "APIclient.makeRequest.error, the response probably didnt have a body so it failed in turning it into JSON so ignore this",
         err
       );
+      return false;
     }
   }
   getOrders = async () => {

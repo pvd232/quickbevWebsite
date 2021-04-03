@@ -7,6 +7,7 @@ import Signin from "./pages/Signin.js";
 import Splash from "./pages/Splash.js";
 import PayoutSetupCallback from "./pages/PayoutSetupCallback.js";
 import ResetPassword from "./pages/PasswordReset.js";
+import MenuBuilder from "./pages/admin/MenuBuilder.js";
 
 const Main = () => {
   return (
@@ -20,6 +21,8 @@ const Main = () => {
         path="/payout-setup-callback"
         component={PayoutSetupCallback}
       ></Route>
+      <Route exact path="/menubuilder" component={MenuBuilder}></Route>
+
       <Route exact path="/" component={Splash}></Route>
       <Switch>
         <Route

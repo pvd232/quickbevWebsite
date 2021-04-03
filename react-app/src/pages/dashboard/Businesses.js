@@ -12,20 +12,13 @@ import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import { Business } from "../../Models";
 import { CSVLink } from "react-csv";
+import { toCapitalizedWords } from "../../Models";
 
 const useStyles = makeStyles({
   table: {
     width: "100%",
   },
 });
-const capitalize = (word) => {
-  return word.charAt(0).toUpperCase() + word.substring(1);
-};
-const toCapitalizedWords = (name) => {
-  var words = name.match(/[A-Za-z][a-z]*/g) || [];
-
-  return words.map(capitalize).join(" ");
-};
 
 const Businesses = (props) => {
   const classes = useStyles();
@@ -34,17 +27,14 @@ const Businesses = (props) => {
   });
   var csvData = mappedBusinesses.map((business) => {
     var businessData = [];
-    Object.values(business).map((value) => {
+    Object.values(business).forEach((value) => {
       switch (value) {
-        case typeof value === "string":
-          businessData.push(value.replace("_", ""));
-          return value;
         case value === true:
           businessData.push("yes");
-          return value;
+          break;
         default:
           businessData.push(value);
-          return value;
+          break;
       }
     });
     return businessData;

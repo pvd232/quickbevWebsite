@@ -12,20 +12,13 @@ import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import { Customer } from "../../Models";
 import { CSVLink } from "react-csv";
+import {toCapitalizedWords} from '../../Models'
 
 const useStyles = makeStyles({
   table: {
     width: "100%",
   },
 });
-const capitalize = (word) => {
-  return word.charAt(0).toUpperCase() + word.substring(1);
-};
-const toCapitalizedWords = (name) => {
-  var words = name.match(/[A-Za-z][a-z]*/g) || [];
-
-  return words.map(capitalize).join(" ");
-};
 const nonCamelCaseWords = (name) => {
   var words = name.match(/[A-Za-z][a-z]*/g) || [];
   return words.join(" ");
@@ -45,7 +38,7 @@ const Customers = (props) => {
       // if the key is "id" than we want to display an email label
       toCapitalizedWords(
         // the object keys are the objects private properties so we have to remove the underscores
-        key === "_id" ? "email" : key.replace("_", "")
+        key === "id" ? "email" : key
       )
     )
   );
@@ -84,7 +77,7 @@ const Customers = (props) => {
                       // if the key is "id" than we want to display an email label
                       toCapitalizedWords(
                         // the object keys are the objects private properties so we have to remove the underscores
-                        key === "_id" ? "email" : key.replace("_", "")
+                        key === "id" ? "email" : key
                       )
                     }
                   </TableCell>
@@ -97,7 +90,7 @@ const Customers = (props) => {
                   <TableCell>{i}</TableCell>
                   {Object.values(row).map((key, i) => (
                     <TableCell align="left" key={i}>
-                      {nonCamelCaseWords(key.replace("_", ""))}
+                      {nonCamelCaseWords(key)}
                     </TableCell>
                   ))}
                 </TableRow>

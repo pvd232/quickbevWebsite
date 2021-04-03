@@ -165,7 +165,7 @@ const CreateYourAccountFieldset = (props) => {
         </Row>
         <Row>
           <Col>
-            <Form.Label>Phone number</Form.Label>
+            <Form.Label>Phone number (no dashes)</Form.Label>
             <Form.Control
               type="tel"
               name="phoneNumber"

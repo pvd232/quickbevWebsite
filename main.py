@@ -17,7 +17,7 @@ import jwt
 import calendar
 from pushjack_http2_mod import APNSHTTP2Client, APNSAuthToken
 from werkzeug.security import generate_password_hash, check_password_hash
-
+from werkzeug.datastructures import MultiDict
 
 merchant_menu_upload_folder = os.getcwd() + "/files"
 # ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'docx'}
@@ -174,14 +174,19 @@ def orders(session_token):
 
         headers["Access-Control-Expose-Headers"] = "*"
 
-        headers["Access-Control-Allow-Credentials"] = "true"
         username = base64.b64decode(
             request.headers.get(
                 "Authorization").split(" ")[1]).decode("utf-8").split(":")[0]
         filter_orders_by = request.headers.get('filterBy')
         orders = []
         if filter_orders_by == 'merchant':
-            orders = order_service.get_merchant_orders(username=username)
+            orders = [x.dto_serialize()
+                      for x in order_service.get_merchant_orders(username=username)]
+            if len(orders) == 0:
+                # dummy data to populate orders table if the merchant has no orders
+                dummy_order = Order_Domain()
+                orders.append(dummy_order.dto_serialize())
+                print("orders", orders)
 
         elif filter_orders_by == 'customer':
             orders = order_service.get_merchant_orders(username=username)
@@ -285,9 +290,7 @@ def customer():
             'Access-Control-Request-Headers')
         headers["Access-Control-Allow-Credentials"] = "true"
 
-        headers["Access-Control-Expose-Headers"] = "Access-Control-Allow-Origin"
-        headers["Access-Control-Expose-Headers"] = "Access-Control-Allow-Credentials"
-        headers["Access-Control-Expose-Headers"] = "Access-Control-Allow-Headers"
+        headers["Access-Control-Expose-Headers"] = "*"
 
         return Response(status=200, headers=headers)
     if request.method == 'POST':
@@ -324,20 +327,23 @@ def customer():
         return Response(status=200)
         return Response(status=200, headers=headers)
     elif request.method == "GET":
+        headers["Access-Control-Allow-Origin"] = request.origin
         headers["Access-Control-Allow-Headers"] = request.headers.get(
             'Access-Control-Request-Headers')
-        headers["Access-Control-Expose-Headers"] = "authorization"
-        headers["Access-Control-Allow-Origin"] = request.origin
-        headers["Access-Control-Allow-Credentials"] = 'true'
-        headers["Access-Control-Expose-Headers"] = "Access-Control-Allow-Origin"
-        headers["Access-Control-Expose-Headers"] = "Access-Control-Allow-Credentials"
-        headers["Access-Control-Expose-Headers"] = "Access-Control-Allow-Headers"
+        headers["Access-Control-Allow-Credentials"] = "true"
+
+        headers["Access-Control-Expose-Headers"] = "*"
 
         merchant_id = base64.b64decode(
             request.headers.get(
                 "Authorization").split(" ")[1]).decode("utf-8")
         customers = [x.dto_serialize() for x in Customer_Service(
         ).get_customers(merchant_id=merchant_id)]
+        print("customers", customers)
+
+        if len(customers) < 1:
+            dummy_customer = Customer_Domain()
+            customers.append(dummy_customer.dto_serialize())
         response = {"customers": customers}
         return Response(status=200, response=json.dumps(response), headers=headers)
 
@@ -412,6 +418,10 @@ def business(session_token):
             merchant_id = request.headers.get('merchantId')
             merchant_businesses = [x.dto_serialize(
             ) for x in Business_Service().get_merchant_business(merchant_id)]
+
+            if len(merchant_businesses) < 1:
+                dummy_business = Business_Domain()
+                merchant_businesses.append(dummy_business.dto_serialize())
             response["businesses"] = merchant_businesses
             if merchant_businesses:
                 print("merchant_businesses", merchant_businesses)
@@ -526,7 +536,7 @@ def create_account():
                 return Response(status=200, response=json.dumps(response), headers=headers)
             # if file and allowed_file(file.filename):
             if file:
-                Google_Cloud_Storage_API().upload_blob(file, new_business.id)
+                Google_Cloud_Storage_API().upload_menu_file(file, new_business.id)
                 response["msg"] = "File successfully uploaded!"
                 return Response(status=200, response=json.dumps(response), headers=headers)
             # elif file and not allowed_file(file.filename):
@@ -574,6 +584,8 @@ def authenticate_merchant():
         merchant = Merchant_Service().authenticate_merchant(username, password)
         # if the merchant exists it will return False, if it doesn't it will return True
         if merchant:
+            print("merchant", merchant.dto_serialize())
+
             headers["jwt_token"] = jwt.encode(
                 {"sub": merchant.id}, key=secret, algorithm="HS256")
 
@@ -604,16 +616,81 @@ def create_stripe_account():
     return response
 
 
-@app.route('/add-menu', methods=['POST'])
+@app.route('/menu', methods=['POST', 'GET'])
 def add_menu():
-    drink_service = Drink_Service()
-    menu = json.loads(request.data)
-    business_id = request.headers.get("business_id")
-    response = Response(status=200, response=json.dumps(
-        drink_service.add_drinks(business_id, menu)))
-    return response
+    headers = {}
+    response = {}
+    if request.method == 'OPTIONS':
+        headers["Access-Control-Allow-Origin"] = request.origin
+        headers["Access-Control-Allow-Headers"] = request.headers.get(
+            'Access-Control-Request-Headers')
+        headers["Access-Control-Expose-Headers"] = "*"
+
+        return Response(status=200, headers=headers)
+
+    if request.method == 'POST':
+        headers["Access-Control-Allow-Origin"] = request.origin
+        headers["Access-Control-Expose-Headers"] = "*"
+
+        drink_names = json.loads(request.form.get("drinkName"))
+        drink_descriptions = json.loads(request.form.get("drinkDescription"))
+        drink_prices = json.loads(request.form.get("drinkPrice"))
+        drink_file_names = json.loads(request.form.get("selectedFile"))
+        business_id = json.loads(request.form.get("businessId"))
+
+        new_drinks = [{"name": x} for x in drink_names]
+        for i in range(len(new_drinks)):
+            drink = new_drinks[i]
+            drink["description"] = drink_descriptions[i]
+            drink["price"] = float(drink_prices[i])
+            drink["has_image"] = drink_file_names[i]
+
+        added_drinks = Drink_Service().add_drinks(business_id, new_drinks)
+
+        files = request.files
+        drinks_with_images = [
+            x for x in added_drinks if x.has_image == True]
+        if 'selectedFile' in files:
+            multi_dict_files = MultiDict(files).getlist('selectedFile')
+            for i in range(len(multi_dict_files)):
+                file = multi_dict_files[i]
+                file_type = file.filename.split('.')[1]
+                if file_type != 'jpg':
+                    file.filename = file.filename.split('.')[0] + '.jpg'
+                drink = drinks_with_images[i]
+                drink.file = file
+                Google_Cloud_Storage_API().upload_drink_image_file(drink)
+                response["msg"] = "File successfully uploaded!"
+            return Response(status=200, response=json.dumps(response), headers=headers)
+        # file_type = file.split('.')[1]
+        # if file_type != 'jpg':
+        #     filename = secure_filename(file.filename)
+        #     file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+
+        for item in files.items():
+            print('item', item)
+        print("drink_names", drink_names)
+
+        drink_descriptions = json.loads(request.form.get("drinkDescription"))
+        print("drink_descriptions", drink_descriptions)
+
+        drink_descriptions = json.loads(request.form.get("drinkDescription"))
+
+        response = Response(status=200, headers=headers)
+        # business_id = request.headers.get("business_id")
+        # response = Response(status=200, response=json.dumps(
+        #     drink_service.add_drinks(business_id, menu)))
+        return response
+    else:
+        business_id = request.args.get('businessId')
+        menu = Business_Service().get_menu(business_id)
+        if menu:
+            menu = [x.dto_serialize() for x in menu]
+            response = Response(status=200, response=json.dumps(menu))
+        else:
+            response = Response(status=404)
+        return response
 
 
 if __name__ == '__main__':
-    # app.run(host="192.168.86.42", port=5000, debug=True)
     app.run(host='127.0.0.1', port=8080, debug=True)
