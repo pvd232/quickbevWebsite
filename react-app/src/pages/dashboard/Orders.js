@@ -51,9 +51,9 @@ const Orders = (props) => {
   });
   var csvData = formattedMappedOrders.map((order) => {
     var orderData = [];
-    Object.values(order).map((key) => {
+    Object.values(order).forEach((key) => {
       if (key instanceof OrderDrink) {
-        Object.values(key.orderDrink).map((drink) => {
+        Object.values(key.orderDrink).forEach((drink) => {
           orderData.push(String(drink.quantity) + "x " + drink.name);
         });
       } else {
