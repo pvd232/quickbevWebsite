@@ -213,7 +213,7 @@ class Business_Service(object):
     def get_businesses(self):
         with session_scope() as session:
             response = []
-            for business in Business_Repository().get_businesess(session):
+            for business in Business_Repository().get_businesses(session):
                 business_domain = Business_Domain(business_object=business)
                 response.append(business_domain)
             return response
