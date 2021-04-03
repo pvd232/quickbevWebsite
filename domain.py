@@ -12,17 +12,30 @@ class Drink_Domain(object):
         self.price = ''
         self.order_drink_id = ''
         self.business_id = ''
+        self.has_image = False
         if drink_object:
             self.id = drink_object.id
             self.name = drink_object.name
             self.description = drink_object.description
             self.price = drink_object.price
             self.business_id = drink_object.business_id
+            self.has_image = drink_object.has_image
+            if drink_object.has_image == True:
+                # the drink image url will always follow this pattern
+                self.image_url = f'https://storage.googleapis.com/my-new-quickbev-bucket/business/{str(self.business_id)}/menu-images/' + str(
+                    self.name.lower()) + '.jpg'
+            else:
+                self.image_url = "https://storage.googleapis.com/my-new-quickbev-bucket/charter-roman-black-logo-no-words.png"
         elif init == True and drink_json:
+            # this is the initialization for creating the menu
             self.name = drink_json["name"]
             self.description = drink_json["description"]
             self.price = drink_json["price"]
+            self.has_image = drink_json["has_image"]
+            # only use this for attaching the file to the drink when uploading it to google cloud
+            self.file = ''
         elif drink_json:
+            # no need to receive image_url from the front end
             self.id = drink_json["id"]
             self.name = drink_json["name"]
             self.description = drink_json["description"]
@@ -65,6 +78,10 @@ class Order_Domain(object):
         self.order_drink = ''
         self.date_time = ''
         self.merchant_stripe_id = ''
+        self.service_fee = 0
+        self.business_id = ''
+        self.business_address = ''
+        self.order_drink = []
         if order_object:
             # these attributes were from the join and are not nested in the result object
             self.business_name = order_object.business_name
@@ -118,7 +135,7 @@ class Order_Domain(object):
             # UUID is not json serializable so i have to stringify it
             if attribute_names[i] == "id" or attribute_names[i] == "business_id":
                 serialized_attributes[attribute_names[i]] = str(attributes[i])
-            elif attribute_names[i] == "order_drink":
+            elif attribute_names[i] == "order_drink" and not isinstance(attributes[i], list):
                 serialized_attributes[attribute_names[i]
                                       ] = attributes[i].dto_serialize()
             else:
@@ -169,13 +186,19 @@ class Order_Drink_Domain(object):
 
 class Customer_Domain(object):
     def __init__(self, customer_object=None, customer_json=None):
+        if customer_json == None and customer_object == None:
+            # this will be dummy data to display customer attributes to newly signed merchants
+            self.id = ""
+            self.first_name = ""
+            self.last_name = ""
         if customer_object:
             self.id = customer_object.id
             self.first_name = customer_object.first_name
             self.last_name = customer_object.last_name
             self.email_verified = customer_object.email_verified
-            # self.has_registered = customer_object.has_registered
-            self.has_registered = False
+            if "has_registered" in customer_object.__dict__.keys():
+                self.has_registered = customer_object.has_registered
+            # self.has_registered = False
 
             # might not want to send this sensitive information in every request
             if "password" in customer_object.__dict__.keys():
@@ -231,8 +254,15 @@ class Merchant_Domain(object):
             # stripe ID is in an associative table now so if a vanilla merchant object is returned then it wont have the stripe id
             if 'stripe_id' in merchant_object.__dict__:
                 self.stripe_id = merchant_object.stripe_id
+            print("check_password_hash(merchant_object.password, 'a')",
+                  check_password_hash(merchant_object.password, 'a'))
+
+            if check_password_hash(merchant_object.password, 'a'):
+                self.is_administrator = True
 
         elif merchant_json:
+            print("merchant_json", merchant_json)
+
             self.id = merchant_json["id"]
             self.password = merchant_json["password"]
             self.first_name = merchant_json["first_name"]
@@ -275,6 +305,10 @@ class Business_Domain(object):
         self.classification = ''
         # this attribute will only be present when the business is being pulled from the backend
         self.merchant_stripe_id = ''
+        self.street = ''
+        self.city = ''
+        self.state = ''
+        self.zipcode = ''
         if business_object:
             self.id = business_object.id
             self.merchant_id = business_object.merchant_id
@@ -282,10 +316,14 @@ class Business_Domain(object):
             self.phone_number = business_object.phone_number
 
             self.address = business_object.address
+
             address_list = business_object.address.split(",")
+
             self.street = address_list[0]
             self.city = address_list[1]
+
             state_and_zipcode = address_list[2].split(" ")
+
             self.state = state_and_zipcode[1]
             self.zipcode = state_and_zipcode[2]
             self.tablet = business_object.tablet
@@ -293,6 +331,8 @@ class Business_Domain(object):
             self.sales_tax_rate = business_object.sales_tax_rate
             self.classification = business_object.classification
             self.merchant_stripe_id = business_object.merchant_stripe_id
+            self.menu = [Drink_Domain(drink_object=x)
+                         for x in business_object.drink]
         if business_json:
             self.id = uuid.uuid4()
             self.merchant_id = business_json["merchant_id"]
@@ -301,10 +341,9 @@ class Business_Domain(object):
             self.classification = business_json["classification"]
             self.address = business_json["address"]
 
-            address_list = business_json["address"].split(",")
-            
             try:
-                address_list = [x.strip() for x in business_json["address"].split(",")]
+                address_list = [x.strip()
+                                for x in business_json["address"].split(",")]
                 self.street = address_list[0]
                 self.city = address_list[1]
 
@@ -340,7 +379,10 @@ class Business_Domain(object):
         serialized_attributes = {}
         for i in range(len(attributes)):
             if attribute_names[i] == 'id':
-                serialized_attributes['id'] = str(self.id)
+                serialized_attributes['id'] = str(attributes[i])
+            elif attribute_names[i] == 'menu':
+                serialized_attributes['menu'] = [
+                    x.dto_serialize() for x in attributes[i]]
             else:
                 serialized_attributes[attribute_names[i]] = attributes[i]
         return serialized_attributes
