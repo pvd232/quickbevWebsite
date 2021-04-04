@@ -134,12 +134,12 @@ def inventory(session_token):
             response['drinks'] = drink_list
 
             etag = ETag_Service().get_etag("drink")
-            headers["E-tag-id"] = etag.id
-            headers["E-tag-category"] = etag.category
+            headers["e-tag-id"] = etag.id
+            headers["e-tag-category"] = etag.category
     else:
         etag = ETag_Service().get_etag("drink")
-        headers["E-tag-id"] = etag.id
-        headers["E-tag-category"] = etag.category
+        headers["e-tag-id"] = etag.id
+        headers["e-tag-category"] = etag.category
 
     return Response(status=200, response=json.dumps(response), headers=headers)
 
@@ -444,12 +444,12 @@ def business(session_token):
                     response['businesses'] = business_list
 
                 etag = ETag_Service().get_etag("business")
-                headers["E-tag-category"] = etag.category
-                headers["E-tag-id"] = str(etag.id)
+                headers["e-tag-category"] = etag.category
+                headers["e-tag-id"] = str(etag.id)
         else:
             etag = ETag_Service().get_etag("business")
-            headers["E-tag-category"] = etag.category
-            headers["E-tag-id"] = str(etag.id)
+            headers["e-tag-category"] = etag.category
+            headers["e-tag-id"] = str(etag.id)
         return Response(status=200, response=json.dumps(response), headers=headers)
 
 
