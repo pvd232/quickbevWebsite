@@ -307,7 +307,15 @@ class Merchant_Repository(object):
             country="US"
         )
         new_stripe_account_id = Stripe_Account(id=new_account.id)
-        new_merchant_stripe = Merchant_Stripe()
+        session.add(new_stripe_account_id)
+        return new_account
+
+    def create_employee_stripe_account(self, session):
+        new_account = stripe.Account.create(
+            type="standard ",
+            country="US"
+        )
+        new_stripe_account_id = Merchant_Stripe_Account(id=new_account.id)
         session.add(new_stripe_account_id)
         return new_account
 

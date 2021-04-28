@@ -550,7 +550,7 @@ def create_account():
 def create_account_redirect():
     response = {"msg": ""}
     headers = {}
-    business_service = Business_Service()
+    business_service = Business_Service ()
     request_json = json.loads(request.data)
     business_to_update = request_json["business"]
     if business_service.update_business(business_to_update):
@@ -562,6 +562,15 @@ def create_account_redirect():
         response["msg"] = "Failed to update business"
         return Response(status=500, response=json.dumps(response))
 
+
+@app.route('/merchant-employee', methods=['POST'])
+def merchant_employee():
+    response = {"msg": ""}
+    headers = {}
+    request_json = json.loads(request.data)
+    print('request_json', request_json)
+    response["msg"] = "hello world"
+    return Response(status=200, response=json.dumps(response))
 
 @app.route('/merchant', methods=['GET', 'OPTIONS'])
 def authenticate_merchant():
