@@ -565,6 +565,7 @@ def create_account_redirect():
 
 @app.route('/merchant-employee', methods=['POST'])
 def merchant_employee():
+    print('request received')
     response = {"msg": ""}
     headers = {}
     request_json = json.loads(request.data)
