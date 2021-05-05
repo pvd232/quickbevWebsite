@@ -106,6 +106,7 @@ class Business(db.Model):
 
 
 class Merchant_Employee(db.Model):
+    __tablename__ = 'merchant_employee'
     id = db.Column(db.String(80), primary_key=True,
                    unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
