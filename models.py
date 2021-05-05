@@ -118,7 +118,7 @@ class Merchant_Employee(db.Model):
     merchant_id = db.Column(db.String(80), db.ForeignKey(
         "merchant.id"),   nullable=False)
     stripe_id = db.Column(db.String(80), db.ForeignKey(
-        "merchant_employee_stripe.id"),   nullable=False)
+        "merchant_employee_stripe_account.id"),   nullable=False)
 
     @property
     def serialize(self):
@@ -290,8 +290,8 @@ class Merchant_Employee_Stripe_Account(db.Model):
     __tablename__ = 'merchant_employee_stripe_account'
     id = db.Column(db.String(80), primary_key=True,
                    unique=True, nullable=False)
-    merchant_employee_stripe = relationship(
-        "Merchant_Employee_Stripe", lazy=True, backref="merchant_employee_stripe_account")
+    merchant_employee = relationship(
+        "Merchant_Employee", lazy=True, backref="merchant_employee_stripe_account")
 
     @property
     def serialize(self):
