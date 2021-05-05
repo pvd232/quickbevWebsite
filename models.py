@@ -115,9 +115,9 @@ class Merchant_Employee(db.Model):
     is_active = db.Column(db.Boolean(), default=True, nullable=False)
     business_id = db.Column(UUID(as_uuid=True), db.ForeignKey(
         "business.id"),  nullable=False)
-    merchant_id = db.Column(db.string(80), db.ForeignKey(
+    merchant_id = db.Column(db.String(80), db.ForeignKey(
         "merchant.id"),   nullable=False)
-    stripe_id = db.Column(db.string(80), db.ForeignKey(
+    stripe_id = db.Column(db.String(80), db.ForeignKey(
         "merchant_employee_stripe.id"),   nullable=False)
 
     @property
