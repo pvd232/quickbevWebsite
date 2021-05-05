@@ -89,9 +89,36 @@ class Business(db.Model):
     zipcode = db.Column(db.Integer, nullable=True)
     suite = db.Column(db.String(80), nullable=True)
     address = db.Column(db.String(80), nullable=False)
+    merchant_employee = relationship(
+        "Merchant_Employee", lazy=True, backref="business")
     drink = relationship('Drink', lazy=True, backref="business")
     order = relationship('Order', lazy=True, backref="business")
     tab = relationship('Tab', lazy=True, backref="business")
+
+    @property
+    def serialize(self):
+        attribute_names = list(self.__dict__.keys())
+        attributes = list(self.__dict__.values())
+        serialized_attributes = {}
+        for i in range(len(attributes)):
+            serialized_attributes[attribute_names[i]] = attributes[i]
+        return serialized_attributes
+
+
+class Merchant_Employee(db.Model):
+    id = db.Column(db.String(80), primary_key=True,
+                   unique=True, nullable=False)
+    password = db.Column(db.String(200), nullable=False)
+    first_name = db.Column(db.String(80), nullable=False)
+    last_name = db.Column(db.String(80), nullable=False)
+    phone_number = db.Column(db.BigInteger(), nullable=False)
+    is_active = db.Column(db.Boolean(), default=True, nullable=False)
+    business_id = db.Column(UUID(as_uuid=True), db.ForeignKey(
+        "business.id"),  nullable=False)
+    merchant_id = db.Column(db.string(80), db.ForeignKey(
+        "merchant.id"),   nullable=False)
+    stripe_id = db.Column(db.string(80), db.ForeignKey(
+        "merchant_employee_stripe.id"),   nullable=False)
 
     @property
     def serialize(self):
@@ -112,6 +139,8 @@ class Merchant(db.Model):
     phone_number = db.Column(db.BigInteger(), nullable=False)
     number_of_businesses = db.Column(db.Integer(), nullable=False)
     is_active = db.Column(db.Boolean(), default=True, nullable=False)
+    merchant_employee = relationship(
+        "Merchant_Employee", lazy=True, backref="merchant")
     business = relationship(
         "Business", lazy=True, backref="merchant")
     merchant_stripe = relationship(
@@ -246,6 +275,23 @@ class Stripe_Customer(db.Model):
     id = db.Column(db.String(80), primary_key=True,
                    unique=True, nullable=False)
     customer = relationship('Customer', lazy=True)
+
+    @property
+    def serialize(self):
+        attribute_names = list(self.__dict__.keys())
+        attributes = list(self.__dict__.values())
+        serialized_attributes = {}
+        for i in range(len(attributes)):
+            serialized_attributes[attribute_names[i]] = attributes[i]
+        return serialized_attributes
+
+
+class Merchant_Employee_Stripe_Account(db.Model):
+    __tablename__ = 'merchant_employee_stripe_account'
+    id = db.Column(db.String(80), primary_key=True,
+                   unique=True, nullable=False)
+    merchant_employee_stripe = relationship(
+        "Merchant_Employee_Stripe", lazy=True, backref="merchant_employee_stripe_account")
 
     @property
     def serialize(self):

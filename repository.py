@@ -335,6 +335,23 @@ class Merchant_Repository(object):
         session.add(new_merchant_stripe)
         return True
 
+class Merchant_Employee_Repository(object):
+    def create_employee_stripe_account(self, session):
+        new_account = stripe.Account.create(
+            type="standard ",
+            country="US"
+        )
+        new_stripe_account_id = Merchant_Employee_Stripe_Account(id=new_account.id)
+        session.add(new_stripe_account_id)
+        return new_account
+
+    def authenticate_merchant_employee(self, session, email, password):
+        for merchant_employee in session.query(Merchant_Employee):
+            if merchant_employee.id == email and check_password_hash(merchant_employee.password, password):
+                return merchant_employee
+        else:
+            return False
+
 
 class ETag_Repository():
     def get_etag(self, session, category):

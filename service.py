@@ -208,6 +208,27 @@ class Merchant_Service(object):
             return Merchant_Repository().add_merchant(
                 session, requested_new_merchant)
 
+class Merchant_Employee_Service(object):
+    def create_stripe_account(self):
+        with session_scope() as session:
+            return Merchant_Employee_Repository().create_stripe_account(session)
+
+    def authenticate_merchant_employee(self, email, password):
+        with session_scope() as session:
+            merchant_employee_object = Merchant_Employee_Repository().authenticate_merchant_employee(
+                session, email, password)
+            if merchant_employee_object:
+                merchant_employee_domain = Merchant_Employee_Domain(
+                    merchant_employee_object=merchant_employee_object)
+                return merchant_employee_domain
+            else:
+                return False
+
+    def add_merchant_employee(self, merchant_employee):
+        with session_scope() as session:
+            requested_new_merchant_employee = Merchant_Employee_Domain(merchant_employee_json=merchant_employee)
+            return Merchant_Employee_Repository().add_merchant_employee(
+                session, requested_new_merchant_employee)
 
 class Business_Service(object):
     def get_businesses(self):

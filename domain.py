@@ -294,6 +294,61 @@ class Merchant_Domain(object):
                 serialized_attributes[attribute_names[i]] = attributes[i]
         return serialized_attributes
 
+class Merchant_Employee_Domain(object):
+    def __init__(self, merchant_employee_object=None, merchant_employee_json=None):
+        self.id = ''
+        self.password = ''
+        self.first_name = ''
+        self.last_name = ''
+        self.phone_number = ''
+        self.stripe_id = ''
+        if merchant_employee_object:
+            self.id = merchant_employee_object.id
+            self.password = merchant_employee_object.password
+            self.first_name = merchant_employee_object.first_name
+            self.last_name = merchant_employee_object.last_name
+            self.phone_number = merchant_employee_object.phone_number
+            self.number_of_businesses = merchant_employee_object.number_of_businesses
+            # stripe ID is in an associative table now so if a vanilla merchant_employee object is returned then it wont have the stripe id
+            if 'stripe_id' in merchant_employee_object.__dict__:
+                self.stripe_id = merchant_employee_object.stripe_id
+            print("check_password_hash(merchant_employee_object.password, 'a')",
+                  check_password_hash(merchant_employee_object.password, 'a'))
+
+            if check_password_hash(merchant_employee_object.password, 'a'):
+                self.is_administrator = True
+
+        elif merchant_employee_json:
+            print("merchant_employee_json", merchant_employee_json)
+
+            self.id = merchant_employee_json["id"]
+            self.password = merchant_employee_json["password"]
+            self.first_name = merchant_employee_json["first_name"]
+            self.last_name = merchant_employee_json["last_name"]
+            self.phone_number = merchant_employee_json["phone_number"]
+            # when the merchant_employee object is validated it wont be present initially
+            if "stripe_id" in merchant_employee_json:
+                self.stripe_id = merchant_employee_json["stripe_id"]
+
+    def serialize(self):
+        attribute_names = list(self.__dict__.keys())
+        attributes = list(self.__dict__.values())
+        serialized_attributes = {}
+        for i in range(len(attributes)):
+            serialized_attributes[attribute_names[i]] = attributes[i]
+        return serialized_attributes
+
+    def dto_serialize(self):
+        attribute_names = list(self.__dict__.keys())
+        attributes = list(self.__dict__.values())
+        serialized_attributes = {}
+        for i in range(len(attributes)):
+            if attribute_names[i] == 'id':
+                serialized_attributes['id'] = str(self.id)
+            else:
+                serialized_attributes[attribute_names[i]] = attributes[i]
+        return serialized_attributes
+
 
 class Business_Domain(object):
     def __init__(self, business_object=None, business_json=None):
