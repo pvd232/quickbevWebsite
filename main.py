@@ -496,7 +496,42 @@ def create_payment_intent(session_token):
 #     return '.' in filename and \
 #            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+@app.route('/merchant_employee_login', methods=['POST', 'OPTIONS'])
+def create_account():
+    response = {"msg": ""}
+    headers = {}
+    if request.method == 'OPTIONS':
+        headers["Access-Control-Allow-Origin"] = request.origin
+        headers["Access-Control-Allow-Headers"] = request.headers.get(
+            'Access-Control-Request-Headers')
 
+        headers["Access-Control-Expose-Headers"] = "*"
+        return Response(status=200, headers=headers)
+    elif request.method == 'POST':
+        headers["Access-Control-Allow-Headers"] = request.headers.get(
+            'Access-Control-Request-Headers')
+        headers["Access-Control-Allow-Origin"] = request.origin
+        headers["Access-Control-Expose-Headers"] = "*"
+        # check if the post request has the file part
+    request_data = json.loads(request.data)
+
+    merchant_employee_service = Merchant_Employee_Service()
+    new_merchant = merchant_employee_service.authenticate_merchant_employee(
+        email=request_data['email'], password=request_data['password'])
+    return Response(status=200)
+
+
+@app.route('/business_phone_number', methods=['GET'])
+def business_phone_number():
+    business_phone_number = request.args.get('business_phone_number')
+    business_phone_number_status = Business_Service(
+    ).get_business_phone_number(business_phone_number)
+    if business_phone_number_status == False:
+        return Response(status=400)
+    else:
+        # if the business phone exists then the business id will be returned
+        return Response(status=200, response=json.dumps(business_phone_number_status.dto_serialize()))
+        
 @app.route('/create-account', methods=['POST', 'OPTIONS'])
 def create_account():
     response = {"msg": ""}
@@ -562,6 +597,43 @@ def create_account_redirect():
         response["msg"] = "Failed to update business"
         return Response(status=500, response=json.dumps(response))
 
+@app.route('/merchant_employee_stripe_account', methods=['GET'])
+def merchant_employee_stripe_account():
+    headers = {}
+    merchant_id = request.args.get('merchant_employee_id')
+    # create a new stripe account with the stripe API in the backend and add it to the Merchant_Employee_Stripe_Account Table
+    new_account = Merchant_Employee_Service().create_stripe_account(merchant_id)
+    account_links = stripe.AccountLink.create(
+        account=new_account.id,
+        refresh_url='https://quickbev.uc.r.appspot.com/merchant-employee-payout-setup-callback',
+        return_url='https://quickbev.uc.r.appspot.com/merchant-employee-payout-setup-callback-complete',
+        type='account_onboarding',
+    )
+    headers["stripe_id"] = new_account.id
+    headers["Access-Control-Allow-Origin"] = request.origin
+    headers["Access-Control-Expose-Headers"] = "*"
+
+    response = Response(status=200, response=json.dumps(
+        account_links), headers=headers)
+    return response
+
+
+@app.route('/merchant_employee', methods=['POST', 'GET'])
+def merchant_employee():
+    if request.method == 'POST':
+        request_json = json.loads(request.data)
+        new_merchant_employee = Merchant_Employee_Service().add_merchant_employee(request_json)
+        return Response(status=200, response=json.dumps(new_merchant_employee.dto_serialize()))
+    # check to see if the merchant username already exists during account creation
+    elif request.method == 'GET':
+        merchant_employee_username = request.args.get('username')
+        print('merchant_employee_username', merchant_employee_username)
+        merchant_employee_username_status = Merchant_Employee_Service(
+        ).authenticate_username(merchant_employee_username)
+        if merchant_employee_username_status == True:
+            return Response(status=400)
+        else:
+            return Response(status=200)
 
 @app.route('/merchant-employee', methods=['POST'])
 def merchant_employee():

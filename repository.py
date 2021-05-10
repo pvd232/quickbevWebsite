@@ -291,6 +291,14 @@ class Business_Repository(object):
         else:
             return False
 
+    def get_business_phone_number(self, session, business_phone_number):
+        business_with_corresponding_phone_number = session.query(Business).filter(
+            Business.phone_number == business_phone_number).first()
+        if business_with_corresponding_phone_number:
+            return business_with_corresponding_phone_number
+        else:
+            return False
+
 
 class Tab_Repository(object):
     def post_tab(self, session, tab):
@@ -310,15 +318,6 @@ class Merchant_Repository(object):
         session.add(new_stripe_account_id)
         return new_account
 
-    def create_employee_stripe_account(self, session):
-        new_account = stripe.Account.create(
-            type="standard ",
-            country="US"
-        )
-        new_stripe_account_id = Merchant_Stripe_Account(id=new_account.id)
-        session.add(new_stripe_account_id)
-        return new_account
-
     def authenticate_merchant(self, session, email, password):
         for merchant in session.query(Merchant):
             if merchant.id == email and check_password_hash(merchant.password, password):
@@ -335,15 +334,21 @@ class Merchant_Repository(object):
         session.add(new_merchant_stripe)
         return True
 
+
 class Merchant_Employee_Repository(object):
-    def create_employee_stripe_account(self, session):
-        new_account = stripe.Account.create(
-            type="standard ",
-            country="US"
-        )
-        new_stripe_account_id = Merchant_Employee_Stripe_Account(id=new_account.id)
-        session.add(new_stripe_account_id)
-        return new_account
+    # def create_stripe_account(self, session, merchant_employee_id):
+    #     new_account = stripe.Account.create(
+    #         type="standard",
+    #         country="US"
+    #     )
+    #     new_stripe_account_id = Merchant_Employee_Stripe_Account(
+    #         id=new_account.id)
+    #     session.add(new_stripe_account_id)
+    #     merchant_employee_to_update = session.query(Merchant_Employee).filter(
+    #         Merchant_Employee.id == merchant_employee_id).first()
+    #     if merchant_employee_to_update:
+    #         merchant_employee_to_update.stripe_id = new_stripe_account_id.id
+    #     return new_account
 
     def authenticate_merchant_employee(self, session, email, password):
         for merchant_employee in session.query(Merchant_Employee):
@@ -351,6 +356,29 @@ class Merchant_Employee_Repository(object):
                 return merchant_employee
         else:
             return False
+
+    def authenticate_username(self, session, username):
+        # if a username is passed then we query the db to verify it, if the hashed version is passed then we use the check_password_hash to verify it
+        merchant_employee = session.query(Merchant_Employee).filter(
+            Merchant_Employee.id == username).first()
+        if merchant_employee:
+            return True
+        else:
+            return False
+
+    def add_merchant_employee(self, session, requested_merchant_employee):
+        new_account = stripe.Account.create(
+            type="standard",
+            country="US"
+        )
+        new_stripe_account_id = Merchant_Employee_Stripe_Account(
+            id=new_account.id)
+        session.add(new_stripe_account_id)
+        new_merchant_employee = Merchant_Employee(id=requested_merchant_employee.id, password=generate_password_hash(requested_merchant_employee.password), first_name=requested_merchant_employee.first_name,
+                                                  last_name=requested_merchant_employee.last_name, phone_number=requested_merchant_employee.phone_number, merchant_id=requested_merchant_employee.merchant_id, business_id=requested_merchant_employee.business_id, stripe_id=new_account.id)
+        requested_merchant_employee.stripe_id = new_account.id
+        session.add(new_merchant_employee)
+        return requested_merchant_employee
 
 
 class ETag_Repository():

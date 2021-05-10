@@ -27,7 +27,7 @@ class Drink_Domain(object):
             else:
                 self.image_url = "https://storage.googleapis.com/my-new-quickbev-bucket/charter-roman-black-logo-no-words.png"
         elif init == True and drink_json:
-            # this is the initialization for creating the menu
+            # this is the initialization for creating the menu and adding the menu drinks to the database
             self.name = drink_json["name"]
             self.description = drink_json["description"]
             self.price = drink_json["price"]
@@ -294,6 +294,7 @@ class Merchant_Domain(object):
                 serialized_attributes[attribute_names[i]] = attributes[i]
         return serialized_attributes
 
+
 class Merchant_Employee_Domain(object):
     def __init__(self, merchant_employee_object=None, merchant_employee_json=None):
         self.id = ''
@@ -301,6 +302,8 @@ class Merchant_Employee_Domain(object):
         self.first_name = ''
         self.last_name = ''
         self.phone_number = ''
+        self.business_id = ''
+        self.merchant_id = ''
         self.stripe_id = ''
         if merchant_employee_object:
             self.id = merchant_employee_object.id
@@ -319,12 +322,13 @@ class Merchant_Employee_Domain(object):
                 self.is_administrator = True
 
         elif merchant_employee_json:
-            print("merchant_employee_json", merchant_employee_json)
-
+            print('merchant_employee_json', merchant_employee_json)
             self.id = merchant_employee_json["id"]
             self.password = merchant_employee_json["password"]
             self.first_name = merchant_employee_json["first_name"]
             self.last_name = merchant_employee_json["last_name"]
+            self.business_id = merchant_employee_json['business_id']
+            self.merchant_id = merchant_employee_json['merchant_id']
             self.phone_number = merchant_employee_json["phone_number"]
             # when the merchant_employee object is validated it wont be present initially
             if "stripe_id" in merchant_employee_json:

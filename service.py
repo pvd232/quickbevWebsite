@@ -208,10 +208,11 @@ class Merchant_Service(object):
             return Merchant_Repository().add_merchant(
                 session, requested_new_merchant)
 
+
 class Merchant_Employee_Service(object):
-    def create_stripe_account(self):
+    def create_stripe_account(self, merchant_employee_id):
         with session_scope() as session:
-            return Merchant_Employee_Repository().create_stripe_account(session)
+            return Merchant_Employee_Repository().create_stripe_account(session, merchant_employee_id)
 
     def authenticate_merchant_employee(self, email, password):
         with session_scope() as session:
@@ -226,9 +227,20 @@ class Merchant_Employee_Service(object):
 
     def add_merchant_employee(self, merchant_employee):
         with session_scope() as session:
-            requested_new_merchant_employee = Merchant_Employee_Domain(merchant_employee_json=merchant_employee)
+            requested_new_merchant_employee = Merchant_Employee_Domain(
+                merchant_employee_json=merchant_employee)
             return Merchant_Employee_Repository().add_merchant_employee(
                 session, requested_new_merchant_employee)
+
+    def authenticate_username(self, username,):
+        with session_scope() as session:
+            merchant_object = Merchant_Employee_Repository().authenticate_username(
+                session, username)
+            if merchant_object:
+                return True
+            else:
+                return False
+
 
 class Business_Service(object):
     def get_businesses(self):
@@ -269,6 +281,14 @@ class Business_Service(object):
             if menu:
                 menu = [Drink_Domain(drink_object=x) for x in menu]
             return menu
+
+    def get_business_phone_number(self, business_phone_number):
+        with session_scope() as session:
+            business_with_associated_phone_number = Business_Repository(
+            ).get_business_phone_number(session, business_phone_number)
+            business_domain = Business_Domain(
+                business_object=business_with_associated_phone_number)
+            return business_domain
 
 
 class Tab_Service(object):
