@@ -346,9 +346,9 @@ class Merchant_Employee_Domain(object):
             if attribute_names[i] == 'id':
                 serialized_attributes['id'] = str(self.id)
             elif attribute_names[i] == 'merchant_id':
-                serialized_attributes['merchant_id'] = str(self.id)
+                serialized_attributes['merchant_id'] = str(self.merchant_id)
             elif attribute_names[i] == 'business_id':
-                serialized_attributes['business_id'] = str(self.id)
+                serialized_attributes['business_id'] = str(self.business_id)
             else:
                 serialized_attributes[attribute_names[i]] = attributes[i]
         return serialized_attributes
