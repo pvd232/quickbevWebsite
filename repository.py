@@ -338,7 +338,7 @@ class Merchant_Repository(object):
 class Merchant_Employee_Repository(object):
     def get_stripe_account(self, session, merchant_employee_id):
         merchant_employee = session.query(Merchant_Employee).filter(
-            Merchant_Employee.id == merchant_employee_id)
+            Merchant_Employee.id == merchant_employee_id).first()
         return merchant_employee.stripe_id
 
     def authenticate_merchant_employee(self, session, email, password):
