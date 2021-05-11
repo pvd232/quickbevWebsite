@@ -602,16 +602,15 @@ def create_account_redirect():
 @app.route('/merchant_employee_stripe_account', methods=['GET'])
 def merchant_employee_stripe_account():
     headers = {}
-    merchant_id = request.args.get('merchant_employee_id')
-    # create a new stripe account with the stripe API in the backend and add it to the Merchant_Employee_Stripe_Account Table
-    new_account = Merchant_Employee_Service().create_stripe_account(merchant_id)
+    merchant_employee_id = request.args.get('merchant_employee_id')
+    stripe_id = Merchant_Employee_Service().get_stripe_account(merchant_employee_id)
     account_links = stripe.AccountLink.create(
-        account=new_account.id,
+        account=stripe_id,
         refresh_url='https://quickbev.uc.r.appspot.com/merchant-employee-payout-setup-callback',
         return_url='https://quickbev.uc.r.appspot.com/merchant-employee-payout-setup-callback-complete',
         type='account_onboarding',
     )
-    headers["stripe_id"] = new_account.id
+    headers["stripe_id"] = stripe_id
     headers["Access-Control-Allow-Origin"] = request.origin
     headers["Access-Control-Expose-Headers"] = "*"
 

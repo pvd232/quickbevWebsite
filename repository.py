@@ -336,19 +336,10 @@ class Merchant_Repository(object):
 
 
 class Merchant_Employee_Repository(object):
-    # def create_stripe_account(self, session, merchant_employee_id):
-    #     new_account = stripe.Account.create(
-    #         type="standard",
-    #         country="US"
-    #     )
-    #     new_stripe_account_id = Merchant_Employee_Stripe_Account(
-    #         id=new_account.id)
-    #     session.add(new_stripe_account_id)
-    #     merchant_employee_to_update = session.query(Merchant_Employee).filter(
-    #         Merchant_Employee.id == merchant_employee_id).first()
-    #     if merchant_employee_to_update:
-    #         merchant_employee_to_update.stripe_id = new_stripe_account_id.id
-    #     return new_account
+    def create_stripe_account(self, session, merchant_employee_id):
+        merchant_employee = session.query(Merchant_Employee).filter(
+            Merchant_Employee.id == merchant_employee_id)
+        return merchant_employee.stripe_id
 
     def authenticate_merchant_employee(self, session, email, password):
         for merchant_employee in session.query(Merchant_Employee):
