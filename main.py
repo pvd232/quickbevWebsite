@@ -157,30 +157,6 @@ def orders(session_token):
         order_service.create_order(new_order)
         response['msg'] = 'you good bruh'
         return Response(status=200, response=json.dumps(response))
-    if request.method == 'OPTIONS':
-        headers["Access-Control-Allow-Origin"] = request.origin
-        headers["Access-Control-Allow-Headers"] = request.headers.get(
-            'Access-Control-Request-Headers')
-        headers["Access-Control-Allow-Credentials"] = "true"
-
-        headers["Access-Control-Expose-Headers"] = "*"
-
-        return Response(status=200, headers=headers)
-
-
-@app.route('/order/<string:session_token>', methods=['POST', 'GET', 'OPTIONS'])
-def orders(session_token):
-    headers = {}
-    if not jwt.decode(session_token, secret, algorithms=["HS256"]):
-        return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
-    response = {}
-    order_service = Order_Service()
-    if request.method == 'POST':
-        new_order = request.json
-        order_service = Order_Service()
-        order_service.create_order(new_order)
-        response['msg'] = 'you good bruh'
-        return Response(status=200, response=json.dumps(response))
     elif request.method == 'OPTIONS':
         headers["Access-Control-Allow-Origin"] = request.origin
         headers["Access-Control-Allow-Headers"] = request.headers.get(
@@ -205,7 +181,6 @@ def orders(session_token):
                       for x in order_service.get_merchant_orders(username=merchant_employee_id)]
 
         else:
-
             username = base64.b64decode(
                 request.headers.get(
                     "Authorization").split(" ")[1]).decode("utf-8").split(":")[0]
