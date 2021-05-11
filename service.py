@@ -210,7 +210,7 @@ class Merchant_Service(object):
 
 
 class Merchant_Employee_Service(object):
-    def create_stripe_account(self, merchant_employee_id):
+    def get_stripe_account(self, merchant_employee_id):
         with session_scope() as session:
             return Merchant_Employee_Repository().create_stripe_account(session, merchant_employee_id)
 
