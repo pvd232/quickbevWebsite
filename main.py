@@ -178,10 +178,15 @@ def orders(session_token):
         merchant_id = request.headers.get('Merchant')
         print('merchant_id', merchant_id)
         if merchant_id:
+            print('merchant id exists')
             filter_orders_by = request.headers.get('Filterby')
+            print('filter_orders_by', filter_orders_by)
             orders = [x.dto_serialize()
                       for x in order_service.get_merchant_orders(username=merchant_id)]
-
+            for order in orders:
+                print()
+                print('order', order)
+                print()
         else:
             username = base64.b64decode(
                 request.headers.get(
