@@ -607,7 +607,7 @@ def merchant_employee_stripe_account():
     account_links = stripe.AccountLink.create(
         account=stripe_id,
         refresh_url='https://quickbev.uc.r.appspot.com/merchant-employee-payout-setup-callback',
-        return_url='https://quickbev.uc.r.appspot.com/merchant-employee-payout-setup-callback-complete',
+        return_url='https://quickbev.uc.r.appspot.com/merchant-employee-payout-setup-complete',
         type='account_onboarding',
     )
     headers["stripe_id"] = stripe_id
