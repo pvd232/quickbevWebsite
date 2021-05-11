@@ -527,7 +527,10 @@ def merchant_employee_login():
     merchant_employee_service = Merchant_Employee_Service()
     new_merchant = merchant_employee_service.authenticate_merchant_employee(
         email=request_data['email'], password=request_data['password'])
-    return Response(status=200, response=json.dumps(new_merchant))
+    if new_merchant != False:
+        return Response(status=200, response=json.dumps(new_merchant))
+    else:
+        return Response(status=400)
 
 
 @app.route('/business_phone_number', methods=['GET'])

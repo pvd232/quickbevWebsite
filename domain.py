@@ -307,19 +307,15 @@ class Merchant_Employee_Domain(object):
         self.stripe_id = ''
         if merchant_employee_object:
             self.id = merchant_employee_object.id
+            self.merchant_id = merchant_employee_object.merchant_id
+            self.business_id = merchant_employee_object.business_id
             self.password = merchant_employee_object.password
             self.first_name = merchant_employee_object.first_name
             self.last_name = merchant_employee_object.last_name
             self.phone_number = merchant_employee_object.phone_number
-            self.number_of_businesses = merchant_employee_object.number_of_businesses
             # stripe ID is in an associative table now so if a vanilla merchant_employee object is returned then it wont have the stripe id
             if 'stripe_id' in merchant_employee_object.__dict__:
                 self.stripe_id = merchant_employee_object.stripe_id
-            print("check_password_hash(merchant_employee_object.password, 'a')",
-                  check_password_hash(merchant_employee_object.password, 'a'))
-
-            if check_password_hash(merchant_employee_object.password, 'a'):
-                self.is_administrator = True
 
         elif merchant_employee_json:
             print('merchant_employee_json', merchant_employee_json)
