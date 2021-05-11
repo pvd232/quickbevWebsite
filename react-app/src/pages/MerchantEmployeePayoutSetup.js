@@ -42,6 +42,8 @@ const MerchantEmployeePayoutSetup = (props) => {
         style={{
           justifyContent: "center",
           height: "100vh",
+          marginTop: "0",
+          marginBottom: "0",
         }}
       >
         <Col
@@ -53,6 +55,7 @@ const MerchantEmployeePayoutSetup = (props) => {
             justifyContent: "center",
             display: "flex",
             backgroundColor: "white",
+            height: "100vh",
           }}
         >
           <div className="text-center box">
