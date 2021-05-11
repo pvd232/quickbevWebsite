@@ -212,7 +212,7 @@ class Merchant_Service(object):
 class Merchant_Employee_Service(object):
     def get_stripe_account(self, merchant_employee_id):
         with session_scope() as session:
-            return Merchant_Employee_Repository().create_stripe_account(session, merchant_employee_id)
+            return Merchant_Employee_Repository().get_stripe_account(session, merchant_employee_id)
 
     def authenticate_merchant_employee(self, email, password):
         with session_scope() as session:
