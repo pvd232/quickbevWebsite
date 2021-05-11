@@ -501,13 +501,8 @@ def create_payment_intent(session_token):
     return Response(status=200, response=json.dumps(response))
 
 
-# def allowed_file(filename):
-#     return '.' in filename and \
-#            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
 @app.route('/merchant_employee_login', methods=['POST', 'OPTIONS'])
 def merchant_employee_login():
-    response = {"msg": ""}
     headers = {}
     if request.method == 'OPTIONS':
         headers["Access-Control-Allow-Origin"] = request.origin
@@ -525,10 +520,13 @@ def merchant_employee_login():
     request_data = json.loads(request.data)
 
     merchant_employee_service = Merchant_Employee_Service()
-    new_merchant = merchant_employee_service.authenticate_merchant_employee(
+    new_merchant_employee = merchant_employee_service.authenticate_merchant_employee(
         email=request_data['email'], password=request_data['password'])
-    if new_merchant != False:
-        return Response(status=200, response=json.dumps(new_merchant.dto_serialize()))
+    if new_merchant_employee != False:
+        headers["jwt_token"] = jwt.encode(
+            {"sub": new_merchant_employee.id}, key=secret, algorithm="HS256")
+
+        return Response(status=200, response=json.dumps(new_merchant_employee.dto_serialize()), headers=headers)
     else:
         return Response(status=400)
 
