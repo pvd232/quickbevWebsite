@@ -497,7 +497,7 @@ def create_payment_intent(session_token):
 #            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @app.route('/merchant_employee_login', methods=['POST', 'OPTIONS'])
-def create_account():
+def merchant_employee_login():
     response = {"msg": ""}
     headers = {}
     if request.method == 'OPTIONS':
@@ -531,7 +531,8 @@ def business_phone_number():
     else:
         # if the business phone exists then the business id will be returned
         return Response(status=200, response=json.dumps(business_phone_number_status.dto_serialize()))
-        
+
+
 @app.route('/create-account', methods=['POST', 'OPTIONS'])
 def create_account():
     response = {"msg": ""}
@@ -585,7 +586,7 @@ def create_account():
 def create_account_redirect():
     response = {"msg": ""}
     headers = {}
-    business_service = Business_Service ()
+    business_service = Business_Service()
     request_json = json.loads(request.data)
     business_to_update = request_json["business"]
     if business_service.update_business(business_to_update):
@@ -596,6 +597,7 @@ def create_account_redirect():
     else:
         response["msg"] = "Failed to update business"
         return Response(status=500, response=json.dumps(response))
+
 
 @app.route('/merchant_employee_stripe_account', methods=['GET'])
 def merchant_employee_stripe_account():
@@ -635,15 +637,6 @@ def merchant_employee():
         else:
             return Response(status=200)
 
-@app.route('/merchant-employee', methods=['POST'])
-def merchant_employee():
-    print('request received')
-    response = {"msg": ""}
-    headers = {}
-    request_json = json.loads(request.data)
-    print('request_json', request_json)
-    response["msg"] = "hello world"
-    return Response(status=200, response=json.dumps(response))
 
 @app.route('/merchant', methods=['GET', 'OPTIONS'])
 def authenticate_merchant():
@@ -775,4 +768,4 @@ def add_menu():
 
 
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=8080, debug=True)
+    app.run()
