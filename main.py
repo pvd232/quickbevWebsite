@@ -175,12 +175,12 @@ def orders(session_token):
         headers["Access-Control-Expose-Headers"] = "*"
         # for tablet get request
         print('request.headers', request.headers)
-        merchant_employee_id = request.headers.get('merchant_employee_id')
-        print('merchant_employee_id', merchant_employee_id)
-        if merchant_employee_id:
+        merchant_id = request.headers.get('merchant_id')
+        print('merchant_id', merchant_id)
+        if merchant_id:
             filter_orders_by = request.headers.get('filterby')
             orders = [x.dto_serialize()
-                      for x in order_service.get_merchant_orders(username=merchant_employee_id)]
+                      for x in order_service.get_merchant_orders(username=merchant_id)]
 
         else:
             username = base64.b64decode(
