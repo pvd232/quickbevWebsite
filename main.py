@@ -166,7 +166,22 @@ def orders(session_token):
         headers["Access-Control-Expose-Headers"] = "*"
 
         return Response(status=200, headers=headers)
-    if request.method == "GET":
+
+
+@app.route('/order/<string:session_token>', methods=['POST', 'GET', 'OPTIONS'])
+def orders(session_token):
+    headers = {}
+    if not jwt.decode(session_token, secret, algorithms=["HS256"]):
+        return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
+    response = {}
+    order_service = Order_Service()
+    if request.method == 'POST':
+        new_order = request.json
+        order_service = Order_Service()
+        order_service.create_order(new_order)
+        response['msg'] = 'you good bruh'
+        return Response(status=200, response=json.dumps(response))
+    elif request.method == 'OPTIONS':
         headers["Access-Control-Allow-Origin"] = request.origin
         headers["Access-Control-Allow-Headers"] = request.headers.get(
             'Access-Control-Request-Headers')
@@ -174,24 +189,43 @@ def orders(session_token):
 
         headers["Access-Control-Expose-Headers"] = "*"
 
-        username = base64.b64decode(
-            request.headers.get(
-                "Authorization").split(" ")[1]).decode("utf-8").split(":")[0]
-        filter_orders_by = request.headers.get('filterBy')
-        orders = []
-        if filter_orders_by == 'merchant':
-            orders = [x.dto_serialize()
-                      for x in order_service.get_merchant_orders(username=username)]
-            if len(orders) == 0:
-                # dummy data to populate orders table if the merchant has no orders
-                dummy_order = Order_Domain()
-                orders.append(dummy_order.dto_serialize())
-                print("orders", orders)
+        return Response(status=200, headers=headers)
+    elif request.method == "GET":
+        headers["Access-Control-Allow-Origin"] = request.origin
+        headers["Access-Control-Allow-Headers"] = request.headers.get(
+            'Access-Control-Request-Headers')
+        headers["Access-Control-Allow-Credentials"] = "true"
 
-        elif filter_orders_by == 'customer':
-            orders = order_service.get_merchant_orders(username=username)
+        headers["Access-Control-Expose-Headers"] = "*"
+        # for tablet get request
+        merchant_employee_id = request.headers.get('merchant_employee_id')
+        if merchant_employee_id:
+            filter_orders_by = request.headers.get('filterBy')
+            orders = [x.dto_serialize()
+                      for x in order_service.get_merchant_orders(username=merchant_employee_id)]
+
+        else:
+
+            username = base64.b64decode(
+                request.headers.get(
+                    "Authorization").split(" ")[1]).decode("utf-8").split(":")[0]
+
+            filter_orders_by = request.headers.get('filterBy')
+            orders = []
+            if filter_orders_by == 'merchant':
+                orders = [x.dto_serialize()
+                          for x in order_service.get_merchant_orders(username=username)]
+                if len(orders) == 0:
+                    # dummy data to populate orders table if the merchant has no orders
+                    dummy_order = Order_Domain()
+                    orders.append(dummy_order.dto_serialize())
+                    print("orders", orders)
+
+            elif filter_orders_by == 'customer':
+                orders = order_service.get_merchant_orders(username=username)
         response['orders'] = orders
-        return Response(status=200, response=json.dumps(response), headers=headers)
+
+    return Response(status=200, response=json.dumps(response), headers=headers)
 
 
 def send_confirmation_email(jwt_token, customer):
