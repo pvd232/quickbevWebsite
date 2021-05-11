@@ -175,10 +175,10 @@ def orders(session_token):
         headers["Access-Control-Expose-Headers"] = "*"
         # for tablet get request
         print('request.headers', request.headers)
-        merchant_id = request.headers.get('merchant_id')
+        merchant_id = request.headers.get('Merchant')
         print('merchant_id', merchant_id)
         if merchant_id:
-            filter_orders_by = request.headers.get('filterby')
+            filter_orders_by = request.headers.get('Filterby')
             orders = [x.dto_serialize()
                       for x in order_service.get_merchant_orders(username=merchant_id)]
 
@@ -187,7 +187,7 @@ def orders(session_token):
                 request.headers.get(
                     "Authorization").split(" ")[1]).decode("utf-8").split(":")[0]
 
-            filter_orders_by = request.headers.get('filterby')
+            filter_orders_by = request.headers.get('Filterby')
             orders = []
             if filter_orders_by == 'merchant':
                 orders = [x.dto_serialize()
