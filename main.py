@@ -528,7 +528,7 @@ def merchant_employee_login():
     new_merchant = merchant_employee_service.authenticate_merchant_employee(
         email=request_data['email'], password=request_data['password'])
     if new_merchant != False:
-        return Response(status=200, response=json.dumps(new_merchant))
+        return Response(status=200, response=json.dumps(new_merchant.dto_serialize()))
     else:
         return Response(status=400)
 
