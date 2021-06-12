@@ -37,7 +37,6 @@ def session_scope():
         yield session
         session.commit()
     except Exception as e:
-        print("service exception", e)
         session.rollback()
         raise e
     finally:
@@ -74,6 +73,11 @@ class Drink_Service(object):
 
 
 class Order_Service(object):
+    def update_order(self, order):
+        with session_scope() as session:
+            new_order_domain = Order_Domain(order_json=order)
+            Order_Repository().update_order(session, new_order_domain)
+
     def create_order(self, order):
         with session_scope() as session:
             new_order_domain = Order_Domain(order_json=order)
@@ -96,6 +100,16 @@ class Order_Service(object):
         with session_scope() as session:
             orders, drinks = Order_Repository().get_merchant_orders(
                 session, username)
+            for order in orders:
+                order_domain = Order_Domain(order_object=order, drinks=drinks)
+                response.append(order_domain)
+            return response
+
+    def get_business_orders(self, business_id):
+        response = []
+        with session_scope() as session:
+            orders, drinks = Order_Repository().get_business_orders(
+                session, business_id)
             for order in orders:
                 order_domain = Order_Domain(order_object=order, drinks=drinks)
                 response.append(order_domain)
@@ -225,6 +239,34 @@ class Merchant_Employee_Service(object):
             else:
                 return False
 
+    def validate_pin_number(self, business_id, pin_number):
+        with session_scope() as session:
+            pin_status = Merchant_Employee_Repository().validate_pin_number(session,
+                                                                            business_id, pin_number)
+            return pin_status
+
+    def authenticate_pin_number(self, merchant_employee_id, pin_number, login_status):
+        with session_scope() as session:
+            merchant_employee_object = Merchant_Employee_Repository().authenticate_pin_number(
+                session, merchant_employee_id, pin_number, login_status)
+            if merchant_employee_object:
+                merchant_employee_domain = Merchant_Employee_Domain(
+                    merchant_employee_object=merchant_employee_object)
+                return merchant_employee_domain
+            else:
+                return False
+
+    def reset_pin_number(self, merchant_employee_id, pin_number):
+        with session_scope() as session:
+            merchant_employee_object = Merchant_Employee_Repository().reset_pin_number(
+                session, merchant_employee_id, pin_number)
+            if merchant_employee_object:
+                merchant_employee_domain = Merchant_Employee_Domain(
+                    merchant_employee_object=merchant_employee_object)
+                return merchant_employee_domain
+            else:
+                return False
+
     def add_merchant_employee(self, merchant_employee):
         with session_scope() as session:
             requested_new_merchant_employee = Merchant_Employee_Domain(
@@ -243,6 +285,20 @@ class Merchant_Employee_Service(object):
 
 
 class Business_Service(object):
+    def authenticate_business(self, business_id):
+        with session_scope() as session:
+            business_status = Business_Repository().authenticate_business(
+                session, business_id)
+            return business_status
+
+    def update_device_token(self, device_token, business_id):
+        with session_scope() as session:
+            return Business_Repository().update_device_token(session, device_token, business_id)
+
+    def get_device_token(self, business_id):
+        with session_scope() as session:
+            return Business_Repository().get_device_token(session, business_id)
+
     def get_businesses(self):
         with session_scope() as session:
             response = []
@@ -395,8 +451,6 @@ class Google_Cloud_Storage_API(object):
         return True
 
     def upload_drink_image_file(self, drink):
-        print("drink", drink.dto_serialize())
-
         """Uploads a file to the bucket."""
         # bucket_name = "your-bucket-name"
         # file = "local/path/to/file" this will be the business folder, with a folder named after the business' unique id, which will have the menu file in it

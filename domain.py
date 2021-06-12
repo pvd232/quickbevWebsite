@@ -43,14 +43,6 @@ class Drink_Domain(object):
             self.business_id = drink_json["business_id"]
             self.quantity = drink_json["quantity"]
 
-    def serialize(self):
-        attribute_names = list(self.__dict__.keys())
-        attributes = list(self.__dict__.values())
-        serialized_attributes = {}
-        for i in range(len(attributes)):
-            serialized_attributes[attribute_names[i]] = attributes[i]
-        return serialized_attributes
-
     def dto_serialize(self):
         attribute_names = list(self.__dict__.keys())
         attributes = list(self.__dict__.values())
@@ -67,6 +59,8 @@ class Order_Domain(object):
     def __init__(self, order_object=None, order_json=None, drinks=None):
         self.id = ''
         self.customer_id = ''
+        self.customer_first_name = ''
+        self.customer_last_name = ''
         self.cost = 0
         self.subtotal = 0
         self.tip_percentage = 0
@@ -82,11 +76,16 @@ class Order_Domain(object):
         self.business_id = ''
         self.business_address = ''
         self.order_drink = []
+        self.completed = False
+        self.rejected = False
+        self.refunded = False
         if order_object:
             # these attributes were from the join and are not nested in the result object
             self.business_name = order_object.business_name
             self.business_id = order_object.business_id
             self.business_address = order_object.business_address
+            self.customer_first_name = order_object.customer_first_name
+            self.customer_last_name = order_object.customer_last_name
             # the order db model object is nested inside the result as "Order"
             self.id = order_object.Order.id
             self.customer_id = order_object.Order.customer_id
@@ -100,14 +99,15 @@ class Order_Domain(object):
             # formatted date string
             self.date_time = order_object.Order.date_time.strftime(
                 "%m/%d/%Y")
-
+            self.merchant_stripe_id = order_object.Order.merchant_stripe_id
             self.order_drink = Order_Drink_Domain(
                 order_id=order_object.Order.id, order_drink_object=order_object.Order.order_drink, drinks=drinks)
+            self.completed = order_object.Order.completed
+            self.rejected = order_object.Order.rejected
+            self.refunded = order_object.Order.refunded
         elif order_json:
             self.id = order_json["id"]
-            self.customer = Customer_Domain(
-                customer_json=order_json["customer"])
-            self.customer_id = self.customer.id
+            self.customer_id = order_json['customer_id']
             self.merchant_stripe_id = order_json["merchant_stripe_id"]
             self.cost = order_json["cost"]
             self.subtotal = order_json["subtotal"]
@@ -115,17 +115,13 @@ class Order_Domain(object):
             self.tip_amount = order_json["tip_amount"]
             self.sales_tax_percentage = order_json["sales_tax_percentage"]
             self.business_id = order_json["business_id"]
-            self.date_time = datetime.fromtimestamp(order_json["date_time"])
+            self.date_time = datetime.fromtimestamp(
+                int(order_json["date_time"]))
             self.order_drink = Order_Drink_Domain(
                 order_id=self.id, order_drink_json=order_json['order_drink'])
-
-    def serialize(self):
-        attribute_names = list(self.__dict__.keys())
-        attributes = list(self.__dict__.values())
-        serialized_attributes = {}
-        for i in range(len(attributes)):
-            serialized_attributes[attribute_names[i]] = attributes[i]
-        return serialized_attributes
+            self.completed = order_json["completed"]
+            self.rejected = order_json["rejected"]
+            self.refunded = order_json["refunded"]
 
     def dto_serialize(self):
         attribute_names = list(self.__dict__.keys())
@@ -168,14 +164,6 @@ class Order_Drink_Domain(object):
                         if drink.id == drink_domain.id:
                             drink.quantity += drink_domain.quantity
 
-    def serialize(self):
-        attribute_names = list(self.__dict__.keys())
-        attributes = list(self.__dict__.values())
-        serialized_attributes = {}
-        for i in range(len(attributes)):
-            serialized_attributes[attribute_names[i]] = attributes[i]
-        return serialized_attributes
-
     def dto_serialize(self):
         serialized_attributes = {}
         serialized_attributes['order_id'] = str(self.order_id)
@@ -215,14 +203,6 @@ class Customer_Domain(object):
             self.last_name = customer_json["last_name"]
             self.stripe_id = customer_json["stripe_id"]
 
-    def serialize(self):
-        attribute_names = list(self.__dict__.keys())
-        attributes = list(self.__dict__.values())
-        serialized_attributes = {}
-        for i in range(len(attributes)):
-            serialized_attributes[attribute_names[i]] = attributes[i]
-        return serialized_attributes
-
     def dto_serialize(self):
         attribute_names = list(self.__dict__.keys())
         attributes = list(self.__dict__.values())
@@ -254,15 +234,11 @@ class Merchant_Domain(object):
             # stripe ID is in an associative table now so if a vanilla merchant object is returned then it wont have the stripe id
             if 'stripe_id' in merchant_object.__dict__:
                 self.stripe_id = merchant_object.stripe_id
-            print("check_password_hash(merchant_object.password, 'a')",
-                  check_password_hash(merchant_object.password, 'a'))
 
             if check_password_hash(merchant_object.password, 'a'):
                 self.is_administrator = True
 
         elif merchant_json:
-            print("merchant_json", merchant_json)
-
             self.id = merchant_json["id"]
             self.password = merchant_json["password"]
             self.first_name = merchant_json["first_name"]
@@ -274,14 +250,6 @@ class Merchant_Domain(object):
             # when the merchant object is validated it wont be present initially
             if "stripe_id" in merchant_json:
                 self.stripe_id = merchant_json["stripe_id"]
-
-    def serialize(self):
-        attribute_names = list(self.__dict__.keys())
-        attributes = list(self.__dict__.values())
-        serialized_attributes = {}
-        for i in range(len(attributes)):
-            serialized_attributes[attribute_names[i]] = attributes[i]
-        return serialized_attributes
 
     def dto_serialize(self):
         attribute_names = list(self.__dict__.keys())
@@ -298,45 +266,40 @@ class Merchant_Domain(object):
 class Merchant_Employee_Domain(object):
     def __init__(self, merchant_employee_object=None, merchant_employee_json=None):
         self.id = ''
-        self.password = ''
+        self.pin_number = ''
         self.first_name = ''
         self.last_name = ''
         self.phone_number = ''
+        self.pin_number = ''
         self.business_id = ''
         self.merchant_id = ''
         self.stripe_id = ''
+        self.logged_in = ''
         if merchant_employee_object:
             self.id = merchant_employee_object.id
             self.merchant_id = merchant_employee_object.merchant_id
             self.business_id = merchant_employee_object.business_id
-            self.password = merchant_employee_object.password
+            self.pin_number = merchant_employee_object.pin_number
             self.first_name = merchant_employee_object.first_name
             self.last_name = merchant_employee_object.last_name
             self.phone_number = merchant_employee_object.phone_number
+            self.logged_in = merchant_employee_object.logged_in
             # stripe ID is in an associative table now so if a vanilla merchant_employee object is returned then it wont have the stripe id
             if 'stripe_id' in merchant_employee_object.__dict__:
                 self.stripe_id = merchant_employee_object.stripe_id
 
         elif merchant_employee_json:
-            print('merchant_employee_json', merchant_employee_json)
             self.id = merchant_employee_json["id"]
-            self.password = merchant_employee_json["password"]
+            self.pin_number = merchant_employee_json["pin_number"]
             self.first_name = merchant_employee_json["first_name"]
             self.last_name = merchant_employee_json["last_name"]
             self.business_id = merchant_employee_json['business_id']
             self.merchant_id = merchant_employee_json['merchant_id']
             self.phone_number = merchant_employee_json["phone_number"]
+            self.logged_in = merchant_employee_json['logged_in']
             # when the merchant_employee object is validated it wont be present initially
             if "stripe_id" in merchant_employee_json:
                 self.stripe_id = merchant_employee_json["stripe_id"]
-
-    def serialize(self):
-        attribute_names = list(self.__dict__.keys())
-        attributes = list(self.__dict__.values())
-        serialized_attributes = {}
-        for i in range(len(attributes)):
-            serialized_attributes[attribute_names[i]] = attributes[i]
-        return serialized_attributes
 
     def dto_serialize(self):
         attribute_names = list(self.__dict__.keys())
@@ -423,14 +386,6 @@ class Business_Domain(object):
                 self.menu_url = None
             self.tablet = business_json["tablet"]
             self.phone_number = business_json["phone_number"]
-
-    def serialize(self):
-        attribute_names = list(self.__dict__.keys())
-        attributes = list(self.__dict__.values())
-        serialized_attributes = {}
-        for i in range(len(attributes)):
-            serialized_attributes[attribute_names[i]] = attributes[i]
-        return serialized_attributes
 
     def dto_serialize(self):
         attribute_names = list(self.__dict__.keys())

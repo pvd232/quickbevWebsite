@@ -29,6 +29,15 @@ class Drink_Repository(object):
 
 
 class Order_Repository(object):
+    def update_order(self, session, order):
+        database_order = session.query(Order).filter(
+            Order.id == order.id).first()
+        if database_order:
+            database_order.completed = order.completed
+            database_order.rejected = order.rejected
+            database_order.refunded = order.refunded
+            return
+
     def post_order(self, session, order):
         # calculate order values on backend to prevent malicious clients
         cost = 0
@@ -66,7 +75,14 @@ class Order_Repository(object):
 
     def get_merchant_orders(self, session, username):
         orders = session.query(Order, Business.id.label("business_id"),  # select from allows me to pull the entire Order from the database so I can get the Order_Drink relationship values
-                               Business.address.label("business_address"), Business.name.label("business_name")).select_from(Order).join(Business, Order.business_id == Business.id).filter(Business.merchant_id == username).all()
+                               Business.address.label("business_address"), Business.name.label("business_name"), Customer.first_name.label('customer_first_name'), Customer.last_name.label('customer_last_name')).select_from(Order).join(Business, Order.business_id == Business.id).join(Customer, Order.customer_id == Customer.id).filter(Business.merchant_id == username).all()
+
+        drinks = session.query(Drink)
+        return orders, drinks
+
+    def get_business_orders(self, session, business_id):
+        orders = session.query(Order, Business.id.label("business_id"),  # select from allows me to pull the entire Order from the database so I can get the Order_Drink relationship values
+                               Business.address.label("business_address"), Business.name.label("business_name"), Customer.first_name.label('customer_first_name'), Customer.last_name.label('customer_last_name')).select_from(Order).join(Business, Order.business_id == Business.id).join(Customer, Order.customer_id == Customer.id).filter(Business.id == business_id).all()
 
         drinks = session.query(Drink)
         return orders, drinks
@@ -111,6 +127,19 @@ class Order_Repository(object):
         merchant_stripe_id = order.merchant_stripe_id
         service_fee = int(round(.1 * amount, 2))
 
+        #get the list of merchant_employees that are clocked in when the sale was made and give them each an equal part of the tip
+        servers = session.query(Merchant_Employee).filter(Merchant_Employee.business_id == order.business_id, Merchant_Employee.logged_in == True)
+        for server in servers:
+            tip_per_server = tip_amount/len(servers)
+
+            #create a direct charge that is sourced from the customer and sent to the merchant
+            tip_payment_intent =  stripe.PaymentIntent.create(
+            amount=tip_per_server,
+            customer=order.customer.stripe_id,
+            setup_future_usage='on_session',
+            currency='usd',
+           stripe_account=server.stripe_id
+        )
         payment_intent = stripe.PaymentIntent.create(
             amount=amount,
             customer=order.customer.stripe_id,
@@ -202,6 +231,7 @@ class Customer_Repository(object):
         customer_to_update = session.query(Customer).filter(
             Customer.id == customer_id).first()
         if customer_to_update:
+            customer_to_update.device_token = device_token
             return True
         else:
             return False
@@ -253,6 +283,14 @@ class Customer_Repository(object):
 
 
 class Business_Repository(object):
+    def authenticate_business(self, session, business_id):
+        business_status = session.query(Business).filter(
+            Business.id == business_id).first()
+        if business_status:
+            return True
+        else:
+            return False
+
     def get_businesses(self, session):
         businesses = session.query(Business).all()
         return businesses
@@ -299,6 +337,24 @@ class Business_Repository(object):
         else:
             return False
 
+    def update_device_token(self, session, device_token, business_id):
+        business_to_update = session.query(Business).filter(
+            Business.id == business_id).first()
+        if business_to_update:
+            business_to_update.device_token = device_token
+            return True
+        else:
+            return False
+
+    def get_device_token(self, session, business_id):
+        requested_business = session.query(Business).filter(
+            Business.id == business_id).first()
+        if requested_business:
+            device_token = requested_business.device_token
+            return device_token
+        else:
+            return False
+
 
 class Tab_Repository(object):
     def post_tab(self, session, tab):
@@ -320,7 +376,7 @@ class Merchant_Repository(object):
 
     def authenticate_merchant(self, session, email, password):
         for merchant in session.query(Merchant):
-            if merchant.id == email and check_password_hash(merchant.password, password):
+            if merchant.id == email and check_password_hash(merchant.password, password) == True:
                 return merchant
         else:
             return False
@@ -347,6 +403,35 @@ class Merchant_Employee_Repository(object):
                 return merchant_employee
         else:
             return False
+    
+    # this validates that the pin number is unique for the tablet upon which the merchant employee is registering
+    def validate_pin_number(self, session, business_id, pin_number):
+        for merchant_employee in session.query(Merchant_Employee).filter(Merchant_Employee.business_id == business_id):
+            if check_password_hash(merchant_employee.pin_number, pin_number) == True:
+                return False
+        return True
+
+    def authenticate_pin_number(self, session, merchant_employee_id, pin_number, login_status):
+        for merchant_employee in session.query(Merchant_Employee):
+            if merchant_employee.id == merchant_employee_id:
+                if check_password_hash(merchant_employee.pin_number, pin_number) == True:
+                    merchant_employee.logged_in = login_status
+                    return merchant_employee
+        else:
+            return False
+
+    def reset_pin_number(self, session, merchant_employee_id, pin_number):
+        for merchant_employee in session.query(Merchant_Employee):
+            if merchant_employee.id == merchant_employee_id:
+                print('merchant_employee.id', merchant_employee.id)
+                print('merchant_employee_id', merchant_employee_id)
+                merchant_employee.pin_number = generate_password_hash(
+                    pin_number)
+                print('pin_number', pin_number)
+                print('merchant_employee', merchant_employee.serialize)
+                return merchant_employee
+        else:
+            return False
 
     def authenticate_username(self, session, username):
         # if a username is passed then we query the db to verify it, if the hashed version is passed then we use the check_password_hash to verify it
@@ -365,7 +450,7 @@ class Merchant_Employee_Repository(object):
         new_stripe_account_id = Merchant_Employee_Stripe_Account(
             id=new_account.id)
         session.add(new_stripe_account_id)
-        new_merchant_employee = Merchant_Employee(id=requested_merchant_employee.id, password=generate_password_hash(requested_merchant_employee.password), first_name=requested_merchant_employee.first_name,
+        new_merchant_employee = Merchant_Employee(id=requested_merchant_employee.id, pin_number=generate_password_hash(requested_merchant_employee.pin_number), first_name=requested_merchant_employee.first_name,
                                                   last_name=requested_merchant_employee.last_name, phone_number=requested_merchant_employee.phone_number, merchant_id=requested_merchant_employee.merchant_id, business_id=requested_merchant_employee.business_id, stripe_id=new_account.id)
         requested_merchant_employee.stripe_id = new_account.id
         session.add(new_merchant_employee)
@@ -379,18 +464,12 @@ class ETag_Repository():
 
     def update_etag(self, session, category):
         etag = session.query(ETag).filter(ETag.category == category).first()
-        print('etag.id', etag.id)
         etag.id += 1
-        print('etag.id', etag.id)
         return etag.id
 
     def validate_etag(self, session, etag):
-        print('etag', etag)
-        print('etag["category"]', etag["category"])
-        print('etag["id"]', etag["id"])
         validation = session.query(ETag).filter(
             ETag.category == etag["category"], ETag.id == etag["id"]).first()
-        print('validation', validation)
         if validation:
             return True
         else:

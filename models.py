@@ -80,6 +80,7 @@ class Business(db.Model):
     sales_tax_rate = db.Column(db.Float(), nullable=False)
     is_active = db.Column(db.Boolean(), default=True, nullable=False)
     tablet = db.Column(db.Boolean(), nullable=False)
+    device_token = db.Column(db.String(200), nullable=True)
     phone_number = db.Column(db.BigInteger(), nullable=False)
     # not all businesses will have a menu URL or file upload, but they could be specific to each business
     menu_url = db.Column(db.String(80), nullable=True)
@@ -109,11 +110,12 @@ class Merchant_Employee(db.Model):
     __tablename__ = 'merchant_employee'
     id = db.Column(db.String(80), primary_key=True,
                    unique=True, nullable=False)
-    password = db.Column(db.String(200), nullable=False)
+    pin_number = db.Column(db.String(200), nullable=False)
     first_name = db.Column(db.String(80), nullable=False)
     last_name = db.Column(db.String(80), nullable=False)
     phone_number = db.Column(db.BigInteger(), nullable=False)
     is_active = db.Column(db.Boolean(), default=True, nullable=False)
+    logged_in = db.Column(db.Boolean(), default=False, nullable=False)
     business_id = db.Column(UUID(as_uuid=True), db.ForeignKey(
         "business.id"),  nullable=False)
     merchant_id = db.Column(db.String(80), db.ForeignKey(
@@ -177,7 +179,7 @@ class Customer(db.Model):
     email_verified = db.Column(db.Boolean(), nullable=False)
     has_registered = db.Column(db.Boolean(), nullable=False)
     is_active = db.Column(db.Boolean(), default=True, nullable=False)
-    device_token = db.Column(db.String(80), nullable=True)
+    device_token = db.Column(db.String(200), nullable=True)
     order = relationship('Order', lazy=True, backref="order")
     tab = relationship('Tab', lazy=True, backref="tab")
 
@@ -209,6 +211,9 @@ class Order(db.Model):
     tip_amount = db.Column(db.Float(), nullable=False)
     service_fee = db.Column(db.Float(), nullable=False)
     date_time = db.Column(db.Date, nullable=False)
+    completed = db.Column(db.Boolean(), default=False, nullable=True)
+    rejected = db.Column(db.Boolean(), default=False, nullable=True)
+    refunded = db.Column(db.Boolean(), default=False, nullable=True)
     order_drink = relationship(
         "Order_Drink", lazy=True, backref="order", uselist=True)
 
@@ -341,7 +346,7 @@ class ETag (db.Model):
 
 class Guest_Device_Token(db.Model):
     __tablename__ = 'guest_device_token'
-    id = db.Column(db.String(80), primary_key=True, nullable=False)
+    id = db.Column(db.String(200), primary_key=True, nullable=False)
 
     @property
     def serialize(self):
@@ -460,7 +465,6 @@ def create_orders_and_customers():
     # create 50 new orders for testing
     for i in range(151):
         day = randrange(1, 29)
-        print("day", day)
         month = randrange(1, 4)
         date = datetime(2021, month, day)
         customer_index = randrange(6)
