@@ -13,7 +13,7 @@ const MerchantEmployeePayoutSetupComplete = () => {
       }}
     >
       <Col
-        sm={4}
+        sm={12}
         id="payoutSetup"
         style={{
           borderRadius: "7px",
