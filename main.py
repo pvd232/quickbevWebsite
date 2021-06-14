@@ -135,7 +135,7 @@ def login():
     customer = customer_service.authenticate_customer(email, password)
 
     if customer:
-        serialized_customer = customer.serialize()
+        serialized_customer = customer.dto_serialize()
         jwt_token = jwt.encode(
             {"sub": serialized_customer["id"]}, key=secret, algorithm="HS256")
         headers["authorization-token"] = jwt_token
@@ -370,7 +370,7 @@ def customer():
                 status = 201
             else:
                 status = 200
-            return Response(response=json.dumps(generated_new_customer.serialize()), status=status, headers=headers)
+            return Response(response=json.dumps(generated_new_customer.dto_serialize()), status=status, headers=headers)
         else:
             return Response(status=400)
     elif request.method == 'PUT':
