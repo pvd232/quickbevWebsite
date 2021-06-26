@@ -140,17 +140,24 @@ class Order_Repository(object):
             currency='usd',
            stripe_account=server.stripe_id
         )
+        # payment_intent = stripe.PaymentIntent.create(
+        #     amount=amount,
+        #     customer=order.customer.stripe_id,
+        #     setup_future_usage='on_session',
+        #     currency='usd',
+        #     application_fee_amount=service_fee,
+        #     transfer_data={
+        #         'destination': f'{merchant_stripe_id}',
+        #     }
+        # )
         payment_intent = stripe.PaymentIntent.create(
             amount=amount,
             customer=order.customer.stripe_id,
             setup_future_usage='on_session',
             currency='usd',
             application_fee_amount=service_fee,
-            transfer_data={
-                'destination': f'{merchant_stripe_id}',
-            }
+                stipe_account= f'{merchant_stripe_id}',
         )
-
         # now we return the client secret to the front end which is used to pay for the order
         return payment_intent["client_secret"]
 
@@ -367,7 +374,7 @@ class Tab_Repository(object):
 class Merchant_Repository(object):
     def create_stripe_account(self, session):
         new_account = stripe.Account.create(
-            type="express",
+            type="standard",
             country="US"
         )
         new_stripe_account_id = Stripe_Account(id=new_account.id)
