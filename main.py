@@ -787,14 +787,24 @@ def authenticate_merchant():
 def create_stripe_account():
     headers = {}
     new_account = Merchant_Service().create_stripe_account()
-
-    account_links = stripe.AccountLink.create(
-        account=new_account.id,
-        refresh_url='https://quickbev.uc.r.appspot.com/payout-setup-callback',
-        return_url='https://quickbev.uc.r.appspot.com/home',
-        type='account_onboarding',
-    )
-    headers["stripe_id"] = new_account.id
+    callback_stripe_id = request.args.get('stripe')
+    account_links = ''
+    if callback_stripe_id:
+        account_links = stripe.AccountLink.create(
+            account=callback_stripe_id,
+            refresh_url='https://quickbev.uc.r.appspot.com/payout-setup-callback',
+            return_url='https://quickbev.uc.r.appspot.com/home',
+            type='account_onboarding',
+        )
+        headers["stripe_id"] = callback_stripe_id
+    else:
+        account_links = stripe.AccountLink.create(
+            account=new_account.id,
+            refresh_url='https://quickbev.uc.r.appspot.com/payout-setup-callback',
+            return_url='https://quickbev.uc.r.appspot.com/home',
+            type='account_onboarding',
+        )
+        headers["stripe_id"] = new_account.id
 
     headers["Access-Control-Allow-Origin"] = request.origin
     headers["Access-Control-Expose-Headers"] = "*"

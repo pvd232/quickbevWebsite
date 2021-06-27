@@ -2,15 +2,24 @@ import React, { useState, useEffect } from "react";
 import Button from "react-bootstrap/Button";
 import API from "../helpers/Api.js";
 import bankIcon from "../static/icon-bank.svg";
-import { Business, setLocalStorage } from "../Models.js";
+import { Business, setLocalStorage, Merchant } from "../Models.js";
 
 const PayoutSetup = (props) => {
   const [redirect, setRedirect] = useState(null);
   var redirectUrl = null;
   const getRedirectInfo = async () => {
-    return API.makeRequest("GET", `/create-stripe-account`);
+    if (!props.callback) {
+      return API.makeRequest("GET", `/create-stripe-account`);
+    }
+    else {
+      const currentMerchant = new Merchant(
+        "localStorage",
+        localStorage.getItem("merchant")
+      );
+      return API.makeRequest("GET", `/create-stripe-account?stripe=${currentMerchant.stripeId}`);
+    }
   };
-  const onSubmit = async (event) => {
+  const onSubmit = async () => {
     if (localStorage.getItem("business")) {
       const currentBusiness = new Business(
         localStorage.getItem("business"),
@@ -70,9 +79,8 @@ const PayoutSetup = (props) => {
             onClick={(event) => {
               // if this is the payout redirect then all values for business and merchant have been set in the backend and we dont need to propogate back upwards
               event.preventDefault();
-              const eventTarget = event.target;
-              handleConnect().then((merchantStripeId) =>
-                onSubmit(eventTarget, merchantStripeId).then(() => {
+              handleConnect().then(() =>
+                onSubmit().then(() => {
                   setRedirect(redirectUrl);
                 })
               );
