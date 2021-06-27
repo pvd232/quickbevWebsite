@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import API from "../helpers/Api.js";
 import { setLocalStorage } from "../Models.js";
 import PayoutSetup from "./PayoutSetup.js";
+import Navbar from "../Navbar.js";
 
 const Home = () => {
   const [orders, setOrders] = useState(null);
@@ -49,7 +50,9 @@ const Home = () => {
       return <></>;
     }
   } else {
-    return <PayoutSetup callback={true}></PayoutSetup>;
+    return ( <> <Navbar/>
+    <div className="signupBody">
+      <div id="msform"> <PayoutSetup callback={true}></PayoutSetup> </div></div></>)
   }
 };
 export default Home;
