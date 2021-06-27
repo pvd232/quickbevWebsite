@@ -814,15 +814,18 @@ def create_stripe_account():
 
 
 @app.route('/validate-merchant', methods=['GET', 'OPTIONS'])
-def create_stripe_account():
+def validate_merchant_stripe_account():
     headers = {}
     callback_stripe_id = request.args.get('stripe')
-    merchant_stripe_status = Merchant_Service().authenticate_merchant_stripe(callback_stripe_id)
+    merchant_stripe_status = Merchant_Service(
+    ).authenticate_merchant_stripe(callback_stripe_id)
+    print('merchant_stripe_status', merchant_stripe_status)
     if merchant_stripe_status:
         response = Response(status=200)
     else:
         response = Response(status=400)
     return response
+
 
 @app.route('/menu', methods=['POST', 'GET'])
 def add_menu():
