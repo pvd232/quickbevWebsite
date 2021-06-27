@@ -16,6 +16,7 @@ from flask import Flask
 import jwt
 import calendar
 import base64
+from urllib.request import urlopen
 from pushjack_http2_mod import APNSHTTP2Client, APNSAuthToken
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.datastructures import MultiDict
@@ -256,7 +257,7 @@ def send_confirmation_email(jwt_token, customer):
     button_url = f"https://{host}/verify-email/{jwt_token}"
 
     logo = "https://storage.googleapis.com/my-new-quickbev-bucket/landscape-logo-purple.png"
-    data = open(logo, 'rb').read() # read bytes from file
+    data = urlopen(logo).read().decode('utf-8') # read bytes from file
     data_base64 = base64.b64encode(data)  # encode to base64 (bytes)
     data_base64 = "data:image/jpeg;base64," +  data_base64.decode()    # convert bytes to string
 
