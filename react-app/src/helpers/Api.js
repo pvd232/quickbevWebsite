@@ -69,6 +69,7 @@ class Client {
       return false;
     }
   }
+  // this is hitting the same endpoint as the api request made to verify that the merchant email is not taken when the merchant is signing up
   getMerchant = async (credentials) => {
     this.url = this.baseUrl + "/merchant";
     var requestHeaders = new Headers();
@@ -78,6 +79,10 @@ class Client {
     const response = await fetch(this.url, {
       headers: requestHeaders,
     });
+    const headers = {};
+        for (const [key, value] of response.headers.entries()) {
+          headers[key] = value;
+        }
     if (response.status === 204) {
       console.log('response status 204 to log in merchant')
       return false;
@@ -86,9 +91,9 @@ class Client {
       console.log("loggedInMerchant", loggedInMerchant);
 
       setLocalStorage("merchant", loggedInMerchant);
-      console.log("response.headers.jwt_token", response.headers.jwt_token);
+      console.log("response.headers.jwt_token", headers.jwt_token);
 
-      setLocalStorage("sessionToken", response.headers.jwt_token);
+      setLocalStorage("sessionToken", headers.jwt_token);
       return true;
     }
   };
