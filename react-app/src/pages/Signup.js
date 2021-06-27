@@ -442,8 +442,7 @@ const PromoteYourMenuFieldset = (props) => {
               paddingRight: "5px",
             }}
           >
-            Choose how to recieve your orders. We highly reccomend the tablet
-            solution to maximize your business' efficieny in fulfilling orders.
+            To maximize your business' efficieny, orders will be received through an Android tablet and labeled using a bluetooth label printer.
           </h5>
           <Card>
             <Card.Body>
@@ -462,7 +461,7 @@ const PromoteYourMenuFieldset = (props) => {
                   />
                 </Col>
                 <Col xs={10}>
-                  <Form.Label>Tablet (Highly Reccomended)</Form.Label>
+                  <Form.Label>Tablet</Form.Label>
                   <Card.Text
                     className="text-muted"
                     style={{
@@ -472,55 +471,7 @@ const PromoteYourMenuFieldset = (props) => {
                       fontWeight: "bold",
                     }}
                   >
-                    $0 for 30 days, then $5/month without cell service, or
-                    $15/month with cell service
-                  </Card.Text>
-
-                  <Card.Text
-                    className="text-muted"
-                    style={{
-                      textIndent: "0",
-                      textAlign: "left",
-                      fontSize: "12px",
-                      fontWeight: "bolder",
-                    }}
-                  >
-                    Your orders will be sent to your tablet for convenience and
-                    efficiency.
-                  </Card.Text>
-                </Col>
-              </Row>
-            </Card.Body>
-          </Card>
-        </Row>
-        <Row style={{ paddingLeft: "5px", paddingRight: "15px" }}>
-          <Card>
-            <Card.Body>
-              <Row>
-                <Col xs={2}>
-                  <Form.Check
-                    type="radio"
-                    label=""
-                    name="tablet"
-                    id="formHorizontalRadios2"
-                    onClick={() => {
-                      console.log("tablet false");
-                      setTablet(false);
-                    }}
-                  />
-                </Col>
-                <Col xs={10}>
-                  <Form.Label>Email + Phone Confirmation</Form.Label>
-                  <Card.Text
-                    className="text-muted"
-                    style={{
-                      textIndent: "0",
-                      textAlign: "left",
-                      fontSize: "13px",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    $0
+                    $0 for 30 days, then $9/month for 12 months
                   </Card.Text>
 
                   <Card.Text

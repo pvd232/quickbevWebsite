@@ -238,7 +238,7 @@ class Merchant_Domain(object):
             if 'stripe_id' in merchant_object.__dict__:
                 self.stripe_id = merchant_object.stripe_id
 
-            if check_password_hash(merchant_object.password, 'a'):
+            if merchant_object.id == 'patardriscoll@gmail.com':
                 self.is_administrator = True
 
         elif merchant_json:

@@ -268,7 +268,7 @@ def send_confirmation_email(jwt_token, customer):
     message['From'] = sender_address
     message['To'] = email
 
-    message['Subject'] = 'Order From'  # The subject line
+    message['Subject'] = 'Welcome to Quickbev'  # The subject line
 
     mail_content = mail_body
     # The body and the attachments for the mail

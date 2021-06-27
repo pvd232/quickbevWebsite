@@ -131,7 +131,7 @@
   padding: 10px 5px;
   margin: 10px;
   height: fit-content;
-  font-size: calc(2px + 2vmin);
+  font-size: calc(1.5px + 2vmin);
 }
 #msform .action-button:hover,
 #msform .action-button:focus {

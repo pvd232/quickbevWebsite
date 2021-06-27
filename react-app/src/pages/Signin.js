@@ -57,7 +57,6 @@ const Signin = () => {
             );
 
             setLocalStorage("sessionToken", response.headers.jwt_token);
-            setLocalStorage("firstLogin", true);
 
             setRedirect("/home");
             // return false;
