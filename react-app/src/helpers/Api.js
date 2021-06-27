@@ -69,6 +69,29 @@ class Client {
       return false;
     }
   }
+  getMerchant = async (credentials) => {
+    this.url = this.baseUrl + "/merchant";
+    var requestHeaders = new Headers();
+    for (const [key, value] of Object.entries(credentials)) {
+      requestHeaders.set(key, value);
+    }
+    const response = await fetch(this.url, {
+      headers: requestHeaders,
+    });
+    if (response.status === 204) {
+      console.log('response status 204 to log in merchant')
+      return false;
+    } else {
+      const loggedInMerchant = new Merchant("json", await response.json());
+      console.log("loggedInMerchant", loggedInMerchant);
+
+      setLocalStorage("merchant", loggedInMerchant);
+      console.log("response.headers.jwt_token", response.headers.jwt_token);
+
+      setLocalStorage("sessionToken", response.headers.jwt_token);
+      return true;
+    }
+  };
   getOrders = async () => {
     this.url =
       this.baseUrl +
@@ -116,21 +139,9 @@ class Client {
       "localStorage",
       localStorage.getItem("merchant")
     );
-
-    if (!currentMerchant.stripeId) {
-      const merchantStripeObject = await fetch(
-        this.baseUrl +
-          `/merchant_stripe_account?merchant_id=${currentMerchant.id}`,
-        {}
-      ).then((data) => data.json());
-      console.log("merchantStripeObject", merchantStripeObject);
-      const merchantStripeId = merchantStripeObject.stripe_id;
-      console.log('merchantStripeId',merchantStripeId)
-      currentMerchant.stripeId = merchantStripeId;
-      setLocalStorage("merchant", currentMerchant);
-    }
     this.url =
-      this.baseUrl + `/validate-merchant-stripe-account?stripe=${currentMerchant.stripeId}`;
+      this.baseUrl +
+      `/validate-merchant-stripe-account?stripe=${currentMerchant.stripeId}`;
     // will uncomment this when i have added menu for new businesses
     const response = await fetch(this.url, {});
     if (response.status === 200) {

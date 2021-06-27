@@ -70,7 +70,7 @@ class Business(db.Model):
     id = db.Column(UUID(as_uuid=True), primary_key=True,
                    unique=True, nullable=False)
     merchant_stripe_id = db.Column(db.String(80), db.ForeignKey(
-        'stripe_account.id'), nullable=False)
+        'merchant_stripe_account.id'), nullable=False)
     merchant_id = db.Column(db.String(80), db.ForeignKey(
         'merchant.id'), nullable=False)
     name = db.Column(db.String(80),
@@ -141,14 +141,12 @@ class Merchant(db.Model):
     last_name = db.Column(db.String(80), nullable=False)
     phone_number = db.Column(db.BigInteger(), nullable=False)
     number_of_businesses = db.Column(db.Integer(), nullable=False)
+    stripe_id = db.Column(db.String(80), db.ForeignKey('merchant_stripe_account.id'), nullable=False)
     is_active = db.Column(db.Boolean(), default=True, nullable=False)
     merchant_employee = relationship(
         "Merchant_Employee", lazy=True, backref="merchant")
     business = relationship(
         "Business", lazy=True, backref="merchant")
-    merchant_stripe = relationship(
-        "Merchant_Stripe", lazy=True, backref="merchant")
-
     @property
     def serialize(self):
         attribute_names = list(self.__dict__.keys())
@@ -158,13 +156,6 @@ class Merchant(db.Model):
             serialized_attributes[attribute_names[i]] = attributes[i]
         return serialized_attributes
 
-
-class Merchant_Stripe(db.Model):
-    __tablename__ = "merchant_stripe"
-    merchant_id = db.Column(db.String(80), db.ForeignKey(
-        "merchant.id"),  primary_key=True, nullable=False)
-    stripe_id = db.Column(db.String(80), db.ForeignKey(
-        "stripe_account.id"),  primary_key=True, nullable=False)
 
 
 class Customer(db.Model):
@@ -180,8 +171,8 @@ class Customer(db.Model):
     has_registered = db.Column(db.Boolean(), nullable=False)
     is_active = db.Column(db.Boolean(), default=True, nullable=False)
     device_token = db.Column(db.String(200), nullable=True)
-    order = relationship('Order', lazy=True, backref="order")
-    tab = relationship('Tab', lazy=True, backref="tab")
+    order = relationship('Order', lazy=True, backref="customer")
+    tab = relationship('Tab', lazy=True, backref="customer")
 
     @property
     def serialize(self):
@@ -202,7 +193,7 @@ class Order(db.Model):
     business_id = db.Column(UUID(as_uuid=True), db.ForeignKey(
         'business.id'), nullable=False)
     merchant_stripe_id = db.Column(
-        db.String(80), db.ForeignKey('stripe_account.id'))
+        db.String(80), db.ForeignKey('merchant_stripe_account.id'))
     cost = db.Column(db.Float(), nullable=False)
     subtotal = db.Column(db.Float(), nullable=False)
     sales_tax = db.Column(db.Float(), nullable=False)
@@ -309,15 +300,12 @@ class Merchant_Employee_Stripe_Account(db.Model):
         return serialized_attributes
 
 
-class Stripe_Account(db.Model):
-    __tablename__ = 'stripe_account'
-
+class Merchant_Stripe_Account(db.Model):
+    __tablename__ = 'merchant_stripe_account'
     id = db.Column(db.String(80), primary_key=True,
                    unique=True, nullable=False)
-    # merchant = relationship('Merchant', lazy=True, backref="stripe_account")
-    merchant_stripe = relationship(
-        "Merchant_Stripe", lazy=True, backref="stripe_account")
-    business = relationship("Business", lazy=True, backref="merchant_stripe")
+    merchant = relationship('Merchant', lazy=True, backref="merchant_stripe_account")
+    business = relationship("Business", lazy=True, backref="merchant_stripe_account")
 
     @property
     def serialize(self):
@@ -369,17 +357,14 @@ def load_json(filename):
 
 def create_business():
     new_account = stripe.Account.create(
-        type="express",
+        type="standard",
         country="US"
     )
-    new_stripe_account = Stripe_Account(id=new_account.id)
+    new_stripe_account = Merchant_Stripe_Account(id=new_account.id)
     db.session.add(new_stripe_account)
     new_merchant = Merchant(id="a", password=generate_password_hash("a"), first_name="peter",
                             last_name="driscoll", phone_number=5126456898, number_of_businesses=2)
-    new_merchant_stripe = Merchant_Stripe(
-        merchant_id=new_merchant.id, stripe_id=new_stripe_account.id)
-
-    db.session.add(new_merchant_stripe)
+   
     db.session.add(new_merchant)
 
     test_business = load_json("test_business.json")

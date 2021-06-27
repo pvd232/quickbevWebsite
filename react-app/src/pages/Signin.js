@@ -43,23 +43,16 @@ const Signin = () => {
     event.preventDefault();
     const form = event.target;
     if (validate(form)) {
-      API.makeRequest("GET", "/merchant", false, authorization).then(
+      API.getMerchant().then(
         (response) => {
           if (response) {
-            // if the username is available the response from the API will be true
-            const loggedInMerchant = new Merchant("json", response);
-            console.log("loggedInMerchant", loggedInMerchant);
-
-            setLocalStorage("merchant", loggedInMerchant);
-            console.log(
-              "response.headers.jwt_token",
-              response.headers.jwt_token
+            console.log('successfully logged in merchant!!')
+            const currentMerchant = new Merchant(
+              "localStorage",
+              localStorage.getItem("merchant")
             );
-
-            setLocalStorage("sessionToken", response.headers.jwt_token);
-
-            setRedirect("/home");
-            // return false;
+            console.log("currentMerchant after logging in", currentMerchant);
+            // setRedirect("/home");
           } else {
             const newErrorMsgState = {};
             // otherwise it will be false

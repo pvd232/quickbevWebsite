@@ -378,7 +378,7 @@ class Merchant_Repository(object):
             type="standard",
             country="US"
         )
-        new_stripe_account_id = Stripe_Account(id=new_account.id)
+        new_stripe_account_id = Merchant_Stripe_Account(id=new_account.id)
         session.add(new_stripe_account_id)
         return new_account
 
@@ -397,17 +397,10 @@ class Merchant_Repository(object):
 
     def add_merchant(self, session, requested_merchant):
         new_merchant = Merchant(id=requested_merchant.id, password=generate_password_hash(requested_merchant.password), first_name=requested_merchant.first_name,
-                                last_name=requested_merchant.last_name, phone_number=requested_merchant.phone_number, number_of_businesses=requested_merchant.number_of_businesses)
-        new_merchant_stripe = Merchant_Stripe(
-            merchant_id=requested_merchant.id, stripe_id=requested_merchant.stripe_id)
+                                last_name=requested_merchant.last_name, phone_number=requested_merchant.phone_number, number_of_businesses=requested_merchant.number_of_businesses, stripe_id = requested_merchant.stripe_id)
         session.add(new_merchant)
-        session.add(new_merchant_stripe)
         return True
 
-    def get_stripe_id(self, session, merchant_id):
-        merchant_stripe_account = session.query(Merchant_Stripe).filter(
-            Merchant_Stripe.merchant_id == merchant_id).first()
-        return merchant_stripe_account.stripe_id
 
 
 class Merchant_Employee_Repository(object):

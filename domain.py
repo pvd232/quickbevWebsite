@@ -234,9 +234,7 @@ class Merchant_Domain(object):
             self.last_name = merchant_object.last_name
             self.phone_number = merchant_object.phone_number
             self.number_of_businesses = merchant_object.number_of_businesses
-            # stripe ID is in an associative table now so if a vanilla merchant object is returned then it wont have the stripe id
-            if 'stripe_id' in merchant_object.__dict__.keys():
-                self.stripe_id = merchant_object.stripe_id
+            self.stripe_id = merchant_object.stripe_id
 
             if merchant_object.id == 'patardriscoll@gmail.com':
                 self.is_administrator = True
