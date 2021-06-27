@@ -275,7 +275,7 @@ def send_confirmation_email(jwt_token, customer):
     message.attach(MIMEText(mail_content, 'html'))
     s = smtplib.SMTP('smtp.mailgun.org', 587)
     s.login('postmaster@quickbev.us',
-            'ad02d6a35928f01f2e6f912a6c3a06e1-ba042922-166a083c')
+            'Iqopaogh23!')
     s.sendmail(message['From'], message['To'], message.as_string())
     s.quit()
 
