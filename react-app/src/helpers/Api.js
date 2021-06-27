@@ -122,7 +122,7 @@ class Client {
         this.baseUrl +
           `/merchant_stripe_account?merchant_id=${currentMerchant.id}`,
         {}
-      ).then((data) => data.json()).stripe_id;
+      ).then((data) => data.json());
       console.log("merchantStripeObject", merchantStripeObject);
       const merchantStripeId = merchantStripeObject.stripe_id;
       currentMerchant.stripeId = merchantStripeId;
