@@ -282,8 +282,8 @@ def send_confirmation_email(jwt_token, customer):
 
 
 def send_password_reset_email(jwt_token, customer):
-    # host = request.headers.get('Host')
-    host = "quickbev.uc.r.appspot.com"
+    host = request.headers.get('Host')
+    # host = "quickbev.uc.r.appspot.com"
 
     button_url = f"https://{host}/reset-password/{jwt_token}"
 
@@ -359,6 +359,7 @@ def customer():
 
         # generate a secure JSON token using the user's unverified email address. then i embed this token in the url for the verify account link sent in the email. i then parse this string when the user navigates to the page, securely verifying their email by using the
         if generated_new_customer:
+            print('generated cust', generated_new_customer.dto_serialize())
             Customer_Service().update_device_token(
                 device_token, generated_new_customer.id)
             jwt_token = jwt.encode(
