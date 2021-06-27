@@ -55,6 +55,7 @@ const PayoutSetup = (props) => {
     //had to do this because memory leak due to component not unmounting properly
     let mount = true;
     if (mount && redirect) {
+      console.log('redirect',redirect)
       // window.location.assign(redirect);
     }
 

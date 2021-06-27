@@ -43,7 +43,7 @@ const Signin = () => {
     event.preventDefault();
     const form = event.target;
     if (validate(form)) {
-      API.getMerchant().then(
+      API.getMerchant(authorization).then(
         (response) => {
           if (response) {
             console.log('successfully logged in merchant!!')

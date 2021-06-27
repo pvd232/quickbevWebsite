@@ -716,6 +716,16 @@ const Signup = () => {
     console.log('confirmed_new_business',confirmed_new_business)
 
     setLocalStorage("business", confirmed_new_business);
+    const currentMerchant = new Merchant(
+      "localStorage",
+      localStorage.getItem("merchant")
+    );
+    const currentBusiness = new Merchant(
+      "localStorage",
+      localStorage.getItem("business")
+    );
+    console.log("currentMerchant after signing up", currentMerchant);
+    console.log("currentMerchant after signing up", currentBusiness);
     return true;
   };
   const fieldSets = [
