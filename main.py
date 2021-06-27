@@ -615,7 +615,9 @@ def create_account_redirect():
     headers = {}
     business_service = Business_Service()
     request_json = json.loads(request.data)
+    print('request_json',request_json)
     business_to_update = request_json["business"]
+    print('business_to_update',business_to_update)
     if business_service.update_business(business_to_update):
         headers["jwt_token"] = jwt.encode(
             {"sub": business_to_update["id"]}, key=secret, algorithm="HS256")

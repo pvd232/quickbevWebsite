@@ -26,7 +26,7 @@ const PayoutSetup = (props) => {
         true,
         true
       );
-      setLocalStorage("business", currentBusiness);
+      console.log('currentBusiness',currentBusiness)
 
       const dataObject = { business: currentBusiness };
       let result = await API.makeRequest(

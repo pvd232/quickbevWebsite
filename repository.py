@@ -314,6 +314,8 @@ class Business_Repository(object):
     def update_business(self, session, business):
         business_database_object_to_update = session.query(
             Business).filter(Business.id == business.id).first()
+        print('business_database_object_to_update',business_database_object_to_update)
+
         if business_database_object_to_update:
             business_database_object_to_update.stripe_id = business.stripe_id
             return True
