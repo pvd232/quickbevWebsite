@@ -12,7 +12,7 @@ from models import instantiate_db_connection
 username = "postgres"
 password = "Iqopaogh23!"
 connection_string_beginning = "postgres://"
-connection_string_end = "@localhost:5432/quickbevdb"
+connection_string_end = "@localhost:5432/quickbevdb1"
 connection_string = connection_string_beginning + \
     username + ":" + password + connection_string_end
 
@@ -373,7 +373,7 @@ class Test_Service(object):
         self.username = "postgres"
         self.password = "Iqopaogh23!"
         self.connection_string_beginning = "postgres://"
-        self.connection_string_end = "@localhost: 5432/quickbevdb"
+        self.connection_string_end = "@localhost: 5432/quickbevdb1"
         self.connection_string = self.connection_string_beginning + \
             self.username + ":" + self.password + self.connection_string_end
         self.test_engine = create_engine(
