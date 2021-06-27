@@ -129,6 +129,7 @@ export class Merchant {
     if (objectType === "json") {
       // the merchant object will be pre-populated with values from the form thus it will use camelCase notation
       this.id = object.id;
+      this.stripeId = object.stripe_id
       this.password = object.password;
       this.firstName = object.first_name;
       this.lastName = object.last_name;
