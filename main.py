@@ -812,14 +812,17 @@ def create_stripe_account():
         account_links), headers=headers)
     return response
 
+
 @app.route('/merchant_stripe_account', methods=['GET'])
 def merchant_stripe_account():
     merchant_id = request.args.get('merchant_id')
     merchant_stripe_id = Merchant_Service().get_stripe_id(merchant_id)
     response_data = {'stripe_id': merchant_stripe_id}
+    print('response_data', response_data)
     response = Response(status=200, response=json.dumps(
-       response_data ))
+        response_data))
     return response
+
 
 @app.route('/validate-merchant', methods=['GET', 'OPTIONS'])
 def validate_merchant_stripe_account():
