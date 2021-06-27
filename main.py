@@ -786,7 +786,6 @@ def authenticate_merchant():
 @app.route('/create-stripe-account', methods=['GET', 'OPTIONS'])
 def create_stripe_account():
     headers = {}
-    new_account = Merchant_Service().create_stripe_account()
     callback_stripe_id = request.args.get('stripe')
     account_links = ''
     if callback_stripe_id:
@@ -798,6 +797,7 @@ def create_stripe_account():
         )
         headers["stripe_id"] = callback_stripe_id
     else:
+        new_account = Merchant_Service().create_stripe_account()
         account_links = stripe.AccountLink.create(
             account=new_account.id,
             refresh_url='https://quickbev.uc.r.appspot.com/payout-setup-callback',
@@ -812,6 +812,17 @@ def create_stripe_account():
         account_links), headers=headers)
     return response
 
+
+@app.route('/validate-merchant', methods=['GET', 'OPTIONS'])
+def create_stripe_account():
+    headers = {}
+    callback_stripe_id = request.args.get('stripe')
+    merchant_stripe_status = Merchant_Service().authenticate_merchant_stripe(callback_stripe_id)
+    if merchant_stripe_status:
+        response = Response(status=200)
+    else:
+        response = Response(status=400)
+    return response
 
 @app.route('/menu', methods=['POST', 'GET'])
 def add_menu():

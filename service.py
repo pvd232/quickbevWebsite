@@ -216,6 +216,11 @@ class Merchant_Service(object):
             else:
                 return False
 
+    def authenticate_merchant_stripe(self, stripe_id):
+        with session_scope() as session:
+            return Merchant_Repository().authenticate_merchant_stripe(session, stripe_id)
+
+
     def add_merchant(self, merchant):
         with session_scope() as session:
             requested_new_merchant = Merchant_Domain(merchant_json=merchant)

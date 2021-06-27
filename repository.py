@@ -388,6 +388,11 @@ class Merchant_Repository(object):
         else:
             return False
 
+    def authenticate_merchant_stripe(self, session, stripe_id):
+        merchant_stripe_status = stripe.Account.retrieve(stripe_id)
+        print('merchant_stripe_status',merchant_stripe_status)
+        return merchant_stripe_status['charges_enabled']
+
     def add_merchant(self, session, requested_merchant):
         new_merchant = Merchant(id=requested_merchant.id, password=generate_password_hash(requested_merchant.password), first_name=requested_merchant.first_name,
                                 last_name=requested_merchant.last_name, phone_number=requested_merchant.phone_number, number_of_businesses=requested_merchant.number_of_businesses)

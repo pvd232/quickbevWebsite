@@ -116,10 +116,19 @@ class Client {
       "localStorage",
       localStorage.getItem("merchant")
     );
-    this.url = `/v1/accounts/${currentMerchant.stripeId}`;
+    this.url =
+      this.baseUrl + `/validate-merchant/?stripe=${currentMerchant.stripeId}`
 
     // will uncomment this when i have added menu for new businesses
-    return fetch(this.url, {}).then((data) => data.json());
+    const response =  await fetch(this.url, {})
+    if (response.status === 200) {
+      console.log('merchant stripe id good')
+      return true
+    }
+    else {
+      console.log('merchant stripe id bad')
+      return false
+    }
   };
   getBusinesses = async () => {
     this.url =

@@ -14,7 +14,8 @@ const Home = () => {
   useEffect(() => {
     let mounted = true;
     API.checkStripeStatus().then((value) => {
-      if (value.capabilities.charges_enabled && mounted) {
+      console.log('value',value)
+      if (value && mounted) {
         setIsValidated(true);
       }
     });
