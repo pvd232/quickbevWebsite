@@ -130,7 +130,7 @@ class Client {
       setLocalStorage("merchant", currentMerchant);
     }
     this.url =
-      this.baseUrl + `/validate-merchant-stripe-account/?stripe=${currentMerchant.stripeId}`;
+      this.baseUrl + `/validate-merchant-stripe-account?stripe=${currentMerchant.stripeId}`;
     // will uncomment this when i have added menu for new businesses
     const response = await fetch(this.url, {});
     if (response.status === 200) {
