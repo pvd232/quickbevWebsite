@@ -59,7 +59,12 @@ const CreateYourAccountFieldset = (props) => {
   const formChangeHandler = (event) => {
     let name = event.target.name;
     let value = event.target.value;
-    setFormValue({ [name]: value });
+    if (typeof value === String && name !== 'password' && name !== 'confirmPassword') {
+    setFormValue({ [name]: value.trim().toLowerCase()});
+    }
+    else {
+      setFormValue({ [name]: value });
+    }
   };
   const validate = (form) => {
     form.classList.add("was-validated");
@@ -252,11 +257,13 @@ const PromoteYourMenuFieldset = (props) => {
 
   const formChangeHandler = (event) => {
     let name = event.target.name;
-    console.log("formValue.typeOfBusiness", formValue.typeOfBusiness);
-    console.log("name", name);
     let value = event.target.value;
-    console.log("value", value);
-    setFormValue({ [name]: value });
+    if (typeof value === String) {
+    setFormValue({ [name]: value.trim().toLowerCase()});
+    }
+    else {
+      setFormValue({ [name]: value });
+    }
   };
   const validate = (form) => {
     if (form.checkValidity()) {
@@ -539,7 +546,12 @@ const BusinessFieldset = (props) => {
   const formChangeHandler = (event) => {
     let name = event.target.name;
     let value = event.target.value;
-    setFormValue({ [name]: value });
+    if (typeof value === String) {
+    setFormValue({ [name]: value.trim().toLowerCase()});
+    }
+    else {
+      setFormValue({ [name]: value });
+    }
   };
 
   const handleSubmit = async (eventTarget, merchantStripeId) => {
@@ -652,7 +664,7 @@ const Signup = () => {
     const newForm = new FormData();
     // set values from formDataObject into business object
     newBusiness.tablet = formDataObject.tablet;
-    newBusiness.classification = formDataObject.classification.toLowerCase();
+    newBusiness.classification = formDataObject.classification;
     newBusiness.merchantStripeId = merchantStripeId;
     if (formDataObject.menuUrl) {
       newBusiness.menuUrl = formDataObject.menuUrl;

@@ -111,6 +111,16 @@ class Client {
       headers: headers,
     }).then((data) => data.json());
   };
+  checkStripeStatus = async () => {
+    const currentMerchant = new Merchant(
+      "localStorage",
+      localStorage.getItem("merchant")
+    );
+    this.url = `/v1/accounts/${currentMerchant.stripeId}`;
+
+    // will uncomment this when i have added menu for new businesses
+    return fetch(this.url, {}).then((data) => data.json());
+  };
   getBusinesses = async () => {
     this.url =
       this.baseUrl +
