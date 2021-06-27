@@ -179,6 +179,7 @@ class Customer_Domain(object):
             self.id = ""
             self.first_name = ""
             self.last_name = ""
+            self.has_registered = False
         if customer_object:
             self.id = customer_object.id
             self.first_name = customer_object.first_name
@@ -194,7 +195,7 @@ class Customer_Domain(object):
             if "stripe_id" in customer_object.__dict__.keys():
                 self.stripe_id = customer_object.stripe_id
         elif customer_json:
-            # has registered property will be set in repository, so it will never be sent down from front end thus wont be necessary in initialization from json
+            # has registered property will be false when the customer is created initially
             self.id = customer_json["id"]
             self.password = generate_password_hash(
                 customer_json["password"], "sha256")
