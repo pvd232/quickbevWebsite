@@ -1,4 +1,4 @@
-import { Merchant } from "../Models.js";
+import { Merchant, setLocalStorage } from "../Models.js";
 
 class Client {
   constructor() {
@@ -116,18 +116,28 @@ class Client {
       "localStorage",
       localStorage.getItem("merchant")
     );
-    this.url =
-      this.baseUrl + `/validate-merchant/?stripe=${currentMerchant.stripeId}`
 
-    // will uncomment this when i have added menu for new businesses
-    const response =  await fetch(this.url, {})
-    if (response.status === 200) {
-      console.log('merchant stripe id good')
-      return true
+    if (!currentMerchant.stripeId) {
+      const merchantStripeObject = await fetch(
+        this.baseUrl +
+          `/merchant_stripe_account?merchant_id=${currentMerchant.id}`,
+        {}
+      ).then((data) => data.json()).stripe_id;
+      console.log("merchantStripeObject", merchantStripeObject);
+      const merchantStripeId = merchantStripeObject.stripe_id;
+      currentMerchant.stripeId = merchantStripeId;
+      setLocalStorage("merchant", currentMerchant);
     }
-    else {
-      console.log('merchant stripe id bad')
-      return false
+    this.url =
+      this.baseUrl + `/validate-merchant/?stripe=${currentMerchant.stripeId}`;
+    // will uncomment this when i have added menu for new businesses
+    const response = await fetch(this.url, {});
+    if (response.status === 200) {
+      console.log("merchant stripe id good");
+      return true;
+    } else {
+      console.log("merchant stripe id bad");
+      return false;
     }
   };
   getBusinesses = async () => {

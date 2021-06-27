@@ -127,19 +127,20 @@ class Order_Repository(object):
         merchant_stripe_id = order.merchant_stripe_id
         service_fee = int(round(.1 * amount, 2))
 
-        #get the list of merchant_employees that are clocked in when the sale was made and give them each an equal part of the tip
-        servers = session.query(Merchant_Employee).filter(Merchant_Employee.business_id == order.business_id, Merchant_Employee.logged_in == True)
+        # get the list of merchant_employees that are clocked in when the sale was made and give them each an equal part of the tip
+        servers = session.query(Merchant_Employee).filter(
+            Merchant_Employee.business_id == order.business_id, Merchant_Employee.logged_in == True)
         for server in servers:
             tip_per_server = tip_amount/len(servers)
 
-            #create a direct charge that is sourced from the customer and sent to the merchant
-            tip_payment_intent =  stripe.PaymentIntent.create(
-            amount=tip_per_server,
-            customer=order.customer.stripe_id,
-            setup_future_usage='on_session',
-            currency='usd',
-           stripe_account=server.stripe_id
-        )
+            # create a direct charge that is sourced from the customer and sent to the merchant
+            tip_payment_intent = stripe.PaymentIntent.create(
+                amount=tip_per_server,
+                customer=order.customer.stripe_id,
+                setup_future_usage='on_session',
+                currency='usd',
+                stripe_account=server.stripe_id
+            )
         # payment_intent = stripe.PaymentIntent.create(
         #     amount=amount,
         #     customer=order.customer.stripe_id,
@@ -156,7 +157,7 @@ class Order_Repository(object):
             setup_future_usage='on_session',
             currency='usd',
             application_fee_amount=service_fee,
-                stipe_account= f'{merchant_stripe_id}',
+            stipe_account=f'{merchant_stripe_id}',
         )
         # now we return the client secret to the front end which is used to pay for the order
         return payment_intent["client_secret"]
@@ -390,7 +391,7 @@ class Merchant_Repository(object):
 
     def authenticate_merchant_stripe(self, session, stripe_id):
         merchant_stripe_status = stripe.Account.retrieve(stripe_id)
-        print('merchant_stripe_status',merchant_stripe_status)
+        print('merchant_stripe_status', merchant_stripe_status)
         return merchant_stripe_status['charges_enabled']
 
     def add_merchant(self, session, requested_merchant):
@@ -401,6 +402,11 @@ class Merchant_Repository(object):
         session.add(new_merchant)
         session.add(new_merchant_stripe)
         return True
+
+    def get_stripe_account(self, session, merchant_id):
+        merchant_stripe_account = session.query(Merchant_Stripe).filter(
+            Merchant_Stripe.merchant_id == merchant_id).first()
+        return merchant_stripe_account.stripe_id
 
 
 class Merchant_Employee_Repository(object):
@@ -415,7 +421,7 @@ class Merchant_Employee_Repository(object):
                 return merchant_employee
         else:
             return False
-    
+
     # this validates that the pin number is unique for the tablet upon which the merchant employee is registering
     def validate_pin_number(self, session, business_id, pin_number):
         for merchant_employee in session.query(Merchant_Employee).filter(Merchant_Employee.business_id == business_id):
