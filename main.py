@@ -472,6 +472,7 @@ def business(session_token):
 
         business_list = []
         if request.headers.get('merchantId'):
+            print('request.headers.get(merchantId)',request.headers.get('merchantId'))
             merchant_id = request.headers.get('merchantId')
             merchant_businesses = [x.dto_serialize(
             ) for x in Business_Service().get_merchant_business(merchant_id)]

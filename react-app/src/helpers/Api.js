@@ -163,6 +163,7 @@ class Client {
       localStorage.getItem("merchant")
     );
     // will uncomment this when i have added menu for new businesses
+    console.log('currentMerchant in business',currentMerchant)
     headers.set("merchantId", currentMerchant.id);
     return fetch(this.url, {
       headers: headers,

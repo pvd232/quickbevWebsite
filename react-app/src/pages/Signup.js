@@ -59,10 +59,13 @@ const CreateYourAccountFieldset = (props) => {
   const formChangeHandler = (event) => {
     let name = event.target.name;
     let value = event.target.value;
-    if (typeof value === String && name !== 'password' && name !== 'confirmPassword') {
-    setFormValue({ [name]: value.trim().toLowerCase()});
-    }
-    else {
+    if (
+      typeof value === String &&
+      name !== "password" &&
+      name !== "confirmPassword"
+    ) {
+      setFormValue({ [name]: value.trim().toLowerCase() });
+    } else {
       setFormValue({ [name]: value });
     }
   };
@@ -90,7 +93,8 @@ const CreateYourAccountFieldset = (props) => {
         const newMerchant = new Merchant("merchantStateObject", formValue);
         const merchantData = { merchant: newMerchant };
         API.makeRequest("GET", "/merchant", merchantData).then((response) => {
-          if (response) {
+          console.log("response", response);
+          if (response.status === 204) {
             // if the username is available the response from the API will be true
             props.onClick("next", "merchant", newMerchant);
           } else {
@@ -259,9 +263,8 @@ const PromoteYourMenuFieldset = (props) => {
     let name = event.target.name;
     let value = event.target.value;
     if (typeof value === String) {
-    setFormValue({ [name]: value.trim().toLowerCase()});
-    }
-    else {
+      setFormValue({ [name]: value.trim().toLowerCase() });
+    } else {
       setFormValue({ [name]: value });
     }
   };
@@ -449,7 +452,9 @@ const PromoteYourMenuFieldset = (props) => {
               paddingRight: "5px",
             }}
           >
-            To maximize your business' efficieny, orders will be received through an Android tablet and labeled using a bluetooth label printer.
+            To maximize your business' efficieny, orders will be received
+            through an Android tablet and labeled using a bluetooth label
+            printer.
           </h5>
           <Card>
             <Card.Body>
@@ -547,9 +552,8 @@ const BusinessFieldset = (props) => {
     let name = event.target.name;
     let value = event.target.value;
     if (typeof value === String) {
-    setFormValue({ [name]: value.trim().toLowerCase()});
-    }
-    else {
+      setFormValue({ [name]: value.trim().toLowerCase() });
+    } else {
       setFormValue({ [name]: value });
     }
   };
@@ -689,6 +693,7 @@ const Signup = () => {
 
     // set the merchant id in business to be the same as the new merchant
     newBusiness.merchantId = newMerchant.id;
+    console.log('newBusiness',newBusiness)
     newForm.append("business", JSON.stringify(newBusiness));
 
     setLocalStorage("merchant", newMerchant);
@@ -708,6 +713,8 @@ const Signup = () => {
       true,
       false
     );
+    console.log('confirmed_new_business',confirmed_new_business)
+
     setLocalStorage("business", confirmed_new_business);
     return true;
   };
