@@ -125,6 +125,7 @@ class Client {
       ).then((data) => data.json());
       console.log("merchantStripeObject", merchantStripeObject);
       const merchantStripeId = merchantStripeObject.stripe_id;
+      console.log('merchantStripeId',merchantStripeId)
       currentMerchant.stripeId = merchantStripeId;
       setLocalStorage("merchant", currentMerchant);
     }

@@ -826,9 +826,11 @@ def merchant_stripe_account():
 
 @app.route('/validate-merchant-stripe-account', methods=['GET'])
 def validate_merchant_stripe_account():
-    headers = {}
+    print('hey')
     callback_stripe_id = request.args.get('stripe')
+    print('callback_stripe_id',callback_stripe_id)
     merchant_stripe_status = Merchant_Service(
+        print('merchant_stripe_status',merchant_stripe_status)
     ).authenticate_merchant_stripe(callback_stripe_id)
     print('merchant_stripe_status', merchant_stripe_status)
     if merchant_stripe_status:
