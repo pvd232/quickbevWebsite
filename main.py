@@ -824,7 +824,7 @@ def merchant_stripe_account():
     return response
 
 
-@app.route('/validate-merchant', methods=['GET', 'OPTIONS'])
+@app.route('/validate-merchant-stripe-account', methods=['GET'])
 def validate_merchant_stripe_account():
     headers = {}
     callback_stripe_id = request.args.get('stripe')

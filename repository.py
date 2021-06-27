@@ -391,6 +391,7 @@ class Merchant_Repository(object):
 
     def authenticate_merchant_stripe(self, session, stripe_id):
         merchant_stripe_status = stripe.Account.retrieve(stripe_id)
+        print('authenticating merchant stripe')
         print('merchant_stripe_status', merchant_stripe_status)
         return merchant_stripe_status['charges_enabled']
 
