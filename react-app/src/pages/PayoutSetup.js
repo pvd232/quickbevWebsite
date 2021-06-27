@@ -20,27 +20,6 @@ const PayoutSetup = (props) => {
     }
   };
   const onSubmit = async () => {
-    if (localStorage.getItem("business")) {
-      const currentBusiness = new Business(
-        localStorage.getItem("business"),
-        true,
-        true
-      );
-      console.log('currentBusiness',currentBusiness)
-
-      const dataObject = { business: currentBusiness };
-      let result = await API.makeRequest(
-        "POST",
-        "/create-account-redirect",
-        dataObject,
-        false,
-        false
-      );
-      return result;
-    } else {
-      console.log("No user business found");
-    }
-  };
   const handleConnect = async () => {
     let responseContent = await getRedirectInfo();
     const merchantStripeId = responseContent.headers.stripe_id;
@@ -55,8 +34,7 @@ const PayoutSetup = (props) => {
     //had to do this because memory leak due to component not unmounting properly
     let mount = true;
     if (mount && redirect) {
-      console.log('redirect',redirect)
-      // window.location.assign(redirect);
+      window.location.assign(redirect);
     }
 
     return () => (mount = false);

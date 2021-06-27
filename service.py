@@ -323,12 +323,13 @@ class Business_Service(object):
             else:
                 return False
 
-    def update_business(self, business):
-        with session_scope() as session:
-            business_domain = Business_Domain(business_json=business)
-            # need to add this line because the initialization of the business domain will create a new UUID for the id
-            business_domain.id = business['id']
-            return Business_Repository().update_business(session, business_domain)
+    # dont need this anymore because i no longer generate a new stripe ID when the user hits the redirect_url. felt cute, will probably delete later
+    # def update_business(self, business):
+    #     with session_scope() as session:
+    #         business_domain = Business_Domain(business_json=business)
+    #         # need to add this line because the initialization of the business domain will create a new UUID for the id
+    #         business_domain.id = business['id']
+    #         return Business_Repository().update_business(session, business_domain)
 
     def get_merchant_business(self, merchant_id):
         with session_scope() as session:

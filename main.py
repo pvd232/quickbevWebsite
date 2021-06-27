@@ -608,24 +608,24 @@ def create_account():
         response["msg"] = "An unknown internal server error occured"
         return Response(status=500, response=json.dumps(response), headers=headers)
 
-
-@app.route('/create-account-redirect', methods=['POST'])
-def create_account_redirect():
-    response = {"msg": ""}
-    headers = {}
-    business_service = Business_Service()
-    request_json = json.loads(request.data)
-    print('request_json',request_json)
-    business_to_update = request_json["business"]
-    print('business_to_update',business_to_update)
-    if business_service.update_business(business_to_update):
-        headers["jwt_token"] = jwt.encode(
-            {"sub": business_to_update["id"]}, key=secret, algorithm="HS256")
-        response["msg"] = "Business sucessfully updated"
-        return Response(status=200, response=json.dumps(response), headers=headers)
-    else:
-        response["msg"] = "Failed to update business"
-        return Response(status=500, response=json.dumps(response))
+# dont need this anymore because i no longer generate a new stripe ID when the user hits the redirect_url. felt cute, will probably delete later
+# @app.route('/create-account-redirect', methods=['POST'])
+# def create_account_redirect():
+#     response = {"msg": ""}
+#     headers = {}
+#     business_service = Business_Service()
+#     request_json = json.loads(request.data)
+#     print('request_json',request_json)
+#     business_to_update = request_json["business"]
+#     print('business_to_update',business_to_update)
+#     if business_service.update_business(business_to_update):
+#         headers["jwt_token"] = jwt.encode(
+#             {"sub": business_to_update["id"]}, key=secret, algorithm="HS256")
+#         response["msg"] = "Business sucessfully updated"
+#         return Response(status=200, response=json.dumps(response), headers=headers)
+#     else:
+#         response["msg"] = "Failed to update business"
+#         return Response(status=500, response=json.dumps(response))
 
 
 @app.route('/merchant_employee_stripe_account', methods=['GET'])

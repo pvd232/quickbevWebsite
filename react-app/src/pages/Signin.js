@@ -43,27 +43,25 @@ const Signin = () => {
     event.preventDefault();
     const form = event.target;
     if (validate(form)) {
-      API.getMerchant(authorization).then(
-        (response) => {
-          if (response) {
-            console.log('successfully logged in merchant!!')
-            const currentMerchant = new Merchant(
-              "localStorage",
-              localStorage.getItem("merchant")
-            );
-            console.log("currentMerchant after logging in", currentMerchant);
-            // setRedirect("/home");
-          } else {
-            const newErrorMsgState = {};
-            // otherwise it will be false
-            newErrorMsgState["errorMsg"] =
-              "Invalid username or password, please try again";
-            newErrorMsgState["errorDisplay"] = "inline-block";
-            setErrorMsg(newErrorMsgState);
-            return false;
-          }
+      API.getMerchant(authorization).then((response) => {
+        if (response) {
+          console.log("successfully logged in merchant!!");
+          const currentMerchant = new Merchant(
+            "localStorage",
+            localStorage.getItem("merchant")
+          );
+          console.log("currentMerchant after logging in", currentMerchant);
+          setRedirect("/home");
+        } else {
+          const newErrorMsgState = {};
+          // otherwise it will be false
+          newErrorMsgState["errorMsg"] =
+            "Invalid username or password, please try again";
+          newErrorMsgState["errorDisplay"] = "inline-block";
+          setErrorMsg(newErrorMsgState);
+          return false;
         }
-      );
+      });
     } else {
       return false;
     }

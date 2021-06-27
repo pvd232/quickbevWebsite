@@ -311,16 +311,17 @@ class Business_Repository(object):
         session.add(new_business)
         return new_business
 
-    def update_business(self, session, business):
-        business_database_object_to_update = session.query(
-            Business).filter(Business.id == business.id).first()
-        print('business_database_object_to_update',business_database_object_to_update)
+    # dont need this anymore because i no longer generate a new stripe ID when the user hits the redirect_url. felt cute, will probably delete later
+    # def update_business(self, session, business):
+    #     business_database_object_to_update = session.query(
+    #         Business).filter(Business.id == business.id).first()
+    #     print('business_database_object_to_update',business_database_object_to_update)
 
-        if business_database_object_to_update:
-            business_database_object_to_update.stripe_id = business.stripe_id
-            return True
-        else:
-            return False
+    #     if business_database_object_to_update:
+    #         business_database_object_to_update.merchant_stripe_id = business.merchant_stripe_id
+    #         return True
+    #     else:
+    #         return False
 
     def get_merchant_businesses(self, session, merchant_id):
         businesses = session.query(Business).filter(
