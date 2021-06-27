@@ -403,7 +403,7 @@ class Merchant_Repository(object):
         session.add(new_merchant_stripe)
         return True
 
-    def get_stripe_account(self, session, merchant_id):
+    def get_stripe_id(self, session, merchant_id):
         merchant_stripe_account = session.query(Merchant_Stripe).filter(
             Merchant_Stripe.merchant_id == merchant_id).first()
         return merchant_stripe_account.stripe_id
