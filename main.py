@@ -274,8 +274,9 @@ def send_confirmation_email(jwt_token, customer):
     # The body and the attachments for the mail
     message.attach(MIMEText(mail_content, 'html'))
     s = smtplib.SMTP('smtp.mailgun.org', 587)
+    # this password was generated ay the domain settings page on mailgun. its a really shitty confusing service.
     s.login('postmaster@quickbev.us',
-            'Iqopaogh23!')
+            '77bf9d60999ee72f1f72f98dd1a57152-1f1bd6a9-a4533d5f')
     s.sendmail(message['From'], message['To'], message.as_string())
     s.quit()
 
