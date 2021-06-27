@@ -257,7 +257,7 @@ def send_confirmation_email(jwt_token, customer):
     button_url = f"https://{host}/verify-email/{jwt_token}"
 
     logo = "https://storage.googleapis.com/my-new-quickbev-bucket/landscape-logo-purple.png"
-    data = urlopen(logo).read().decode('utf-8') # read bytes from file
+    data = urlopen(logo).read() # read bytes from file
     data_base64 = base64.b64encode(data)  # encode to base64 (bytes)
     data_base64 = "data:image/jpeg;base64," +  data_base64.decode()    # convert bytes to string
 
