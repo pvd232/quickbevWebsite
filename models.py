@@ -363,7 +363,7 @@ def create_business():
     new_stripe_account = Merchant_Stripe_Account(id=new_account.id)
     db.session.add(new_stripe_account)
     new_merchant = Merchant(id="a", password=generate_password_hash("a"), first_name="peter",
-                            last_name="driscoll", phone_number=5126456898, number_of_businesses=2)
+                            last_name="driscoll", phone_number=5126456898, number_of_businesses=2, stripe_id = new_stripe_account.id)
    
     db.session.add(new_merchant)
 
