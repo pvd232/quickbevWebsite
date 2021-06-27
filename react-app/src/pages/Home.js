@@ -4,6 +4,7 @@ import API from "../helpers/Api.js";
 import { setLocalStorage } from "../Models.js";
 import PayoutSetup from "./PayoutSetup.js";
 import Navbar from "../Navbar.js";
+import "../css/Signup.css";
 
 const Home = () => {
   const [orders, setOrders] = useState(null);
