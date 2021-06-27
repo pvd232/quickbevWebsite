@@ -220,7 +220,6 @@ class Customer_Domain(object):
 
 class Merchant_Domain(object):
     def __init__(self, merchant_object=None, merchant_json=None):
-        print('merchant_object',merchant_object.serialize)
         self.id = ''
         self.password = ''
         self.first_name = ''
