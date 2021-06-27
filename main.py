@@ -260,7 +260,7 @@ def send_confirmation_email(jwt_token, customer):
     mail_body_text = f'<p style="margin-top: 3vh;margin-bottom: 15px;">Hey {customer.first_name},</p><p style="margin-top: 15px;margin-bottom: 15px;">Welcome to QuickBev!</p><p style="margin-top: 15px;margin-bottom: 15px;">Please click the link below to verify your account.</p><br /><p style="margin-top: 15px;margin-bottom: 15px;">Let the good times begin,</p><p style="margin-top: 15px;margin-bottom: 15px;">—The QuickBev Team</p></div><div style="width:100%; height:3vh;">{verify_button}</div>'
     mail_body = f'<div style="height: 100%;"><div style="width: 100%;height: 100%;background-color: #e8e8e8;"><div style="width: 100%;max-width: 500px;height: 80vh; margin-top: 0%;margin-bottom: 10%; margin-right:auto; margin-left:auto; background-color: #e8e8e8;"><tr style="width:100%;height:5vh;"></tr><div style="width:calc(100% - 30px); height:50vh; padding:30px 30px 30px 30px; background-color:white; margin-top:auto; margin-bottom:auto"><div style="width:100%; text-align:center; justify-content:center"><img src="{logo}" style="width:50%; height:12%; margin-right:auto; margin-left:auto" alt="img" /></div><div  style="margin-top: 30px;">{mail_body_text}</div><tr style="width:100%;height:5vh;"></tr></div></div></div>'
 
-    sender_address = 'postmaster@sandbox471ef3a89bf64e819540bc75206062f2.mailgun.org'
+    sender_address = 'quickbev.us'
     email = customer.id
 
     # Setup the MIME
@@ -274,8 +274,8 @@ def send_confirmation_email(jwt_token, customer):
     # The body and the attachments for the mail
     message.attach(MIMEText(mail_content, 'html'))
     s = smtplib.SMTP('smtp.mailgun.org', 587)
-    s.login('postmaster@sandbox471ef3a89bf64e819540bc75206062f2.mailgun.org',
-            '44603d9d0e3864edd01989602e0db876-e49cc42c-7570439d')
+    s.login('postmaster@quickbev.us',
+            'ad02d6a35928f01f2e6f912a6c3a06e1-ba042922-166a083c')
     s.sendmail(message['From'], message['To'], message.as_string())
     s.quit()
 
@@ -366,7 +366,7 @@ def customer():
             headers["authorization-token"] = jwt_token
             send_confirmation_email(
                 jwt_token=jwt_token, customer=generated_new_customer)
-            if generated_new_customer.has_registered:
+            if generated_new_customer.has_registered == True:
                 status = 201
             else:
                 status = 200

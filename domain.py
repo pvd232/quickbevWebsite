@@ -185,6 +185,8 @@ class Customer_Domain(object):
             self.first_name = customer_object.first_name
             self.last_name = customer_object.last_name
             self.email_verified = customer_object.email_verified
+            for key in customer_object.__dict__.keys():
+                print('customer key', key)
             if "has_registered" in customer_object.__dict__.keys():
                 self.has_registered = customer_object.has_registered
             # self.has_registered = False
