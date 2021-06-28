@@ -236,7 +236,7 @@ class Merchant_Domain(object):
             self.number_of_businesses = merchant_object.number_of_businesses
             self.stripe_id = merchant_object.stripe_id
 
-            if merchant_object.id == 'patardriscoll@gmail.com':
+            if merchant_object.id == 'bbucey@utexas.edu':
                 self.is_administrator = True
 
         elif merchant_json:
