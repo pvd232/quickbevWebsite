@@ -92,6 +92,8 @@ export class Order {
     this.serviceFee = parseFloat(order_object.service_fee);
     this.orderDrink = [];
     // if there are no orders then the backend will send an empty order so we dont need to construct an order drink
+    console.log('typeof order_object.orderDrink',typeof order_object.orderDrink)
+    console.log('typeof order_object.orderDrink === Array',typeof order_object.orderDrink === Array)
     if (
       typeof order_object.orderDrink === Array &&
       order_object.orderDrink[0].cost > 0

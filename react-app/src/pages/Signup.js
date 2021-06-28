@@ -262,7 +262,8 @@ const PromoteYourMenuFieldset = (props) => {
   const formChangeHandler = (event) => {
     let name = event.target.name;
     let value = event.target.value;
-    if (typeof value === String) {
+    console.log('typeof value === String',typeof value)
+    if (typeof value === "string") {
       setFormValue({ [name]: value.trim().toLowerCase() });
     } else {
       setFormValue({ [name]: value });
