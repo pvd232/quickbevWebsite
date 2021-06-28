@@ -230,6 +230,7 @@ class Merchant_Domain(object):
         self.phone_number = ''
         self.number_of_businesses = ''
         self.stripe_id = ''
+        self.is_administrator = False
         if merchant_object:
             self.id = merchant_object.id
             self.password = merchant_object.password
@@ -248,6 +249,8 @@ class Merchant_Domain(object):
             self.first_name = merchant_json["first_name"]
             self.last_name = merchant_json["last_name"]
             self.phone_number = merchant_json["phone_number"]
+            if merchant_json["id"] == 'bbucey@utexas.edu':
+                self.is_administrator = True
             # number of locations is added as a property later in the signup process so it won't be present when checking if the merchant exists at step one
             if "number_of_businesses" in merchant_json:
                 self.number_of_businesses = merchant_json["number_of_businesses"]
