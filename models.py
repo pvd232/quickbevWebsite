@@ -441,11 +441,12 @@ def create_orders_and_customers():
                                'Bucey', 'Driscoll', 'Sevastianos', 'Noorily']
 
     # create 6 new customers for testing
-    for i in range(len(customer_first_name_list)):
+    for i in range(len(customer_id_list)):
         new_stripe_customer = stripe.Customer.create()
         new_my_table_stripe_customer = Stripe_Customer(
             id=new_stripe_customer.id)
         db.session.add(new_my_table_stripe_customer)
+        print('customer_id_list[i]',customer_id_list[i])
         new_customer = Customer(id=customer_id_list[i], stripe_id=new_my_table_stripe_customer.id, password=generate_password_hash(
             customer_password_list[i]), first_name=customer_first_name_list[i], last_name=customer_last_name_list[i], email_verified=True, has_registered=False)
         db.session.add(new_customer)
