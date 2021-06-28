@@ -25,7 +25,7 @@ class Drink_Domain(object):
                 # the drink image url will always follow this pattern
                 self.image_url = drink_object.image_url
             else:
-                self.image_url = "https://storage.googleapis.com/my-new-quickbev-bucket/charter-roman-black-logo-no-words.png"
+                self.image_url = "https://storage.googleapis.com/my-new-quickbev-bucket/original.png"
         elif init == True and drink_json:
             # this is the initialization for creating the menu and adding the menu drinks to the database
             self.name = drink_json["name"]

@@ -470,7 +470,7 @@ class Google_Cloud_Storage_API(object):
         file_type = file.filename.rsplit('.', 1)[1].lower()
         destination_blob_name = "business/" + \
             str(drink.business_id) + "/menu-images/" + \
-            str(drink.id) + "." + file_type
+            drink.image_url
         blob = self.bucket.blob(destination_blob_name)
         blob.upload_from_file(file)
         blob.make_public()
