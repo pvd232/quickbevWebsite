@@ -489,9 +489,12 @@ def business(session_token):
 
         businesss = Business_Service().get_businesses()
         client_etag = json.loads(request.headers.get("If-None-Match"))
+        print('client_etag',client_etag)
 
         if client_etag:
+            print('client etag exists')
             if not ETag_Service().validate_etag(client_etag):
+                print('cant validate etag')
                 for business in businesss:
                     # turn into dictionaries
                     businessDTO = {}
@@ -502,7 +505,10 @@ def business(session_token):
                 etag = ETag_Service().get_etag("business")
                 headers["e-tag-category"] = etag.category
                 headers["e-tag-id"] = str(etag.id)
+            else:
+                print('client etag exists but it was validated')
         else:
+            print('no client etag')
             etag = ETag_Service().get_etag("business")
             headers["e-tag-category"] = etag.category
             headers["e-tag-id"] = str(etag.id)
