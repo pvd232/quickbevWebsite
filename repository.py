@@ -98,10 +98,12 @@ class Order_Repository(object):
         customer = request['stripe_id']
         customer_bool = False
         if customer:
+            print('customer',customer)
             confirm_customer_existence = session.query(Stripe_Customer).filter(
                 Stripe_Customer.id == customer).first()
             # Lookup the customer in the database so that if they exist we can attach their stripe id to the Ephermeral key such that later when they create the payment intent it will include their payment methods
             if confirm_customer_existence:
+                print('confirm_customer_existence',confirm_customer_existence)
                 customer_bool = True
                 key = stripe.EphemeralKey.create(
                     customer=customer, stripe_version=request['api_version'])
@@ -109,6 +111,7 @@ class Order_Repository(object):
                 return key, header
 
         if not customer_bool:
+            print('not customer_bool')
             new_customer = stripe.Customer.create()
             new_stripe = Stripe_Customer(id=new_customer.id)
             session.add(new_stripe)
@@ -197,16 +200,24 @@ class Customer_Repository(object):
             return False
 
     def register_new_customer(self, session, customer):
+        print('customer',customer.dto_serialize())
+        print('customer',customer)
         test_customer = session.query(Customer).filter(
             Customer.id == customer.id).first()
+        print('test_customer',test_customer)
+
         test_stripe_id = session.query(Stripe_Customer).filter(
             Stripe_Customer.id == customer.stripe_id).first()
+        print('test_stripe_id',test_stripe_id)
+
         if not test_customer and test_stripe_id:
+            print('if not test_customer and test_stripe_id')
             new_customer = Customer(id=customer.id, password=customer.password,
                                     first_name=customer.first_name, last_name=customer.last_name, stripe_id=test_stripe_id.id, email_verified=customer.email_verified, has_registered=False)
             session.add(new_customer)
             return new_customer
         elif not test_customer and not test_stripe_id:
+            print('elif not test_customer and not test_stripe_id')
             new_customer = stripe.Customer.create()
             new_stripe = Stripe_Customer(id=new_customer.id)
             session.add(new_stripe)
@@ -216,6 +227,7 @@ class Customer_Repository(object):
             return new_customer
         # if the customer that has been requested for registration from the front end is unverified then we overwrite the customer values with the new values and return True to let the front end know that this customer has previously attempted to have been registered but was never verified. that way if a customer never verfies the account can continue to be modified as necessary while still preserving its unverified state
         elif test_customer and test_customer.email_verified == False and not test_stripe_id:
+            print('elif test_customer and test_customer.email_verified == False and not test_stripe_id')
             new_customer = stripe.Customer.create()
             new_stripe = Stripe_Customer(id=new_customer.id)
             session.add(new_stripe)
@@ -227,6 +239,7 @@ class Customer_Repository(object):
             return test_customer
 
         elif test_customer and test_customer.email_verified == False and test_stripe_id:
+            print('test_customer and test_customer.email_verified == False and test_stripe_id')
             test_customer.password = customer.password
             test_customer.first_name = customer.first_name
             test_customer.last_name = customer.last_name
