@@ -98,6 +98,7 @@ class Client {
     }
   };
   getOrders = async () => {
+    console.log('ORDERS JSON.parse(localStorage.getItem("sessionToken"))',JSON.parse(localStorage.getItem("sessionToken")))
     this.url =
       this.baseUrl +
       "/order/" +

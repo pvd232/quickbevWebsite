@@ -711,6 +711,8 @@ const Signup = () => {
       false
     );
     console.log("confirmed_new_business", confirmed_new_business);
+    console.log('responseBody.jwt_token',responseBody.jwt_token)
+    
 
     setLocalStorage("business", confirmed_new_business);
     setLocalStorage("sessionToken", responseBody.jwt_token);
@@ -718,7 +720,7 @@ const Signup = () => {
       "localStorage",
       localStorage.getItem("merchant")
     );
-    const currentBusiness = new Merchant(
+    const currentBusiness = new Business(
       "localStorage",
       localStorage.getItem("business")
     );
