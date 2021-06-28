@@ -60,7 +60,7 @@ const CreateYourAccountFieldset = (props) => {
     let name = event.target.name;
     let value = event.target.value;
     if (
-      typeof value === String &&
+      typeof value === "string" &&
       name !== "password" &&
       name !== "confirmPassword"
     ) {
@@ -262,7 +262,6 @@ const PromoteYourMenuFieldset = (props) => {
   const formChangeHandler = (event) => {
     let name = event.target.name;
     let value = event.target.value;
-    console.log('typeof value === String',typeof value)
     if (typeof value === "string") {
       setFormValue({ [name]: value.trim().toLowerCase() });
     } else {
@@ -548,7 +547,7 @@ const BusinessFieldset = (props) => {
   const formChangeHandler = (event) => {
     let name = event.target.name;
     let value = event.target.value;
-    if (typeof value === String) {
+    if (typeof value === "string") {
       setFormValue({ [name]: value.trim().toLowerCase() });
     } else {
       setFormValue({ [name]: value });
