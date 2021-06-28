@@ -110,7 +110,7 @@ class Order_Domain(object):
             self.rejected = order_object.Order.rejected
             self.refunded = order_object.Order.refunded
         elif order_json:
-            print('order_json[customer]',order_json['customer'])
+            print('order_json',order_json)
             self.id = order_json["id"]
             self.customer = Customer_Domain(customer_json=order_json['customer'])
             self.merchant_stripe_id = order_json["merchant_stripe_id"]
