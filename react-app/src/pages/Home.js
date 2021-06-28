@@ -11,15 +11,18 @@ const Home = () => {
   const [orders, setOrders] = useState(null);
   const [customers, setCustomers] = useState(null);
   const [businesses, setBusinesses] = useState(null);
-  const [isValidated, setIsValidated] = useState(true);
+  const [isValidated, setIsValidated] = useState(null);
   useEffect(() => {
-    console.log("fuck this shit", JSON.parse(localStorage.getItem('merchant')))
-    console.log("fuck this shit 2", JSON.parse(localStorage.getItem('business')))
     let mounted = true;
     API.checkStripeStatus().then((value) => {
       console.log('value',value)
-      if (!value && mounted) {
-        setIsValidated(false);
+      if (mounted) {
+        if (!value) {
+          setIsValidated(false);
+        }
+        else {
+          setIsValidated(true);
+        }
       }
     });
     API.getOrders().then((items) => {
@@ -42,7 +45,7 @@ const Home = () => {
     });
     return () => (mounted = false);
   }, []);
-  if (isValidated) {
+  if (isValidated === true) {
     if (orders && customers && businesses) {
       return (
         <Dashboard
@@ -54,7 +57,7 @@ const Home = () => {
     } else {
       return <></>;
     }
-  } else {
+  } else if (isValidated === false) {
     return ( <> <Navbar/>
     <div className="signupBody">
       <div id="msform">  <Row>
@@ -65,6 +68,9 @@ const Home = () => {
           >
             <PayoutSetup callback={true}></PayoutSetup> 
             </Col></Row></div></div></>)
+  }
+  else if (isValidated === null) {
+    return <></>
   }
 };
 export default Home;
