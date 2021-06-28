@@ -401,7 +401,7 @@ def customer():
             # send the hashed user ID as a crypted key embedded in the activation link for security
             headers["authorization-token"] = jwt_token
             send_confirmation_email(
-                jwt_token=jwt_token, user=generated_new_customer)
+                jwt_token=jwt_token, user=generated_new_customer, email_type="customer_confirmation")
             if generated_new_customer.has_registered == True:
                 status = 201
             else:
@@ -415,7 +415,7 @@ def customer():
         jwt_token = jwt.encode(
             {"sub": customer.id}, key=secret, algorithm="HS256")
         send_confirmation_email(
-            jwt_token=jwt_token, user=customer)
+            jwt_token=jwt_token, user=customer, email_type="customer_confirmation")
         return Response(status=200)
         return Response(status=200, headers=headers)
     elif request.method == "GET":
