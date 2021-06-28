@@ -11,13 +11,13 @@ const Home = () => {
   const [orders, setOrders] = useState(null);
   const [customers, setCustomers] = useState(null);
   const [businesses, setBusinesses] = useState(null);
-  const [isValidated, setIsValidated] = useState(false);
+  const [isValidated, setIsValidated] = useState(true);
   useEffect(() => {
     let mounted = true;
     API.checkStripeStatus().then((value) => {
       console.log('value',value)
-      if (value && mounted) {
-        setIsValidated(true);
+      if (!value && mounted) {
+        setIsValidated(false);
       }
     });
     API.getOrders().then((items) => {
