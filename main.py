@@ -367,7 +367,7 @@ def customer():
     response = {}
     headers = {}
     if request.method == 'OPTIONS':
-        session_token = request.args.get('sessionToken')
+        session_token = request.args.get('session_token')
         if not jwt.decode(session_token, secret, algorithms=["HS256"]):
             return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
         headers["Access-Control-Allow-Origin"] = request.origin

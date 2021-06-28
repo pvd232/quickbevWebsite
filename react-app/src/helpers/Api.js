@@ -80,11 +80,11 @@ class Client {
       headers: requestHeaders,
     });
     const headers = {};
-        for (const [key, value] of response.headers.entries()) {
-          headers[key] = value;
-        }
+    for (const [key, value] of response.headers.entries()) {
+      headers[key] = value;
+    }
     if (response.status === 204) {
-      console.log('response status 204 to log in merchant')
+      console.log("response status 204 to log in merchant");
       return false;
     } else {
       const loggedInMerchant = new Merchant("json", await response.json());
@@ -93,16 +93,19 @@ class Client {
       setLocalStorage("merchant", loggedInMerchant);
       console.log("response.headers.jwt_token", headers.jwt_token);
 
-      setLocalStorage("sessionToken", headers.jwt_token);
+      setLocalStorage("session_token", headers.jwt_token);
       return true;
     }
   };
   getOrders = async () => {
-    console.log('ORDERS JSON.parse(localStorage.getItem("sessionToken"))',JSON.parse(localStorage.getItem("sessionToken")))
+    console.log(
+      'ORDERS JSON.parse(localStorage.getItem("sessionToken"))',
+      JSON.parse(localStorage.getItem("session_token"))
+    );
     this.url =
       this.baseUrl +
       "/order/" +
-      JSON.parse(localStorage.getItem("sessionToken"));
+      JSON.parse(localStorage.getItem("session_token"));
     console.log("this.url", this.url);
 
     var headers = new Headers();
@@ -124,8 +127,8 @@ class Client {
   getCustomers = async () => {
     this.url =
       this.baseUrl +
-      "/customer?sessionToken=" +
-      JSON.parse(localStorage.getItem("sessionToken"));
+      "/customer?session_token=" +
+      JSON.parse(localStorage.getItem("session_token"));
     console.log("this.url", this.url);
 
     var headers = new Headers();
@@ -162,14 +165,14 @@ class Client {
     this.url =
       this.baseUrl +
       "/business/" +
-      JSON.parse(localStorage.getItem("sessionToken"));
+      JSON.parse(localStorage.getItem("session_token"));
     var headers = new Headers();
     const currentMerchant = new Merchant(
       "localStorage",
       localStorage.getItem("merchant")
     );
     // will uncomment this when i have added menu for new businesses
-    console.log('currentMerchant in business',currentMerchant)
+    console.log("currentMerchant in business", currentMerchant);
     headers.set("merchantId", currentMerchant.id);
     return fetch(this.url, {
       headers: headers,

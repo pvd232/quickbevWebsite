@@ -91,20 +91,25 @@ const CreateYourAccountFieldset = (props) => {
         return false;
       } else {
         const newMerchant = new Merchant("merchantStateObject", formValue);
-        const merchantData = { email: newMerchant.id, password: newMerchant.password };
-        API.makeRequest("GET", "/merchant",false, merchantData).then((response) => {
-          console.log("response", response);
-          if (response.status === 204) {
-            // if the username is available the response from the API will be true
-            props.onClick("next", "merchant", newMerchant);
-          } else {
-            // otherwise it will be false
-            newErrorMsgState["emailErrorMsg"] = "* Username already claimed";
-            newErrorMsgState["emailDisplay"] = "inline-block";
-            setErrorMsg(newErrorMsgState);
-            return false;
+        const merchantData = {
+          email: newMerchant.id,
+          password: newMerchant.password,
+        };
+        API.makeRequest("GET", "/merchant", false, merchantData).then(
+          (response) => {
+            console.log("response", response);
+            if (response.status === 204) {
+              // if the username is available the response from the API will be true
+              props.onClick("next", "merchant", newMerchant);
+            } else {
+              // otherwise it will be false
+              newErrorMsgState["emailErrorMsg"] = "* Username already claimed";
+              newErrorMsgState["emailDisplay"] = "inline-block";
+              setErrorMsg(newErrorMsgState);
+              return false;
+            }
           }
-        });
+        );
       }
     } else {
       return false;
@@ -546,7 +551,7 @@ const BusinessFieldset = (props) => {
   const formChangeHandler = (event) => {
     let name = event.target.name;
     let value = event.target.value;
-    if (typeof value === "string" && name !== 'name') {
+    if (typeof value === "string" && name !== "name") {
       setFormValue({ [name]: value.trim().toLowerCase() });
     } else {
       setFormValue({ [name]: value });
@@ -693,8 +698,14 @@ const Signup = () => {
 
     setLocalStorage("merchant", newMerchant);
     setLocalStorage("business", newBusiness);
-    console.log("fuck this shit in signup", JSON.parse(localStorage.getItem('merchant')))
-    console.log("fuck this shit in siggup 2", JSON.parse(localStorage.getItem('business')))
+    console.log(
+      "fuck this shit in signup",
+      JSON.parse(localStorage.getItem("merchant"))
+    );
+    console.log(
+      "fuck this shit in siggup 2",
+      JSON.parse(localStorage.getItem("business"))
+    );
     // set in local storage if user has multiple businesses so we can display a tab to add more businesses late
     let responseBody = await API.makeRequest(
       "POST",
@@ -711,11 +722,10 @@ const Signup = () => {
       false
     );
     console.log("confirmed_new_business", confirmed_new_business);
-    console.log('responseBody.jwt_token',responseBody.jwt_token)
-    
+    console.log("responseBody.jwt_token", responseBody.jwt_token);
 
     setLocalStorage("business", confirmed_new_business);
-    setLocalStorage("sessionToken", responseBody.jwt_token);
+    setLocalStorage("session_token", responseBody.headers.jwt_token);
     const currentMerchant = new Merchant(
       "localStorage",
       localStorage.getItem("merchant")
