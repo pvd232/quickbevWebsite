@@ -15,7 +15,6 @@ const Home = () => {
   useEffect(() => {
     console.log("fuck this shit", JSON.parse(localStorage.getItem('merchant')))
     console.log("fuck this shit 2", JSON.parse(localStorage.getItem('business')))
-localStorage.
     let mounted = true;
     API.checkStripeStatus().then((value) => {
       console.log('value',value)
