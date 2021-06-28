@@ -5,7 +5,8 @@ import { setLocalStorage } from "../Models.js";
 import PayoutSetup from "./PayoutSetup.js";
 import Navbar from "../Navbar.js";
 import "../css/Signup.css";
-
+import Row from "react-bootstrap/Row";
+import Col from "react-bootstrap/Col";
 const Home = () => {
   const [orders, setOrders] = useState(null);
   const [customers, setCustomers] = useState(null);
@@ -54,7 +55,14 @@ const Home = () => {
   } else {
     return ( <> <Navbar/>
     <div className="signupBody">
-      <div id="msform"> <PayoutSetup callback={true}></PayoutSetup> </div></div></>)
+      <div id="msform">  <Row>
+          <Col
+            sm={12}
+            id="payoutSetup"
+            style={{ justifyContent: "center", display: "flex" }}
+          >
+            <PayoutSetup callback={true}></PayoutSetup> 
+            </Col></Row></div></div></>)
   }
 };
 export default Home;
