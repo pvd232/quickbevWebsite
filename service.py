@@ -468,9 +468,7 @@ class Google_Cloud_Storage_API(object):
         # destination_blob_name = "storage-object-name" this will be the business uuid
         file = drink.file
         # file_type = file.filename.rsplit('.', 1)[1].lower()
-        destination_blob_name = "business/" + \
-            str(drink.business_id) + "/menu-images/" + \
-            drink.image_url
+        destination_blob_name = drink.image_url
         print('drink.image_url',drink.image_url)
         print('destination_blob_name',destination_blob_name)
 
