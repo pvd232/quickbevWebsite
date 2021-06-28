@@ -142,12 +142,14 @@ class Merchant(db.Model):
     last_name = db.Column(db.String(80), nullable=False)
     phone_number = db.Column(db.BigInteger(), nullable=False)
     number_of_businesses = db.Column(db.Integer(), nullable=False)
-    stripe_id = db.Column(db.String(80), db.ForeignKey('merchant_stripe_account.id'), nullable=False)
+    stripe_id = db.Column(db.String(80), db.ForeignKey(
+        'merchant_stripe_account.id'), nullable=False)
     is_active = db.Column(db.Boolean(), default=True, nullable=False)
     merchant_employee = relationship(
         "Merchant_Employee", lazy=True, backref="merchant")
     business = relationship(
         "Business", lazy=True, backref="merchant")
+
     @property
     def serialize(self):
         attribute_names = list(self.__dict__.keys())
@@ -158,12 +160,11 @@ class Merchant(db.Model):
         return serialized_attributes
 
 
-
 class Customer(db.Model):
     __tablename__ = 'customer'
     id = db.Column(db.String(200), primary_key=True,
                    unique=True, nullable=False)
-    stripe_id = db.Column(db.String(80), db.ForeignKey('stripe_customer.id'),unique = True,
+    stripe_id = db.Column(db.String(80), db.ForeignKey('stripe_customer.id'), unique=True,
                           nullable=False)
     password = db.Column(db.String(200), nullable=False)
     first_name = db.Column(db.String(80), nullable=False)
@@ -305,8 +306,10 @@ class Merchant_Stripe_Account(db.Model):
     __tablename__ = 'merchant_stripe_account'
     id = db.Column(db.String(80), primary_key=True,
                    unique=True, nullable=False)
-    merchant = relationship('Merchant', lazy=True, backref="merchant_stripe_account")
-    business = relationship("Business", lazy=True, backref="merchant_stripe_account")
+    merchant = relationship('Merchant', lazy=True,
+                            backref="merchant_stripe_account")
+    business = relationship("Business", lazy=True,
+                            backref="merchant_stripe_account")
 
     @property
     def serialize(self):
@@ -364,8 +367,8 @@ def create_business():
     new_stripe_account = Merchant_Stripe_Account(id=new_account.id)
     db.session.add(new_stripe_account)
     new_merchant = Merchant(id="a", password=generate_password_hash("a"), first_name="peter",
-                            last_name="driscoll", phone_number=5126456898, number_of_businesses=2, stripe_id = new_stripe_account.id)
-   
+                            last_name="driscoll", phone_number=5126456898, number_of_businesses=2, stripe_id=new_stripe_account.id)
+
     db.session.add(new_merchant)
 
     test_business = load_json("test_business.json")
