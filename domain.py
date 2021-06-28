@@ -21,7 +21,7 @@ class Drink_Domain(object):
             self.price = drink_object.price
             self.business_id = drink_object.business_id
             self.has_image = drink_object.has_image
-            if drink_object.has_image == True:
+            if drink_object.has_image == True and drink_object.image_url != None:
                 # the drink image url will always follow this pattern
                 self.image_url = drink_object.image_url
             else:
