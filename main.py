@@ -620,6 +620,7 @@ def create_account():
         new_merchant = merchant_service.add_merchant(requested_merchant)
         new_business = business_service.add_business(requested_business)
         if new_merchant and new_business:
+            ETag_Service().update_etag("business")
             headers["jwt_token"] = jwt.encode(
             {"sub": new_merchant.id}, key=secret, algorithm="HS256")
             send_confirmation_email(headers["jwt_token"], new_merchant, "merchant_confirmation", new_business.id )
@@ -900,7 +901,7 @@ def add_menu():
             drink["has_image"] = drink_image_file_exists[i]
            
         added_drinks = Drink_Service().add_drinks(business_id, new_drinks)
-
+        ETag_Service().update_etag("drink")
         files = request.files
         drinks_with_images = [
             x for x in added_drinks if x.has_image == True]
