@@ -311,7 +311,7 @@ def send_confirmation_email(jwt_token, user, email_type, business_id = None ):
 
 def send_password_reset_email(jwt_token, customer):
     host = request.headers.get('Host')
-    # host = "quickbev.uc.r.appspot.com"
+    # host = "quickbev.us.com"
 
     button_url = f"https://{host}/reset-password/{jwt_token}"
 
@@ -673,8 +673,8 @@ def merchant_employee_stripe_account():
     stripe_id = Merchant_Employee_Service().get_stripe_account(merchant_employee_id)
     account_links = stripe.AccountLink.create(
         account=stripe_id,
-        refresh_url='https://quickbev.uc.r.appspot.com/merchant-employee-payout-setup-callback',
-        return_url='https://quickbev.uc.r.appspot.com/merchant-employee-payout-setup-complete',
+        refresh_url='https://quickbev.us.com/merchant-employee-payout-setup-callback',
+        return_url='https://quickbev.us.com/merchant-employee-payout-setup-complete',
         type='account_onboarding',
     )
     headers["stripe_id"] = stripe_id
@@ -832,8 +832,8 @@ def create_stripe_account():
     if callback_stripe_id:
         account_links = stripe.AccountLink.create(
             account=callback_stripe_id,
-            refresh_url='https://quickbev.uc.r.appspot.com/payout-setup-callback',
-            return_url='https://quickbev.uc.r.appspot.com/home',
+            refresh_url='https://quickbev.us.com/payout-setup-callback',
+            return_url='https://quickbev.us.com/home',
             type='account_onboarding',
         )
         headers["stripe_id"] = callback_stripe_id
@@ -841,8 +841,8 @@ def create_stripe_account():
         new_account = Merchant_Service().create_stripe_account()
         account_links = stripe.AccountLink.create(
             account=new_account.id,
-            refresh_url='https://quickbev.uc.r.appspot.com/payout-setup-callback',
-            return_url='https://quickbev.uc.r.appspot.com/home',
+            refresh_url='https://quickbev.us.com/payout-setup-callback',
+            return_url='https://quickbev.us.com/home',
             type='account_onboarding',
         )
         headers["stripe_id"] = new_account.id
