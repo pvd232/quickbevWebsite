@@ -5,6 +5,12 @@ runtime: python39
 env: standard
 entrypoint: gunicorn -b :$PORT -c gunicorn.conf.py main:app
 
+handlers:
+- url: /.*
+  script: auto
+  secure: always
+  redirect_http_response_code: 301
+
 #[START env]
 env_variables:
     # postgresql+psycopg2://USER:PASSWORD@/DATABASE?host=/cloudsql/INSTANCE_CONNECTION_NAME
