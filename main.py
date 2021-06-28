@@ -534,7 +534,7 @@ def business(session_token):
                     businessDTO = {}
                     businessDTO['business'] = business.dto_serialize()
                     business_list.append(businessDTO)
-                    response['businesses'] = business_list
+                response['businesses'] = business_list
 
                 etag = ETag_Service().get_etag("business")
                 headers["e-tag-category"] = etag.category
