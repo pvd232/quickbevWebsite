@@ -467,10 +467,13 @@ class Google_Cloud_Storage_API(object):
         # file = "local/path/to/file" this will be the business folder, with a folder named after the business' unique id, which will have the menu file in it
         # destination_blob_name = "storage-object-name" this will be the business uuid
         file = drink.file
-        file_type = file.filename.rsplit('.', 1)[1].lower()
+        # file_type = file.filename.rsplit('.', 1)[1].lower()
         destination_blob_name = "business/" + \
             str(drink.business_id) + "/menu-images/" + \
             drink.image_url
+        print('drink.image_url',drink.image_url)
+        print('destination_blob_name',destination_blob_name)
+
         blob = self.bucket.blob(destination_blob_name)
         blob.upload_from_file(file)
         blob.make_public()
