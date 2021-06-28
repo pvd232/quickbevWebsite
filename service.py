@@ -471,7 +471,7 @@ class Google_Cloud_Storage_API(object):
         # destination_blob_name = "business/" + \
         #     str(drink.business_id) + "/menu-images/" + \
         #     str(drink.id) + "." + file_type
-        destination_blob_name = drink.blog_bname
+        destination_blob_name = drink.blob_name
         blob = self.bucket.blob(destination_blob_name)
         blob.upload_from_file(file)
         blob.make_public()
