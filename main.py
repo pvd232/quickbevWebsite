@@ -916,6 +916,7 @@ def add_menu():
 
                 # update the drink image url for each drink, keeping the proper index intact by extracting only drinks with an image
                 drink.set_image_url(file.filename)
+                print('drink.image_url',drink.image_url)
                 drink.file = file
                 Google_Cloud_Storage_API().upload_drink_image_file(drink)
                 response["msg"] = "File successfully uploaded!"
