@@ -14,6 +14,7 @@ class Drink_Domain(object):
         self.business_id = ''
         self.has_image = False
         self.image_url = ''
+        self.blob_name = ''
         if drink_object:
             self.id = drink_object.id
             self.name = drink_object.name
@@ -45,7 +46,7 @@ class Drink_Domain(object):
 
     def set_image_url(self, file_name):
         self.image_url = f'https://storage.googleapis.com/my-new-quickbev-bucket/business/{str(self.business_id)}/menu-images/' + file_name
-
+        self.blob_name = f'business/{str(self.business_id)}/menu-images/' + file_name
     def dto_serialize(self):
         attribute_names = list(self.__dict__.keys())
         attributes = list(self.__dict__.values())
