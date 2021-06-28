@@ -13,6 +13,9 @@ const Home = () => {
   const [businesses, setBusinesses] = useState(null);
   const [isValidated, setIsValidated] = useState(true);
   useEffect(() => {
+    console.log("fuck this shit", JSON.parse(localStorage.getItem('merchant')))
+    console.log("fuck this shit 2", JSON.parse(localStorage.getItem('business')))
+
     let mounted = true;
     API.checkStripeStatus().then((value) => {
       console.log('value',value)

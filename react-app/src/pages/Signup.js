@@ -235,7 +235,7 @@ const PromoteYourMenuFieldset = (props) => {
     (state, newState) => ({ ...state, ...newState }),
     {
       menuUrl: "",
-      classification: "",
+      classification: "bar",
       numberOfBusinesses: "",
     }
   );
@@ -413,7 +413,6 @@ const PromoteYourMenuFieldset = (props) => {
                 paddingBottom: "0",
               }}
             >
-              <option>Choose ...</option>
               <option>Bar</option>
               <option>Restaurant</option>
               <option>Club</option>
@@ -547,7 +546,7 @@ const BusinessFieldset = (props) => {
   const formChangeHandler = (event) => {
     let name = event.target.name;
     let value = event.target.value;
-    if (typeof value === "string") {
+    if (typeof value === "string" && name !== 'name') {
       setFormValue({ [name]: value.trim().toLowerCase() });
     } else {
       setFormValue({ [name]: value });
@@ -694,6 +693,8 @@ const Signup = () => {
 
     setLocalStorage("merchant", newMerchant);
     setLocalStorage("business", newBusiness);
+    console.log("fuck this shit in signup", JSON.parse(localStorage.getItem('merchant')))
+    console.log("fuck this shit in siggup 2", JSON.parse(localStorage.getItem('business')))
     // set in local storage if user has multiple businesses so we can display a tab to add more businesses late
     let responseBody = await API.makeRequest(
       "POST",
