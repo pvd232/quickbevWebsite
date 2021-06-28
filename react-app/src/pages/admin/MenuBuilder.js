@@ -237,11 +237,13 @@ const MenuBuilder = () => {
       drinkDescription: [],
       drinkPrice: [],
       selectedFile: [],
+      selectedFileName: [],
     };
     for (let i = 0; i < props.numRows; i++) {
       formValues.drinkName.push("");
       formValues.drinkDescription.push("");
       formValues.selectedFile.push("");
+      formValues.selectedFileName.push("");
     }
 
     const formChangeHandler = (newValue) => {

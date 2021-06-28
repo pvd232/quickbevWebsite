@@ -50,6 +50,7 @@ class Drink(db.Model):
     description = db.Column(db.String(80), nullable=False)
     price = db.Column(db.Float(), nullable=False)
     has_image = db.Column(db.Boolean(), default=False, nullable=False)
+    image_url = db.Column(db.String(80), nullable=True)
     is_active = db.Column(db.Boolean(), default=True, nullable=False)
     business_id = db.Column(UUID(as_uuid=True), db.ForeignKey(
         'business.id'), nullable=False)

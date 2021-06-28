@@ -152,13 +152,13 @@ const Dashboard = (props) => {
     setCurrentPageIndex(newIndex);
   };
   const [modalOpen, setModalOpen] = useState(
-    localStorage.getItem("firstLogin") === "true" ? true : false
+    JSON.parse(localStorage.getItem("first_login")) 
   );
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
 
   const modalHandleClose = () => {
-    setLocalStorage("firstLogin", false);
+    setLocalStorage("first_login", false);
     setModalOpen(false);
   };
   const settingsAnchorRef = useRef(null);

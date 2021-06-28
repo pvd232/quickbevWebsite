@@ -852,7 +852,8 @@ def add_menu():
         drink_names = json.loads(request.form.get("drinkName"))
         drink_descriptions = json.loads(request.form.get("drinkDescription"))
         drink_prices = json.loads(request.form.get("drinkPrice"))
-        drink_file_names = json.loads(request.form.get("selectedFile"))
+        drink_image_file_exists = json.loads(request.form.get("selectedFile"))
+        drink_image_file_names = json.loads(request.form.get("selectedFileName"))
         business_id = json.loads(request.form.get("businessId"))
 
         new_drinks = [{"name": x} for x in drink_names]
@@ -860,8 +861,8 @@ def add_menu():
             drink = new_drinks[i]
             drink["description"] = drink_descriptions[i]
             drink["price"] = float(drink_prices[i])
-            drink["has_image"] = drink_file_names[i]
-
+            drink["has_image"] = drink_image_file_exists[i]
+           
         added_drinks = Drink_Service().add_drinks(business_id, new_drinks)
 
         files = request.files
@@ -871,13 +872,17 @@ def add_menu():
             multi_dict_files = MultiDict(files).getlist('selectedFile')
             for i in range(len(multi_dict_files)):
                 file = multi_dict_files[i]
-                file_type = file.filename.split('.')[1]
-                if file_type != 'jpg':
-                    file.filename = file.filename.split('.')[0] + '.jpg'
+                # file_type = file.filename.split('.')[1]
+                # if file_type != 'jpg':
+                #     file.filename = file.filename.split('.')[0] + '.jpg'
                 drink = drinks_with_images[i]
+
+                # update the drink image url for each drink, keeping the proper index intact by extracting only drinks with an image
+                drink.set_image_url(file.filename)
                 drink.file = file
                 Google_Cloud_Storage_API().upload_drink_image_file(drink)
                 response["msg"] = "File successfully uploaded!"
+            Drink_Service().update_drinks(drinks_with_images)
             return Response(status=200, response=json.dumps(response), headers=headers)
         drink_descriptions = json.loads(request.form.get("drinkDescription"))
         drink_descriptions = json.loads(request.form.get("drinkDescription"))

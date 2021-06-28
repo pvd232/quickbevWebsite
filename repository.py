@@ -27,6 +27,13 @@ class Drink_Repository(object):
             session.add(new_drink)
         return drink_list
 
+    def update_drinks(self, session, drinks):
+        for drink in drinks:
+            drink_to_update = session.query(Drink).filter(
+                Drink.id == drink.id).first()
+            drink_to_update.image_url = drink.image_url
+        return True
+
 
 class Order_Repository(object):
     def update_order(self, session, order):
@@ -399,12 +406,11 @@ class Merchant_Repository(object):
         return merchant_stripe_status['charges_enabled']
 
     def add_merchant(self, session, requested_merchant):
-        print('requested_merchant',requested_merchant.dto_serialize())
+        print('requested_merchant', requested_merchant.dto_serialize())
         new_merchant = Merchant(id=requested_merchant.id, password=generate_password_hash(requested_merchant.password), first_name=requested_merchant.first_name,
-                                last_name=requested_merchant.last_name, phone_number=requested_merchant.phone_number, number_of_businesses=requested_merchant.number_of_businesses, stripe_id = requested_merchant.stripe_id)
+                                last_name=requested_merchant.last_name, phone_number=requested_merchant.phone_number, number_of_businesses=requested_merchant.number_of_businesses, stripe_id=requested_merchant.stripe_id)
         session.add(new_merchant)
         return requested_merchant
-
 
 
 class Merchant_Employee_Repository(object):

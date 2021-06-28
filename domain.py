@@ -13,6 +13,7 @@ class Drink_Domain(object):
         self.order_drink_id = ''
         self.business_id = ''
         self.has_image = False
+        self.image_url = ''
         if drink_object:
             self.id = drink_object.id
             self.name = drink_object.name
@@ -22,8 +23,7 @@ class Drink_Domain(object):
             self.has_image = drink_object.has_image
             if drink_object.has_image == True:
                 # the drink image url will always follow this pattern
-                self.image_url = f'https://storage.googleapis.com/my-new-quickbev-bucket/business/{str(self.business_id)}/menu-images/' + str(
-                    self.name.lower()) + '.jpg'
+                self.image_url = drink_object.image_url
             else:
                 self.image_url = "https://storage.googleapis.com/my-new-quickbev-bucket/charter-roman-black-logo-no-words.png"
         elif init == True and drink_json:
@@ -42,6 +42,9 @@ class Drink_Domain(object):
             self.price = drink_json["price"]
             self.business_id = drink_json["business_id"]
             self.quantity = drink_json["quantity"]
+
+    def set_image_url(self, file_name):
+        self.image_url = f'https://storage.googleapis.com/my-new-quickbev-bucket/business/{str(self.business_id)}/menu-images/' + file_name
 
     def dto_serialize(self):
         attribute_names = list(self.__dict__.keys())

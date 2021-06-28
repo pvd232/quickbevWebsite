@@ -64,6 +64,10 @@ class Drink_Service(object):
                 drink.id = id
             return Drink_Repository().add_drinks(session, new_drink_list)
 
+    def update_drinks(self, drinks):
+        with session_scope() as session:
+            return Drink_Repository().update_drinks(drinks)
+
     def get_drinks_etag(self):
         with session_scope() as session:
             return ETag_Domain(etag_object=ETag_Repository().get_etag(session, "drink"))
