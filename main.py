@@ -621,7 +621,7 @@ def create_account():
         new_business = business_service.add_business(requested_business)
         if new_merchant and new_business:
             headers["jwt_token"] = jwt.encode(
-            {"sub": request}, key=secret, algorithm="HS256")
+            {"sub": new_merchant.id}, key=secret, algorithm="HS256")
             send_confirmation_email(headers["jwt_token"], new_merchant, "merchant_confirmation", new_business.id )
 
             response['confirmed_new_business'] = new_business.dto_serialize()
