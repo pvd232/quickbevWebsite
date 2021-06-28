@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import Button from "react-bootstrap/Button";
 import API from "../helpers/Api.js";
 import bankIcon from "../static/icon-bank.svg";
-import { Business, setLocalStorage, Merchant } from "../Models.js";
+import { setLocalStorage, Merchant } from "../Models.js";
 
 const PayoutSetup = (props) => {
   const [redirect, setRedirect] = useState(null);

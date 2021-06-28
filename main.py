@@ -586,6 +586,8 @@ def create_account():
         new_merchant = merchant_service.add_merchant(requested_merchant)
         new_business = business_service.add_business(requested_business)
         if new_merchant and new_business:
+            headers["jwt_token"] = jwt.encode(
+            {"sub": request}, key=secret, algorithm="HS256")
             response['confirmed_new_business'] = new_business.dto_serialize()
 
             if 'file' not in request.files:
@@ -619,8 +621,8 @@ def create_account():
 #     business_to_update = request_json["business"]
 #     print('business_to_update',business_to_update)
 #     if business_service.update_business(business_to_update):
-#         headers["jwt_token"] = jwt.encode(
-#             {"sub": business_to_update["id"]}, key=secret, algorithm="HS256")
+        # headers["jwt_token"] = jwt.encode(
+        #     {"sub": business_to_update["id"]}, key=secret, algorithm="HS256")
 #         response["msg"] = "Business sucessfully updated"
 #         return Response(status=200, response=json.dumps(response), headers=headers)
 #     else:

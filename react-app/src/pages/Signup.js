@@ -712,6 +712,7 @@ const Signup = () => {
     console.log('confirmed_new_business',confirmed_new_business)
 
     setLocalStorage("business", confirmed_new_business);
+    setLocalStorage("sessionToken", responseBody.jwt_token)
     const currentMerchant = new Merchant(
       "localStorage",
       localStorage.getItem("merchant")

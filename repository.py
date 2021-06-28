@@ -309,7 +309,7 @@ class Business_Repository(object):
         ), sales_tax_rate=business.sales_tax_rate, merchant_id=business.merchant_id, street=business.street, city=business.city,
             state=business.state, zipcode=business.zipcode, address=business.address, tablet=business.tablet, phone_number=business.phone_number, merchant_stripe_id=business.merchant_stripe_id)
         session.add(new_business)
-        return new_business
+        return business
 
     # dont need this anymore because i no longer generate a new stripe ID when the user hits the redirect_url. felt cute, will probably delete later
     # def update_business(self, session, business):
@@ -403,7 +403,7 @@ class Merchant_Repository(object):
         new_merchant = Merchant(id=requested_merchant.id, password=generate_password_hash(requested_merchant.password), first_name=requested_merchant.first_name,
                                 last_name=requested_merchant.last_name, phone_number=requested_merchant.phone_number, number_of_businesses=requested_merchant.number_of_businesses, stripe_id = requested_merchant.stripe_id)
         session.add(new_merchant)
-        return True
+        return requested_merchant
 
 
 
