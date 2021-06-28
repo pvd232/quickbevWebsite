@@ -62,7 +62,7 @@ class Drink_Domain(object):
 class Order_Domain(object):
     def __init__(self, order_object=None, order_json=None, drinks=None):
         self.id = ''
-        self.customer_id = ''
+        self.customer= ''
         self.customer_first_name = ''
         self.customer_last_name = ''
         self.cost = 0
@@ -92,7 +92,7 @@ class Order_Domain(object):
             self.customer_last_name = order_object.customer_last_name
             # the order db model object is nested inside the result as "Order"
             self.id = order_object.Order.id
-            self.customer_id = order_object.Order.customer_id
+            self.customer = order_object.Order.customer
             self.cost = order_object.Order.cost
             self.subtotal = order_object.Order.subtotal
             self.tip_percentage = order_object.Order.tip_percentage
@@ -110,8 +110,9 @@ class Order_Domain(object):
             self.rejected = order_object.Order.rejected
             self.refunded = order_object.Order.refunded
         elif order_json:
+            print('order_json[customer]',order_json['customer'])
             self.id = order_json["id"]
-            self.customer_id = order_json['customer_id']
+            self.customer = Customer_Domain(customer_json=order_json['customer'])
             self.merchant_stripe_id = order_json["merchant_stripe_id"]
             self.cost = order_json["cost"]
             self.subtotal = order_json["subtotal"]
