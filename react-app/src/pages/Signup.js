@@ -91,8 +91,8 @@ const CreateYourAccountFieldset = (props) => {
         return false;
       } else {
         const newMerchant = new Merchant("merchantStateObject", formValue);
-        const merchantData = { merchant: newMerchant };
-        API.makeRequest("GET", "/merchant", merchantData).then((response) => {
+        const merchantData = { email: newMerchant.id, password: newMerchant.password };
+        API.makeRequest("GET", "/merchant",false, merchantData).then((response) => {
           console.log("response", response);
           if (response.status === 204) {
             // if the username is available the response from the API will be true
