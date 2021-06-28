@@ -10,16 +10,17 @@ const PayoutSetup = (props) => {
   const getRedirectInfo = async () => {
     if (!props.callback) {
       return API.makeRequest("GET", `/create-stripe-account`);
-    }
-    else {
+    } else {
       const currentMerchant = new Merchant(
         "localStorage",
         localStorage.getItem("merchant")
       );
-      return API.makeRequest("GET", `/create-stripe-account?stripe=${currentMerchant.stripeId}`);
+      return API.makeRequest(
+        "GET",
+        `/create-stripe-account?stripe=${currentMerchant.stripeId}`
+      );
     }
   };
-  const onSubmit = async () => {
   const handleConnect = async () => {
     let responseContent = await getRedirectInfo();
     const merchantStripeId = responseContent.headers.stripe_id;
@@ -34,7 +35,8 @@ const PayoutSetup = (props) => {
     //had to do this because memory leak due to component not unmounting properly
     let mount = true;
     if (mount && redirect) {
-      window.location.assign(redirect);
+      console.log("redirect", redirect);
+      // window.location.assign(redirect);
     }
 
     return () => (mount = false);
@@ -58,11 +60,7 @@ const PayoutSetup = (props) => {
             onClick={(event) => {
               // if this is the payout redirect then all values for business and merchant have been set in the backend and we dont need to propogate back upwards
               event.preventDefault();
-              handleConnect().then(() =>
-                onSubmit().then(() => {
-                  setRedirect(redirectUrl);
-                })
-              );
+              handleConnect().then(() => setRedirect(redirectUrl));
             }}
           >
             Set up payouts
