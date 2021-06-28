@@ -153,9 +153,12 @@ def inventory(session_token):
     headers = {}
     drinks = Drink_Service().get_drinks()
     client_etag = json.loads(request.headers.get("If-None-Match"))
+    print('client_etag',client_etag)
 
     if client_etag:
+        print("client drink etag exists")
         if not ETag_Service().validate_etag(client_etag):
+            print("could not validate drinkEtag")
             for drink in drinks:
                 drinkDTO = {}
                 drinkDTO['drink'] = drink.dto_serialize()
@@ -165,7 +168,10 @@ def inventory(session_token):
             etag = ETag_Service().get_etag("drink")
             headers["e-tag-id"] = etag.id
             headers["e-tag-category"] = etag.category
+        else:
+            print('drink Etag exists but it was validated')
     else:
+        print('no client drink Etag')
         etag = ETag_Service().get_etag("drink")
         headers["e-tag-id"] = etag.id
         headers["e-tag-category"] = etag.category
@@ -395,7 +401,7 @@ def customer():
             # send the hashed user ID as a crypted key embedded in the activation link for security
             headers["authorization-token"] = jwt_token
             send_confirmation_email(
-                jwt_token=jwt_token, customer=generated_new_customer)
+                jwt_token=jwt_token, user=generated_new_customer)
             if generated_new_customer.has_registered == True:
                 status = 201
             else:
@@ -409,7 +415,7 @@ def customer():
         jwt_token = jwt.encode(
             {"sub": customer.id}, key=secret, algorithm="HS256")
         send_confirmation_email(
-            jwt_token=jwt_token, customer=customer)
+            jwt_token=jwt_token, user=customer)
         return Response(status=200)
         return Response(status=200, headers=headers)
     elif request.method == "GET":
