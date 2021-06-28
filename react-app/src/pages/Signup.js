@@ -269,14 +269,9 @@ const PromoteYourMenuFieldset = (props) => {
     }
   };
   const validate = (form) => {
-    if (form.checkValidity()) {
-      form.classList.add("was-validated");
-      return true;
-    } else {
-      return false;
-    }
+    form.classList.add("was-validated");
+    return form.checkValidity();
   };
-
   const handleNext = (event) => {
     event.preventDefault();
     const form = event.target;
@@ -463,6 +458,7 @@ const PromoteYourMenuFieldset = (props) => {
                   <Form.Check
                     type="radio"
                     label=""
+                    required
                     name="tablet"
                     id="formHorizontalRadios2"
                     onClick={() => {
