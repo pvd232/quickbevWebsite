@@ -15,12 +15,11 @@ const Home = () => {
   useEffect(() => {
     let mounted = true;
     API.checkStripeStatus().then((value) => {
-      console.log('value',value)
+      console.log("value", value);
       if (mounted) {
         if (!value) {
           setIsValidated(false);
-        }
-        else {
+        } else {
           setIsValidated(true);
         }
       }
@@ -58,19 +57,28 @@ const Home = () => {
       return <></>;
     }
   } else if (isValidated === false) {
-    return ( <> <Navbar/>
-    <div className="signupBody">
-      <div id="msform">  <Row>
-          <Col
-            sm={12}
-            id="payoutSetup"
-            style={{ justifyContent: "center", display: "flex" }}
-          >
-            <PayoutSetup callback={true}></PayoutSetup> 
-            </Col></Row></div></div></>)
-  }
-  else if (isValidated === null) {
-    return <></>
+    return (
+      <>
+        {" "}
+        <Navbar />
+        <div className="signupBody">
+          <div id="msform">
+            {" "}
+            <Row>
+              <Col
+                sm={12}
+                id="payoutSetup"
+                style={{ justifyContent: "center", display: "flex" }}
+              >
+                <PayoutSetup callback={true}></PayoutSetup>
+              </Col>
+            </Row>
+          </div>
+        </div>
+      </>
+    );
+  } else if (isValidated === null) {
+    return <></>;
   }
 };
 export default Home;

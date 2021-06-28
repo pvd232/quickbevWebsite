@@ -66,7 +66,7 @@ class Drink_Service(object):
 
     def update_drinks(self, drinks):
         with session_scope() as session:
-            return Drink_Repository().update_drinks(drinks)
+            return Drink_Repository().update_drinks(session, drinks)
 
     def get_drinks_etag(self):
         with session_scope() as session:
@@ -223,7 +223,6 @@ class Merchant_Service(object):
     def authenticate_merchant_stripe(self, stripe_id):
         with session_scope() as session:
             return Merchant_Repository().authenticate_merchant_stripe(session, stripe_id)
-
 
     def add_merchant(self, merchant):
         with session_scope() as session:
