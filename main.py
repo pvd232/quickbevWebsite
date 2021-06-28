@@ -250,35 +250,63 @@ def orders(session_token):
     return Response(status=200, response=json.dumps(response), headers=headers)
 
 
-def send_confirmation_email(jwt_token, customer):
+def send_confirmation_email(jwt_token, user, email_type, business_id = None ):
     host = request.headers.get('Host')
-    button_url = f"https://{host}/verify-email/{jwt_token}"
+    if email_type == "customer_confirmation":
+        button_url = f"https://{host}/verify-email/{jwt_token}"
 
-    logo = "https://storage.googleapis.com/my-new-quickbev-bucket/landscape-logo-purple.png"
+        logo = "https://storage.googleapis.com/my-new-quickbev-bucket/landscape-logo-purple.png"
 
-    verify_button = f'<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="margin-right: auto; margin-top:5vh; margin-left:auto; margin-bottom:2vh;   border-collapse:separate;line-height:100%;"><tr><td><div><!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="http://www.activecampaign.com" style="height:40px;v-text-anchor:middle;width:130px;" arcsize="5%" strokecolor="#8682E6" fillcolor="#8682E6;width: 130;"><w:anchorlock/><center style="color:#ffffff;font-family:Helvetica, sans-serif;font-size:18px; font-weight: 600;">Click here!</center></v:roundrect><![endif]--><a href={button_url} style="display: inline-block; mso-hide:all; background-color: #8682E6; color: #FFFFFF; border:1px solid #8682E6; border-radius: 6px; line-height: 220%; width: 200px; font-family: Helvetica, sans-serif; font-size:18px; font-weight:600; text-align: center; text-decoration: none; -webkit-text-size-adjust:none;" target="_blank">Verify email</a></a></div></td></tr></table>'
-    mail_body_text = f'<p style="margin-top: 3vh;margin-bottom: 15px;">Hey {customer.first_name},</p><p style="margin-top: 15px;margin-bottom: 15px;">Welcome to QuickBev!</p><p style="margin-top: 15px;margin-bottom: 15px;">Please click the link below to verify your account.</p><br /><p style="margin-top: 15px;margin-bottom: 15px;">Let the good times begin,</p><p style="margin-top: 15px;margin-bottom: 15px;">—The QuickBev Team</p></div><div style="width:100%; height:3vh;">{verify_button}</div>'
-    mail_body = f'<div style="height: 100%;"><div style="width: 100%;height: 100%;background-color: #e8e8e8;"><div style="width: 100%;max-width: 500px;height: 80vh; margin-top: 0%;margin-bottom: 10%; margin-right:auto; margin-left:auto; background-color: #e8e8e8;"><tr style="width:100%;height:5vh;"></tr><div style="width:calc(100% - 30px); height:50vh; padding:30px 30px 30px 30px; background-color:white; margin-top:auto; margin-bottom:auto"><div style="width:100%; text-align:center; justify-content:center"><img src="{logo}" style="width:50%; height:12%; margin-right:auto; margin-left:auto" alt="img" /></div><div  style="margin-top: 30px;">{mail_body_text}</div><tr style="width:100%;height:5vh;"></tr></div></div></div>'
+        verify_button = f'<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="margin-right: auto; margin-top:5vh; margin-left:auto; margin-bottom:2vh;   border-collapse:separate;line-height:100%;"><tr><td><div><!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="http://www.activecampaign.com" style="height:40px;v-text-anchor:middle;width:130px;" arcsize="5%" strokecolor="#8682E6" fillcolor="#8682E6;width: 130;"><w:anchorlock/><center style="color:#ffffff;font-family:Helvetica, sans-serif;font-size:18px; font-weight: 600;">Click here!</center></v:roundrect><![endif]--><a href={button_url} style="display: inline-block; mso-hide:all; background-color: #8682E6; color: #FFFFFF; border:1px solid #8682E6; border-radius: 6px; line-height: 220%; width: 200px; font-family: Helvetica, sans-serif; font-size:18px; font-weight:600; text-align: center; text-decoration: none; -webkit-text-size-adjust:none;" target="_blank">Verify email</a></a></div></td></tr></table>'
+        mail_body_text = f'<p style="margin-top: 3vh;margin-bottom: 15px;">Hey {user.first_name},</p><p style="margin-top: 15px;margin-bottom: 15px;">Welcome to QuickBev!</p><p style="margin-top: 15px;margin-bottom: 15px;">Please click the button below to verify your account.</p><br /><p style="margin-top: 15px;margin-bottom: 15px;">Let the good times begin,</p><p style="margin-top: 15px;margin-bottom: 15px;">—The QuickBev Team</p></div><div style="width:100%; height:3vh;">{verify_button}</div>'
+        mail_body = f'<div style="height: 100%;"><div style="width: 100%;height: 100%;background-color: #e8e8e8;"><div style="width: 100%;max-width: 500px;height: 80vh; margin-top: 0%;margin-bottom: 10%; margin-right:auto; margin-left:auto; background-color: #e8e8e8;"><tr style="width:100%;height:5vh;"></tr><div style="width:calc(100% - 30px); height:50vh; padding:30px 30px 30px 30px; background-color:white; margin-top:auto; margin-bottom:auto"><div style="width:100%; text-align:center; justify-content:center"><img src="{logo}" style="width:50%; height:12%; margin-right:auto; margin-left:auto" alt="img" /></div><div  style="margin-top: 30px;">{mail_body_text}</div><tr style="width:100%;height:5vh;"></tr></div></div></div>'
 
-    sender_address = 'confirmation@quickbev.us'
-    email = customer.id
+        sender_address = 'confirmation@quickbev.us'
+        email = user.id
 
-    # Setup the MIME
-    message = MIMEMultipart()
-    message['From'] = sender_address
-    message['To'] = email
+        # Setup the MIME
+        message = MIMEMultipart()
+        message['From'] = sender_address
+        message['To'] = email
 
-    message['Subject'] = 'Welcome to Quickbev'  # The subject line
+        message['Subject'] = 'Welcome to Quickbev'  # The subject line
 
-    mail_content = mail_body
-    # The body and the attachments for the mail
-    message.attach(MIMEText(mail_content, 'html'))
-    s = smtplib.SMTP('smtp.mailgun.org', 587)
-    # this password was generated ay the domain settings page on mailgun. its a really shitty confusing service.
-    s.login('postmaster@quickbev.us',
-            '77bf9d60999ee72f1f72f98dd1a57152-1f1bd6a9-a4533d5f')
-    s.sendmail(message['From'], message['To'], message.as_string())
-    s.quit()
+        mail_content = mail_body
+        # The body and the attachments for the mail
+        message.attach(MIMEText(mail_content, 'html'))
+        s = smtplib.SMTP('smtp.mailgun.org', 587)
+        # this password was generated ay the domain settings page on mailgun. its a really shitty confusing service.
+        s.login('postmaster@quickbev.us',
+                '77bf9d60999ee72f1f72f98dd1a57152-1f1bd6a9-a4533d5f')
+        s.sendmail(message['From'], message['To'], message.as_string())
+        s.quit()
+
+    elif email_type == "merchant_confirmation":
+        logo = "https://storage.googleapis.com/my-new-quickbev-bucket/landscape-logo-purple.png"
+
+        mail_body_text = f'<p style="margin-top: 3vh;margin-bottom: 15px;">Hey {user.first_name},</p><p style="margin-top: 15px;margin-bottom: 15px;">Welcome to QuickBev!</p><p style="margin-top: 15px;margin-bottom: 15px;">Below is the id of the business you just registered. You should write this down, it will be important for setting up your account.</p><br />{business_id}</p><p style="margin-top: 15px;margin-bottom: 15px;">Let the good times begin,</p><p style="margin-top: 15px;margin-bottom: 15px;">—The QuickBev Team</p></div>'
+        mail_body = f'<div style="height: 100%;"><div style="width: 100%;height: 100%;background-color: #e8e8e8;"><div style="width: 100%;max-width: 500px;height: 80vh; margin-top: 0%;margin-bottom: 10%; margin-right:auto; margin-left:auto; background-color: #e8e8e8;"><tr style="width:100%;height:5vh;"></tr><div style="width:calc(100% - 30px); height:50vh; padding:30px 30px 30px 30px; background-color:white; margin-top:auto; margin-bottom:auto"><div style="width:100%; text-align:center; justify-content:center"><img src="{logo}" style="width:50%; height:12%; margin-right:auto; margin-left:auto" alt="img" /></div><div  style="margin-top: 30px;">{mail_body_text}</div><tr style="width:100%;height:5vh;"></tr></div></div></div>'
+
+        sender_address = 'confirmation@quickbev.us'
+        email = user.id
+
+        # Setup the MIME
+        message = MIMEMultipart()
+        message['From'] = sender_address
+        message['To'] = email
+
+        message['Subject'] = 'Welcome to Quickbev'  # The subject line
+
+        mail_content = mail_body
+        # The body and the attachments for the mail
+        message.attach(MIMEText(mail_content, 'html'))
+        s = smtplib.SMTP('smtp.mailgun.org', 587)
+        # this password was generated ay the domain settings page on mailgun. its a really shitty confusing service.
+        s.login('postmaster@quickbev.us',
+                '77bf9d60999ee72f1f72f98dd1a57152-1f1bd6a9-a4533d5f')
+        s.sendmail(message['From'], message['To'], message.as_string())
+        s.quit()
+
 
 
 def send_password_reset_email(jwt_token, customer):
@@ -301,7 +329,7 @@ def send_password_reset_email(jwt_token, customer):
     message['From'] = sender_address
     message['To'] = email
 
-    message['Subject'] = 'Order From'  # The subject line
+    message['Subject'] = 'Reset Your Password'  # The subject line
 
     mail_content = mail_body
     # The body and the attachments for the mail
@@ -594,6 +622,8 @@ def create_account():
         if new_merchant and new_business:
             headers["jwt_token"] = jwt.encode(
             {"sub": request}, key=secret, algorithm="HS256")
+            send_confirmation_email(headers["jwt_token"], new_merchant, "merchant_confirmation", new_business.id )
+
             response['confirmed_new_business'] = new_business.dto_serialize()
 
             if 'file' not in request.files:

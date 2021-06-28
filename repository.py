@@ -393,11 +393,13 @@ class Merchant_Repository(object):
         return new_account
 
     def authenticate_merchant(self, session, email, password):
+        print('password',password)
+        print('email',email)
         for merchant in session.query(Merchant):
+            print('merchant in auth merchant',merchant.serialize)
             if merchant.id == email and check_password_hash(merchant.password, password) == True:
                 return merchant
-        else:
-            return False
+        return False
 
     def authenticate_merchant_stripe(self, session, stripe_id):
         merchant_stripe_status = stripe.Account.retrieve(stripe_id)
