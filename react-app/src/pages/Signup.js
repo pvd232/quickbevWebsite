@@ -235,7 +235,7 @@ const PromoteYourMenuFieldset = (props) => {
     (state, newState) => ({ ...state, ...newState }),
     {
       menuUrl: "",
-      typeOfBusiness: "",
+      classification: "",
       numberOfBusinesses: "",
     }
   );
@@ -290,7 +290,7 @@ const PromoteYourMenuFieldset = (props) => {
       const formDataObject = {};
       // Update the formData object
       formDataObject.numberOfBusinesses = formValue.numberOfBusinesses;
-      formDataObject.classification = formValue.typeOfBusiness;
+      formDataObject.classification = formValue.classification;
       formDataObject.tablet = tablet;
       console.log("formDataObject", formDataObject);
 
@@ -396,7 +396,7 @@ const PromoteYourMenuFieldset = (props) => {
         <Row>
           <Form.Group
             as={Col}
-            controlId="typeOfBusiness"
+            controlId="classification"
             style={{ paddingLeft: "5px" }}
           >
             <Form.Label>Type of business</Form.Label>
@@ -404,7 +404,7 @@ const PromoteYourMenuFieldset = (props) => {
               as="select"
               required
               custom
-              name="typeOfBusiness"
+              name="classification"
               onChange={(event) => formChangeHandler(event)}
               style={{
                 paddingLeft: "15px",
@@ -689,7 +689,7 @@ const Signup = () => {
 
     // set the merchant id in business to be the same as the new merchant
     newBusiness.merchantId = newMerchant.id;
-    console.log('newBusiness',newBusiness)
+    console.log("newBusiness", newBusiness);
     newForm.append("business", JSON.stringify(newBusiness));
 
     setLocalStorage("merchant", newMerchant);
@@ -709,10 +709,10 @@ const Signup = () => {
       true,
       false
     );
-    console.log('confirmed_new_business',confirmed_new_business)
+    console.log("confirmed_new_business", confirmed_new_business);
 
     setLocalStorage("business", confirmed_new_business);
-    setLocalStorage("sessionToken", responseBody.jwt_token)
+    setLocalStorage("sessionToken", responseBody.jwt_token);
     const currentMerchant = new Merchant(
       "localStorage",
       localStorage.getItem("merchant")
