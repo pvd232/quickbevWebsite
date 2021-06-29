@@ -142,19 +142,19 @@ class Order_Repository(object):
             Merchant_Employee.business_id == order.business_id, Merchant_Employee.logged_in == True)
 
 
-        for server in servers:
-            tip_per_server = tip_amount/len(servers)
-            server_token = stripe.Token.create(customer=order.customer.stripe_id, stripe_account=server.stripe_id)
-            server_tokenized_customer = stripe.Customer.create(source=server_token.id, stripe_account=server.stripe_id)
+        # for server in servers:
+        #     tip_per_server = tip_amount/len(servers)
+        #     server_token = stripe.Token.create(customer=order.customer.stripe_id, stripe_account=server.stripe_id)
+        #     server_tokenized_customer = stripe.Customer.create(source=server_token.id, stripe_account=server.stripe_id)
 
             # create a direct charge that is sourced from the customer and sent to the merchant
-            tip_payment_intent = stripe.PaymentIntent.create(
-                amount=tip_per_server,
-                customer=server_tokenized_customer.id,
-                setup_future_usage='on_session',
-                currency='usd',
-                stripe_account=server.stripe_id
-            )
+            # tip_payment_intent = stripe.PaymentIntent.create(
+            #     amount=tip_per_server,
+            #     customer=server_tokenized_customer.id,
+            #     setup_future_usage='on_session',
+            #     currency='usd',
+            #     stripe_account=server.stripe_id
+            # )
         # payment_intent = stripe.PaymentIntent.create(
         #     amount=amount,
         #     customer=order.customer.stripe_id,
@@ -165,11 +165,11 @@ class Order_Repository(object):
         #         'destination': f'{merchant_stripe_id}',
         #     }
         # )
-        merchant_token = stripe.Token.create(customer=order.customer.stripe_id, stripe_account=merchant_stripe_id)
-        merchant_tokenized_customer = stripe.Customer.create(source=merchant_token.id, stripe_account= merchant_stripe_id)
+        # merchant_token = stripe.Token.create(customer=order.customer.stripe_id, stripe_account=merchant_stripe_id)
+        # merchant_tokenized_customer = stripe.Customer.create(source=merchant_token.id, stripe_account= merchant_stripe_id)
         payment_intent = stripe.PaymentIntent.create(
             amount=amount,
-            customer=merchant_tokenized_customer.id,
+            customer=order.customer.stripe_id,
             setup_future_usage='on_session',
             currency='usd',
             application_fee_amount=service_fee,
