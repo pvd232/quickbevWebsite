@@ -155,16 +155,16 @@ class Order_Repository(object):
             #     currency='usd',
             #     stripe_account=server.stripe_id
             # )
-        payment_intent = stripe.PaymentIntent.create(
-            amount=amount,
-            customer=order.customer.stripe_id,
-            setup_future_usage='on_session',
-            currency='usd',
-            application_fee_amount=service_fee,
-            transfer_data={
-                'destination': f'{merchant_stripe_id}',
-            }
-        )
+        # payment_intent = stripe.PaymentIntent.create(
+        #     amount=amount,
+        #     customer=order.customer.stripe_id,
+        #     setup_future_usage='on_session',
+        #     currency='usd',
+        #     application_fee_amount=service_fee,
+        #     transfer_data={
+        #         'destination': f'{merchant_stripe_id}',
+        #     }
+        # )
         # merchant_token = stripe.Token.create(customer=order.customer.stripe_id, stripe_account=merchant_stripe_id)
         # merchant_tokenized_customer = stripe.Customer.create(source=merchant_token.id, stripe_account= merchant_stripe_id)
         payment_intent = stripe.PaymentIntent.create(
