@@ -3,10 +3,7 @@ import { useState, useEffect } from "react";
 import API from "../helpers/Api.js";
 import { setLocalStorage } from "../Models.js";
 import PayoutSetup from "./PayoutSetup.js";
-import Navbar from "../Navbar.js";
 import "../css/Signup.css";
-import Row from "react-bootstrap/Row";
-import Col from "react-bootstrap/Col";
 const Home = () => {
   const [orders, setOrders] = useState(null);
   const [customers, setCustomers] = useState(null);
