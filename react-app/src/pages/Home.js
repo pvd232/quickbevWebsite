@@ -59,22 +59,7 @@ const Home = () => {
   } else if (isValidated === false) {
     return (
       <>
-        {" "}
-        <Navbar />
-        <div className="signupBody">
-          <div id="msform">
-            {" "}
-            <Row>
-              <Col
-                sm={12}
-                id="payoutSetup"
-                style={{ justifyContent: "center", display: "flex" }}
-              >
                 <PayoutSetup callback={true}></PayoutSetup>
-              </Col>
-            </Row>
-          </div>
-        </div>
       </>
     );
   } else if (isValidated === null) {
