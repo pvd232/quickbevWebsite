@@ -140,13 +140,17 @@ class Order_Repository(object):
         # get the list of merchant_employees that are clocked in when the sale was made and give them each an equal part of the tip
         servers = session.query(Merchant_Employee).filter(
             Merchant_Employee.business_id == order.business_id, Merchant_Employee.logged_in == True)
+
+
         for server in servers:
             tip_per_server = tip_amount/len(servers)
+            server_token = stripe.Token.create(customer=order.customer.stripe_id, stripe_account=server.stripe_id)
+            server_tokenized_customer = stripe.Customer.create(source=server_token.id, stripe_account=server.stripe_id)
 
             # create a direct charge that is sourced from the customer and sent to the merchant
             tip_payment_intent = stripe.PaymentIntent.create(
                 amount=tip_per_server,
-                customer=order.customer.stripe_id,
+                customer=server_tokenized_customer.id,
                 setup_future_usage='on_session',
                 currency='usd',
                 stripe_account=server.stripe_id
@@ -161,13 +165,15 @@ class Order_Repository(object):
         #         'destination': f'{merchant_stripe_id}',
         #     }
         # )
+        merchant_token = stripe.Token.create(customer=order.customer.stripe_id, stripe_account=merchant_stripe_id)
+        merchant_tokenized_customer = stripe.Customer.create(source=merchant_token.id, stripe_account= merchant_stripe_id)
         payment_intent = stripe.PaymentIntent.create(
             amount=amount,
-            customer=order.customer.stripe_id,
+            customer=merchant_tokenized_customer.id,
             setup_future_usage='on_session',
             currency='usd',
             application_fee_amount=service_fee,
-            stripe_account=f'{merchant_stripe_id}',
+            stripe_account= merchant_stripe_id,
         )
         # now we return the client secret to the front end which is used to pay for the order
         return payment_intent["client_secret"]
