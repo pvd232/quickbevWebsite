@@ -98,12 +98,12 @@ class Order_Repository(object):
         customer = request['stripe_id']
         customer_bool = False
         if customer:
-            print('customer',customer)
+            print('customer', customer)
             confirm_customer_existence = session.query(Stripe_Customer).filter(
                 Stripe_Customer.id == customer).first()
             # Lookup the customer in the database so that if they exist we can attach their stripe id to the Ephermeral key such that later when they create the payment intent it will include their payment methods
             if confirm_customer_existence:
-                print('confirm_customer_existence',confirm_customer_existence)
+                print('confirm_customer_existence', confirm_customer_existence)
                 customer_bool = True
                 key = stripe.EphemeralKey.create(
                     customer=customer, stripe_version=request['api_version'])
@@ -141,20 +141,23 @@ class Order_Repository(object):
         servers = session.query(Merchant_Employee).filter(
             Merchant_Employee.business_id == order.business_id, Merchant_Employee.logged_in == True)
 
-
-        # for server in servers:
-        #     tip_per_server = tip_amount/len(servers)
-        #     server_token = stripe.Token.create(customer=order.customer.stripe_id, stripe_account=server.stripe_id)
-        #     server_tokenized_customer = stripe.Customer.create(source=server_token.id, stripe_account=server.stripe_id)
+        for server in servers:
+            tip_per_server = tip_amount/len(servers)
+            server_token = stripe.Token.create(
+                customer=order.customer.stripe_id, stripe_account=server.stripe_id)
+            server_tokenized_customer = stripe.Customer.create(
+                source=server_token.id, stripe_account=server.stripe_id)
 
             # create a direct charge that is sourced from the customer and sent to the merchant
-            # tip_payment_intent = stripe.PaymentIntent.create(
-            #     amount=tip_per_server,
-            #     customer=server_tokenized_customer.id,
-            #     setup_future_usage='on_session',
-            #     currency='usd',
-            #     stripe_account=server.stripe_id
-            # )
+            tip_payment_intent = stripe.PaymentIntent.create(
+                amount=tip_per_server,
+                customer=order.customer.stripe_id,
+                setup_future_usage='on_session',
+                currency='usd',
+                transfer_data={
+                    'destination': f'{server.stripe_id}',
+                }
+            )
         payment_intent = stripe.PaymentIntent.create(
             amount=amount,
             customer=order.customer.stripe_id,
@@ -206,15 +209,15 @@ class Customer_Repository(object):
             return False
 
     def register_new_customer(self, session, customer):
-        print('customer',customer.dto_serialize())
-        print('customer',customer)
+        print('customer', customer.dto_serialize())
+        print('customer', customer)
         test_customer = session.query(Customer).filter(
             Customer.id == customer.id).first()
-        print('test_customer',test_customer)
+        print('test_customer', test_customer)
 
         test_stripe_id = session.query(Stripe_Customer).filter(
             Stripe_Customer.id == customer.stripe_id).first()
-        print('test_stripe_id',test_stripe_id)
+        print('test_stripe_id', test_stripe_id)
 
         if not test_customer and test_stripe_id:
             print('if not test_customer and test_stripe_id')
@@ -233,7 +236,8 @@ class Customer_Repository(object):
             return new_customer
         # if the customer that has been requested for registration from the front end is unverified then we overwrite the customer values with the new values and return True to let the front end know that this customer has previously attempted to have been registered but was never verified. that way if a customer never verfies the account can continue to be modified as necessary while still preserving its unverified state
         elif test_customer and test_customer.email_verified == False and not test_stripe_id:
-            print('elif test_customer and test_customer.email_verified == False and not test_stripe_id')
+            print(
+                'elif test_customer and test_customer.email_verified == False and not test_stripe_id')
             new_customer = stripe.Customer.create()
             new_stripe = Stripe_Customer(id=new_customer.id)
             session.add(new_stripe)
@@ -245,7 +249,8 @@ class Customer_Repository(object):
             return test_customer
 
         elif test_customer and test_customer.email_verified == False and test_stripe_id:
-            print('test_customer and test_customer.email_verified == False and test_stripe_id')
+            print(
+                'test_customer and test_customer.email_verified == False and test_stripe_id')
             test_customer.password = customer.password
             test_customer.first_name = customer.first_name
             test_customer.last_name = customer.last_name
@@ -412,10 +417,10 @@ class Merchant_Repository(object):
         return new_account
 
     def authenticate_merchant(self, session, email, password):
-        print('password',password)
-        print('email',email)
+        print('password', password)
+        print('email', email)
         for merchant in session.query(Merchant):
-            print('merchant in auth merchant',merchant.serialize)
+            print('merchant in auth merchant', merchant.serialize)
             if merchant.id == email and check_password_hash(merchant.password, password) == True:
                 return merchant
         return False
