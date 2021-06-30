@@ -428,6 +428,13 @@ class Merchant_Repository(object):
                 return merchant
         return False
 
+    def validate_merchant(self, session, email):
+        for merchant in session.query(Merchant):
+            if merchant.id == email:
+                print('merchant in validate merchant', merchant.serialize)
+                return merchant
+        return False
+
     def authenticate_merchant_stripe(self, session, stripe_id):
         merchant_stripe_status = stripe.Account.retrieve(stripe_id)
         print('authenticating merchant stripe')

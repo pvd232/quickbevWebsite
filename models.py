@@ -30,7 +30,7 @@ app = Flask(__name__)
 username = os.environ.get("USER", "postgres")
 password = os.environ.get("PASSWORD", "Iqopaogh23!")
 connection_string_beginning = "postgres://"
-connection_string_end = "@localhost:5432/quickbevdb1"
+connection_string_end = "@localhost:5432/quickbevdb"
 connection_string = connection_string_beginning + \
     username + ":" + password + connection_string_end
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(

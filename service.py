@@ -12,7 +12,7 @@ from models import instantiate_db_connection
 username = "postgres"
 password = "Iqopaogh23!"
 connection_string_beginning = "postgres://"
-connection_string_end = "@localhost:5432/quickbevdb1"
+connection_string_end = "@localhost:5432/quickbevdb"
 connection_string = connection_string_beginning + \
     username + ":" + password + connection_string_end
 
@@ -220,6 +220,10 @@ class Merchant_Service(object):
             else:
                 return False
 
+    def validate_merchant(self, email):
+        with session_scope() as session:
+            return Merchant_Repository().validate_merchant(session, email)
+
     def authenticate_merchant_stripe(self, stripe_id):
         with session_scope() as session:
             return Merchant_Repository().authenticate_merchant_stripe(session, stripe_id)
@@ -326,14 +330,6 @@ class Business_Service(object):
             else:
                 return False
 
-    # dont need this anymore because i no longer generate a new stripe ID when the user hits the redirect_url. felt cute, will probably delete later
-    # def update_business(self, business):
-    #     with session_scope() as session:
-    #         business_domain = Business_Domain(business_json=business)
-    #         # need to add this line because the initialization of the business domain will create a new UUID for the id
-    #         business_domain.id = business['id']
-    #         return Business_Repository().update_business(session, business_domain)
-
     def get_merchant_business(self, merchant_id):
         with session_scope() as session:
             response = []
@@ -384,7 +380,7 @@ class Test_Service(object):
         self.username = "postgres"
         self.password = "Iqopaogh23!"
         self.connection_string_beginning = "postgres://"
-        self.connection_string_end = "@localhost: 5432/quickbevdb1"
+        self.connection_string_end = "@localhost: 5432/quickbevdb"
         self.connection_string = self.connection_string_beginning + \
             self.username + ":" + self.password + self.connection_string_end
         self.test_engine = create_engine(

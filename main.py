@@ -235,27 +235,26 @@ def orders(session_token):
         if business_id:
             orders = [x.dto_serialize()
                       for x in Order_Service().get_business_orders(business_id)]
+    else:
+        username = base64.b64decode(
+            request.headers.get(
+                "Authorization").split(" ")[1]).decode("utf-8").split(":")[0]
 
-        else:
-            username = base64.b64decode(
-                request.headers.get(
-                    "Authorization").split(" ")[1]).decode("utf-8").split(":")[0]
+        filter_orders_by = request.headers.get('Filterby')
+        orders = []
+        if filter_orders_by == 'merchant':
+            orders = [x.dto_serialize()
+                        for x in Order_Service().get_merchant_orders(username=username)]
+            if len(orders) == 0:
+                # dummy data to populate orders table if the merchant has no orders
+                dummy_order = Order_Domain()
+                orders.append(dummy_order.dto_serialize())
 
-            filter_orders_by = request.headers.get('Filterby')
-            orders = []
-            if filter_orders_by == 'merchant':
-                orders = [x.dto_serialize()
-                          for x in Order_Service().get_merchant_orders(username=username)]
-                if len(orders) == 0:
-                    # dummy data to populate orders table if the merchant has no orders
-                    dummy_order = Order_Domain()
-                    orders.append(dummy_order.dto_serialize())
-
-            elif filter_orders_by == 'customer':
-                orders = Order_Service().get_merchant_orders(username=username)
+        # elif filter_orders_by == 'customer':
+        #     orders = Order_Service().get_merchant_orders(username=username)
         response['orders'] = orders
 
-    return Response(status=200, response=json.dumps(response), headers=headers)
+        return Response(status=200, response=json.dumps(response), headers=headers)
 
 
 def send_confirmation_email(jwt_token, user, email_type, business_id=None):
@@ -808,6 +807,7 @@ def reset_pin_number():
 @app.route('/merchant', methods=['GET', 'OPTIONS'])
 def authenticate_merchant():
     headers = {}
+    response = {}
     if request.method == 'OPTIONS':
         headers["Access-Control-Allow-Origin"] = request.origin
         headers["Access-Control-Allow-Headers"] = request.headers.get(
@@ -821,16 +821,24 @@ def authenticate_merchant():
 
         username = request.headers.get('email')
         password = request.headers.get('password')
+        validate = request.headers.get('validate')
+        merchant = ''
 
-        response = {"msg": "customer not found"}
-        merchant = Merchant_Service().authenticate_merchant(username, password)
-        # if the merchant exists it will return False, if it doesn't it will return True
+        # this will be to check if the merchant email is already registered in the system
+        if validate:
+            merchant = merchant = Merchant_Service().validate_merchant(username)
+        # this is for signing in purposes
+        else:
+            # if the merchant exists it will return False, if it doesn't it will return True
+            merchant = Merchant_Service().authenticate_merchant(username, password)
         if merchant:
             headers["jwt_token"] = jwt.encode(
                 {"sub": merchant.id}, key=secret, algorithm="HS256")
 
             return Response(status=200, response=json.dumps(merchant.dto_serialize()), headers=headers)
         else:
+            response["msg"] = "customer not found"
+
             return Response(status=204, response=json.dumps(response), headers=headers)
 
 

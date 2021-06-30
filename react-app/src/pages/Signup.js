@@ -94,6 +94,7 @@ const CreateYourAccountFieldset = (props) => {
         const merchantData = {
           email: newMerchant.id,
           password: newMerchant.password,
+          validate: true
         };
         API.makeRequest("GET", "/merchant", false, merchantData).then(
           (response) => {
