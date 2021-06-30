@@ -559,6 +559,7 @@ const BusinessFieldset = (props) => {
   };
 
   const handleSubmit = async (eventTarget, merchantStripeId) => {
+    console.log('merchantStripeId',merchantStripeId)
     // the event target is the button that was clicked inside the payout setup component inside the business fieldset
     const form = eventTarget.closest("form");
     if (validate(form)) {
@@ -687,6 +688,7 @@ const Signup = () => {
 
     newMerchant.numberOfBusinesses = formDataObject.numberOfBusinesses;
     newMerchant.stripeId = merchantStripeId;
+    console.log('newMerchant',newMerchant)
 
     // set the stripe ID returned from the backend
     newForm.append("merchant", JSON.stringify(newMerchant));
@@ -773,3 +775,4 @@ const Signup = () => {
   );
 };
 export default Signup;
+

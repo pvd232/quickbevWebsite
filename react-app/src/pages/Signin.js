@@ -1,5 +1,5 @@
 import React, { useState, useReducer, useEffect } from "react";
-import { Merchant, setLocalStorage } from "../Models.js";
+import { Merchant } from "../Models.js";
 import API from "../helpers/Api.js";
 import Navbar from "../Navbar.js";
 

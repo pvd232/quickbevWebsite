@@ -9,6 +9,7 @@ const PayoutSetup = (props) => {
   var redirectUrl = null;
   const getRedirectInfo = async () => {
     if (!props.callback) {
+      console.log("not callback");
       return API.makeRequest("GET", `/create-stripe-account`);
     } else {
       const currentMerchant = new Merchant(
@@ -24,6 +25,7 @@ const PayoutSetup = (props) => {
   const handleConnect = async () => {
     let responseContent = await getRedirectInfo();
     const merchantStripeId = responseContent.headers.stripe_id;
+    console.log("merchantStripeId", merchantStripeId);
 
     let url = responseContent.url;
     if (url && merchantStripeId) {
@@ -35,8 +37,7 @@ const PayoutSetup = (props) => {
     //had to do this because memory leak due to component not unmounting properly
     let mount = true;
     if (mount && redirect) {
-      console.log('redirect',redirect)
-      // window.location.assign(redirect);
+      window.location.assign(redirect);
     }
 
     return () => (mount = false);

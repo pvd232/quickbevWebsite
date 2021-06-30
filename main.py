@@ -153,7 +153,7 @@ def inventory(session_token):
     headers = {}
     drinks = Drink_Service().get_drinks()
     client_etag = json.loads(request.headers.get("If-None-Match"))
-    print('client_etag',client_etag)
+    print('client_etag', client_etag)
 
     if client_etag:
         print("client drink etag exists")
@@ -207,8 +207,10 @@ def orders(session_token):
         return Response(status=200)
     elif request.method == 'POST':
         new_order = request.json
+        print('new_order', new_order)
         Order_Service().create_order(new_order)
-        business_device_token = Business_Service().get_device_token(new_order.business_id)
+        business_device_token = Business_Service(
+        ).get_device_token(new_order["business_id"])
         send_fcm(business_device_token)
         response['msg'] = 'order_received'
         return Response(status=200, response=json.dumps(response))
@@ -256,7 +258,7 @@ def orders(session_token):
     return Response(status=200, response=json.dumps(response), headers=headers)
 
 
-def send_confirmation_email(jwt_token, user, email_type, business_id = None ):
+def send_confirmation_email(jwt_token, user, email_type, business_id=None):
     host = request.headers.get('Host')
     if email_type == "customer_confirmation":
         button_url = f"https://{host}/verify-email/{jwt_token}"
@@ -312,7 +314,6 @@ def send_confirmation_email(jwt_token, user, email_type, business_id = None ):
                 '77bf9d60999ee72f1f72f98dd1a57152-1f1bd6a9-a4533d5f')
         s.sendmail(message['From'], message['To'], message.as_string())
         s.quit()
-
 
 
 def send_password_reset_email(jwt_token, customer):
@@ -506,7 +507,8 @@ def business(session_token):
 
         business_list = []
         if request.headers.get('merchantId'):
-            print('request.headers.get(merchantId)',request.headers.get('merchantId'))
+            print('request.headers.get(merchantId)',
+                  request.headers.get('merchantId'))
             merchant_id = request.headers.get('merchantId')
             merchant_businesses = [x.dto_serialize(
             ) for x in Business_Service().get_merchant_business(merchant_id)]
@@ -523,7 +525,7 @@ def business(session_token):
 
         businesss = Business_Service().get_businesses()
         client_etag = json.loads(request.headers.get("If-None-Match"))
-        print('client_etag',client_etag)
+        print('client_etag', client_etag)
 
         if client_etag:
             print('client etag exists')
@@ -628,8 +630,9 @@ def create_account():
         if new_merchant and new_business:
             ETag_Service().update_etag("business")
             headers["jwt_token"] = jwt.encode(
-            {"sub": new_merchant.id}, key=secret, algorithm="HS256")
-            send_confirmation_email(headers["jwt_token"], new_merchant, "merchant_confirmation", new_business.id )
+                {"sub": new_merchant.id}, key=secret, algorithm="HS256")
+            send_confirmation_email(
+                headers["jwt_token"], new_merchant, "merchant_confirmation", new_business.id)
 
             response['confirmed_new_business'] = new_business.dto_serialize()
 
@@ -865,7 +868,7 @@ def create_stripe_account():
 def validate_merchant_stripe_account():
     print('hey')
     callback_stripe_id = request.args.get('stripe')
-    print('callback_stripe_id',callback_stripe_id)
+    print('callback_stripe_id', callback_stripe_id)
     merchant_stripe_status = Merchant_Service(
     ).authenticate_merchant_stripe(callback_stripe_id)
     print('merchant_stripe_status', merchant_stripe_status)
@@ -896,7 +899,8 @@ def add_menu():
         drink_descriptions = json.loads(request.form.get("drinkDescription"))
         drink_prices = json.loads(request.form.get("drinkPrice"))
         drink_image_file_exists = json.loads(request.form.get("selectedFile"))
-        drink_image_file_names = json.loads(request.form.get("selectedFileName"))
+        drink_image_file_names = json.loads(
+            request.form.get("selectedFileName"))
         business_id = json.loads(request.form.get("businessId"))
 
         new_drinks = [{"name": x} for x in drink_names]
@@ -905,7 +909,7 @@ def add_menu():
             drink["description"] = drink_descriptions[i]
             drink["price"] = float(drink_prices[i])
             drink["has_image"] = drink_image_file_exists[i]
-           
+
         added_drinks = Drink_Service().add_drinks(business_id, new_drinks)
         ETag_Service().update_etag("drink")
         files = request.files
@@ -922,7 +926,7 @@ def add_menu():
 
                 # update the drink image url for each drink, keeping the proper index intact by extracting only drinks with an image
                 drink.set_image_url(file.filename)
-                print('drink.image_url',drink.image_url)
+                print('drink.image_url', drink.image_url)
                 drink.file = file
                 Google_Cloud_Storage_API().upload_drink_image_file(drink)
                 response["msg"] = "File successfully uploaded!"

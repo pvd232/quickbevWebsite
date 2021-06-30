@@ -46,6 +46,7 @@ class Order_Repository(object):
             return
 
     def post_order(self, session, order):
+        print('order', order.dto_serialize())
         # calculate order values on backend to prevent malicious clients
         cost = 0
         subtotal = 0
@@ -62,7 +63,7 @@ class Order_Repository(object):
         merchant_stripe_id = order.merchant_stripe_id
         service_fee = int(round(.1 * cost, 2) * 100)
         cost = pre_fee_cost + service_fee
-        new_order = Order(id=order.id, customer_id=order.customer_id, merchant_stripe_id=order.merchant_stripe_id,
+        new_order = Order(id=order.id, customer_id=order.customer.id, merchant_stripe_id=order.merchant_stripe_id,
                           business_id=order.business_id, cost=cost, subtotal=subtotal, tip_percentage=order.tip_percentage, tip_amount=tip_amount, sales_tax=sales_tax, sales_tax_percentage=order.sales_tax_percentage, date_time=order.date_time, service_fee=service_fee)
         session.add(new_order)
 
@@ -413,6 +414,8 @@ class Merchant_Repository(object):
             country="US"
         )
         new_stripe_account_id = Merchant_Stripe_Account(id=new_account.id)
+        print('new_stripe_account_id in create_stripe_account',
+              new_stripe_account_id.id)
         session.add(new_stripe_account_id)
         return new_account
 
