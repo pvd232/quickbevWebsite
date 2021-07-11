@@ -15,7 +15,7 @@ from email.mime.text import MIMEText
 from flask import Flask
 import jwt
 import calendar
-from pushjack_http2_mod import APNSHTTP2Client, APNSAuthToken
+from pushjack_http2_mod import APNSHTTP2Client, APNSHTTP2SandboxClient, APNSAuthToken
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.datastructures import MultiDict
 
@@ -30,7 +30,7 @@ secret = '3327aa0ee1f61998369e815c17b1dc5eaf7e728bca14f6fe557af366ee6e20f9'
 # TODO: need to finish the add_business function by adding the new business address and returning the unique identifier to main.py so i can dynamically set the files path of the new image using the UUID of the business address
 
 
-def send_apn(device_token, action):
+def send_apn(device_token, action, env):
     apn_key = ''
     team_id = '6YGH9XK378'
     # converted authkey to private key that can be properly encoded as RSA key by jwt.encode method using advice here https://github.com/lcobucci/jwt/issues/244
@@ -41,23 +41,32 @@ def send_apn(device_token, action):
         token=apn_token,
         team_id=team_id,
         key_id="9KCZ66FCHF")
-
-    client = APNSHTTP2Client(
+    if env == "production":
+        client = APNSHTTP2Client(
         token=token,
         bundle_id='com.theQuickCompany.QuickBev')
-
+    elif env == "sandbox":
+        client = APNSHTTP2SandboxClient(
+            token=token,
+        bundle_id='com.theQuickCompany.QuickBev')
+        
     if action == "email":
         client.send(
             ids=[device_token],
-            title="Email verified",
+            title="Email Verified",
             message="Email verification complete. Lets get this party started",
             category="email"
         )
     elif action == "order_complete":
-        pass
+        client.send(
+            ids=[device_token],
+            title="Order Completed",
+            message="Your order is ready for pickup!",
+            category="order_complete"
+        )
 
 
-def send_fcm(device_token):
+def send_fcm(device_token, new_order):
     from pushjack_http2_mod import GCMClient
 
     client = GCMClient(
@@ -65,29 +74,29 @@ def send_fcm(device_token):
 
     registration_id = device_token
     alert = 'new_order'
-    notification = {'title': 'Title', 'body': 'Body', 'icon': 'icon'}
 
+    notification = {
+        'title': new_order["customer"]['first_name'], 'body': new_order["customer"]['last_name']}
     # Send to single device.
     # NOTE: Keyword arguments are optional.
     res = client.send(registration_id,
                       alert,
                       notification=notification,
-                      collapse_key='collapse_key',
-                      delay_while_idle=True,
                       time_to_live=604800)
+    
 
     # Send to multiple devices by passing a list of ids.
     # client.send([registration_id], alert, **options)
 
 
-@app.route("/")
-def my_index():
-    return render_template("index.html", flask_token="Hello world")
+# @app.route("/")
+# def my_index():
+#     return render_template("index.html", flask_token="Hello world")
 
 
-@app.errorhandler(404)
-def not_found(e):
-    return render_template('index.html')
+# @app.errorhandler(404)
+# def not_found(e):
+#     return render_template('index.html')
 
 
 @app.route("/b")
@@ -96,6 +105,14 @@ def b():
     # test_service.test_connection()
     instantiate_db_connection()
     return Response(status=200)
+
+
+@app.route('/test_token', methods=["GET"])
+def test_token():
+    fcm_token = 'cdCW0jutR2aIZ_k869mOrM:APA91bGp_eetQsBkM9-CnLlEZBAwM8N2fWEhDV4PDch6EsVZGM0G8NATrKx-CYfSyxM_RbfjTh42nWJxopSesywc3WCqEz4Z_JZTpSQLnuVY-x_Er7Z7KVj5VwVGCb4gjcKwdQQNRKlB'
+    customer = {"first_name": "peter", "last_name": "driscoll"}
+    new_order = {"customer": customer}
+    send_fcm(fcm_token, new_order)
 
 
 @app.route('/apn-token/<string:customer_id>/<string:session_token>', methods=["POST"])
@@ -153,10 +170,8 @@ def inventory(session_token):
     headers = {}
     drinks = Drink_Service().get_drinks()
     client_etag = json.loads(request.headers.get("If-None-Match"))
-    print('client_etag', client_etag)
 
     if client_etag:
-        print("client drink etag exists")
         if not ETag_Service().validate_etag(client_etag):
             print("could not validate drinkEtag")
             for drink in drinks:
@@ -198,21 +213,22 @@ def orders(session_token):
         elif order_to_update["completed"] == True:
             # 1. send push notification to device saying the order is ready
             # device_token = Customer_Service.get_device_token(order_to_update.customer_id)
-            # send_apn(device_token, 'order_completed')
             device_token = Customer_Service().get_device_token(
                 order_to_update["customer_id"])
+            send_apn(device_token, 'order_complete', 'sandbox')
             # send_apn(device_token, "order_ready")
 
         Order_Service().update_order(order_to_update)
         return Response(status=200)
     elif request.method == 'POST':
         new_order = request.json
-        print('new_order', new_order)
-        Order_Service().create_order(new_order)
+        updated_order = Order_Service().create_order(new_order)
+        print("updated_order.dto_serialize()", updated_order.dto_serialize())
         business_device_token = Business_Service(
         ).get_device_token(new_order["business_id"])
-        send_fcm(business_device_token)
-        response['msg'] = 'order_received'
+
+        send_fcm(business_device_token, new_order)
+        response['order'] = updated_order.dto_serialize()
         return Response(status=200, response=json.dumps(response))
     elif request.method == 'OPTIONS':
         headers["Access-Control-Allow-Origin"] = request.origin
@@ -235,23 +251,24 @@ def orders(session_token):
         if business_id:
             orders = [x.dto_serialize()
                       for x in Order_Service().get_business_orders(business_id)]
-    else:
-        username = base64.b64decode(
-            request.headers.get(
-                "Authorization").split(" ")[1]).decode("utf-8").split(":")[0]
 
-        filter_orders_by = request.headers.get('Filterby')
-        orders = []
-        if filter_orders_by == 'merchant':
-            orders = [x.dto_serialize()
-                        for x in Order_Service().get_merchant_orders(username=username)]
-            if len(orders) == 0:
-                # dummy data to populate orders table if the merchant has no orders
-                dummy_order = Order_Domain()
-                orders.append(dummy_order.dto_serialize())
+        else:
+            username = base64.b64decode(
+                request.headers.get(
+                    "Authorization").split(" ")[1]).decode("utf-8").split(":")[0]
 
-        # elif filter_orders_by == 'customer':
-        #     orders = Order_Service().get_merchant_orders(username=username)
+            filter_orders_by = request.headers.get('Filterby')
+            orders = []
+            if filter_orders_by == 'merchant':
+                orders = [x.dto_serialize()
+                          for x in Order_Service().get_merchant_orders(username=username)]
+                if len(orders) == 0:
+                    # dummy data to populate orders table if the merchant has no orders
+                    dummy_order = Order_Domain()
+                    orders.append(dummy_order.dto_serialize())
+
+            # elif filter_orders_by == 'customer':
+            #     orders = Order_Service().get_merchant_orders(username=username)
         response['orders'] = orders
 
         return Response(status=200, response=json.dumps(response), headers=headers)
@@ -393,7 +410,6 @@ def customer():
 
         # generate a secure JSON token using the user's unverified email address. then i embed this token in the url for the verify account link sent in the email. i then parse this string when the user navigates to the page, securely verifying their email by using the
         if generated_new_customer:
-            print('generated cust', generated_new_customer.dto_serialize())
             Customer_Service().update_device_token(
                 device_token, generated_new_customer.id)
             jwt_token = jwt.encode(
@@ -416,7 +432,6 @@ def customer():
             {"sub": customer.id}, key=secret, algorithm="HS256")
         send_confirmation_email(
             jwt_token=jwt_token, user=customer, email_type="customer_confirmation")
-        return Response(status=200)
         return Response(status=200, headers=headers)
     elif request.method == "GET":
         headers["Access-Control-Allow-Origin"] = request.origin
@@ -437,6 +452,13 @@ def customer():
             customers.append(dummy_customer.dto_serialize())
         response = {"customers": customers}
         return Response(status=200, response=json.dumps(response), headers=headers)
+@app.route("/customer/device_token", methods=["GET"])
+def update_device_token():
+    device_token = request.headers.get("device_token")
+    customer_id = request.headers.get("customer_id")
+    if device_token and customer_id:
+        Customer_Service().update_device_token(device_token, customer_id)
+    return Response(status=200)
 
 
 # strongly typed url argument ;)
@@ -450,7 +472,7 @@ def verify_email(session_token):
     if Customer_Service().update_email_verification(customer_id):
         Customer_Service().get_device_token(customer_id)
         device_token = Customer_Service().get_device_token(customer_id)
-        send_apn(device_token, "email")
+        send_apn(device_token, "email", 'sandbox')
         response = {"msg": "successfully registered"}
         return Response(response=json.dumps(response), status=200)
     else:
@@ -506,8 +528,6 @@ def business(session_token):
 
         business_list = []
         if request.headers.get('merchantId'):
-            print('request.headers.get(merchantId)',
-                  request.headers.get('merchantId'))
             merchant_id = request.headers.get('merchantId')
             merchant_businesses = [x.dto_serialize(
             ) for x in Business_Service().get_merchant_business(merchant_id)]
@@ -524,12 +544,8 @@ def business(session_token):
 
         businesss = Business_Service().get_businesses()
         client_etag = json.loads(request.headers.get("If-None-Match"))
-        print('client_etag', client_etag)
-
         if client_etag:
-            print('client etag exists')
             if not ETag_Service().validate_etag(client_etag):
-                print('cant validate etag')
                 for business in businesss:
                     # turn into dictionaries
                     businessDTO = {}
@@ -644,35 +660,14 @@ def create_account():
             if file.filename == '':
                 response["msg"] = "No file file uploaded"
                 return Response(status=200, response=json.dumps(response), headers=headers)
-            # if file and allowed_file(file.filename):
+
             if file:
                 Google_Cloud_Storage_API().upload_menu_file(file, new_business.id)
                 response["msg"] = "File successfully uploaded!"
                 return Response(status=200, response=json.dumps(response), headers=headers)
-            # elif file and not allowed_file(file.filename):
-            #     response["msg"] = "File not allowed"
-            #     return Response(status=415, response=json.dumps(response), headers=headers)
+
         response["msg"] = "An unknown internal server error occured"
         return Response(status=500, response=json.dumps(response), headers=headers)
-
-# dont need this anymore because i no longer generate a new stripe ID when the user hits the redirect_url. felt cute, will probably delete later
-# @app.route('/create-account-redirect', methods=['POST'])
-# def create_account_redirect():
-#     response = {"msg": ""}
-#     headers = {}
-#     business_service = Business_Service()
-#     request_json = json.loads(request.data)
-#     print('request_json',request_json)
-#     business_to_update = request_json["business"]
-#     print('business_to_update',business_to_update)
-#     if business_service.update_business(business_to_update):
-        # headers["jwt_token"] = jwt.encode(
-        #     {"sub": business_to_update["id"]}, key=secret, algorithm="HS256")
-#         response["msg"] = "Business sucessfully updated"
-#         return Response(status=200, response=json.dumps(response), headers=headers)
-#     else:
-#         response["msg"] = "Failed to update business"
-#         return Response(status=500, response=json.dumps(response))
 
 
 @app.route('/merchant_employee_stripe_account', methods=['GET'])
@@ -780,7 +775,6 @@ def authenticate_pin_number():
     if new_merchant_employee != False:
         # have to reset the pin number otherwise it will be the hashed version
         new_merchant_employee.pin_number = pin_number
-        print('new_merchant_employee', new_merchant_employee.dto_serialize())
         headers["jwt_token"] = jwt.encode(
             {"sub": new_merchant_employee.id}, key=secret, algorithm="HS256")
         return Response(status=200, response=json.dumps(new_merchant_employee.dto_serialize()), headers=headers)
@@ -838,7 +832,6 @@ def authenticate_merchant():
             return Response(status=200, response=json.dumps(merchant.dto_serialize()), headers=headers)
         else:
             response["msg"] = "customer not found"
-
             return Response(status=204, response=json.dumps(response), headers=headers)
 
 
@@ -874,12 +867,9 @@ def create_stripe_account():
 
 @app.route('/validate-merchant-stripe-account', methods=['GET'])
 def validate_merchant_stripe_account():
-    print('hey')
     callback_stripe_id = request.args.get('stripe')
-    print('callback_stripe_id', callback_stripe_id)
     merchant_stripe_status = Merchant_Service(
     ).authenticate_merchant_stripe(callback_stripe_id)
-    print('merchant_stripe_status', merchant_stripe_status)
     if merchant_stripe_status:
         response = Response(status=200)
     else:
@@ -934,7 +924,6 @@ def add_menu():
 
                 # update the drink image url for each drink, keeping the proper index intact by extracting only drinks with an image
                 drink.set_image_url(file.filename)
-                print('drink.image_url', drink.image_url)
                 drink.file = file
                 Google_Cloud_Storage_API().upload_drink_image_file(drink)
                 response["msg"] = "File successfully uploaded!"
@@ -957,4 +946,4 @@ def add_menu():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port='5000')
+    app.run(host='0.0.0.0', debug=True, port='5000')

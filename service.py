@@ -85,8 +85,8 @@ class Order_Service(object):
     def create_order(self, order):
         with session_scope() as session:
             new_order_domain = Order_Domain(order_json=order)
-            Order_Repository().post_order(session, new_order_domain)
-            return
+            return Order_Repository().create_order(session, new_order_domain)
+            
 
     def get_customer_orders(self, username):
         response = []
@@ -219,11 +219,11 @@ class Merchant_Service(object):
                 return merchant_domain
             else:
                 return False
-
+    
     def validate_merchant(self, email):
         with session_scope() as session:
             return Merchant_Repository().validate_merchant(session, email)
-
+            
     def authenticate_merchant_stripe(self, stripe_id):
         with session_scope() as session:
             return Merchant_Repository().authenticate_merchant_stripe(session, stripe_id)
@@ -329,6 +329,14 @@ class Business_Service(object):
                 return business_domain
             else:
                 return False
+
+    # dont need this anymore because i no longer generate a new stripe ID when the user hits the redirect_url. felt cute, will probably delete later
+    # def update_business(self, business):
+    #     with session_scope() as session:
+    #         business_domain = Business_Domain(business_json=business)
+    #         # need to add this line because the initialization of the business domain will create a new UUID for the id
+    #         business_domain.id = business['id']
+    #         return Business_Repository().update_business(session, business_domain)
 
     def get_merchant_business(self, merchant_id):
         with session_scope() as session:

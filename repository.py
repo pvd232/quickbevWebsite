@@ -45,8 +45,7 @@ class Order_Repository(object):
             database_order.refunded = order.refunded
             return
 
-    def post_order(self, session, order):
-        print('order', order.dto_serialize())
+    def create_order(self, session, order):
         # calculate order values on backend to prevent malicious clients
         cost = 0
         subtotal = 0
@@ -59,21 +58,26 @@ class Order_Repository(object):
         subtotal = round(subtotal, 2)
         tip_amount = round(order.tip_percentage * subtotal, 2)
         sales_tax = round(subtotal * order.sales_tax_percentage, 2)
-        pre_fee_cost = int(round(subtotal+tip_amount+sales_tax, 2) * 100)
+        pre_fee_cost = round(subtotal+tip_amount+sales_tax, 2) 
         merchant_stripe_id = order.merchant_stripe_id
-        service_fee = int(round(.1 * cost, 2) * 100)
+        service_fee = round(.1 * cost, 2)
         cost = pre_fee_cost + service_fee
         new_order = Order(id=order.id, customer_id=order.customer.id, merchant_stripe_id=order.merchant_stripe_id,
                           business_id=order.business_id, cost=cost, subtotal=subtotal, tip_percentage=order.tip_percentage, tip_amount=tip_amount, sales_tax=sales_tax, sales_tax_percentage=order.sales_tax_percentage, date_time=order.date_time, service_fee=service_fee)
         session.add(new_order)
-
+        order.cost = cost
+        order.tip_amount = tip_amount
+        order.sales_tax = sales_tax
+        order.subtotal = subtotal
+        order.service_fee = service_fee
+        
         for each_order_drink in order.order_drink.order_drink:
             # create a unique instance of Order_Drink for the number of each type of drink that were ordered. the UUID for the Order_Drink is generated in the database
             for i in range(each_order_drink.quantity):
                 new_order_drink = Order_Drink(
                     order_id=new_order.id, drink_id=each_order_drink.id)
                 session.add(new_order_drink)
-        return True
+        return order
 
     def get_customer_orders(self, session, username):
         orders = session.query(Order, Business.id.label("business_id"),  # select from allows me to pull the entire Order from the database so I can get the Order_Drink relationship values
@@ -222,8 +226,11 @@ class Customer_Repository(object):
 
         if not test_customer and test_stripe_id:
             print('if not test_customer and test_stripe_id')
+            new_customer = stripe.Customer.create()
+            new_stripe = Stripe_Customer(id=new_customer.id)
+            session.add(new_stripe)
             new_customer = Customer(id=customer.id, password=customer.password,
-                                    first_name=customer.first_name, last_name=customer.last_name, stripe_id=test_stripe_id.id, email_verified=customer.email_verified, has_registered=False)
+                                    first_name=customer.first_name, last_name=customer.last_name, stripe_id=new_stripe.id, email_verified=customer.email_verified, has_registered=False)
             session.add(new_customer)
             return new_customer
         elif not test_customer and not test_stripe_id:
@@ -429,12 +436,12 @@ class Merchant_Repository(object):
         return False
 
     def validate_merchant(self, session, email):
-        for merchant in session.query(Merchant):
-            if merchant.id == email:
-                print('merchant in validate merchant', merchant.serialize)
-                return merchant
-        return False
-
+            for merchant in session.query(Merchant):
+                if merchant.id == email:
+                    print('merchant in validate merchant', merchant.serialize)
+                    return merchant
+            return False
+            
     def authenticate_merchant_stripe(self, session, stripe_id):
         merchant_stripe_status = stripe.Account.retrieve(stripe_id)
         print('authenticating merchant stripe')

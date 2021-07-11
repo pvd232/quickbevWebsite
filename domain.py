@@ -45,8 +45,11 @@ class Drink_Domain(object):
             self.quantity = drink_json["quantity"]
 
     def set_image_url(self, file_name):
-        self.image_url = f'https://storage.googleapis.com/my-new-quickbev-bucket/business/{str(self.business_id)}/menu-images/' + file_name
-        self.blob_name = f'business/{str(self.business_id)}/menu-images/' + file_name
+        self.image_url = f'https://storage.googleapis.com/my-new-quickbev-bucket/business/{str(self.business_id)}/menu-images/' + \
+            file_name
+        self.blob_name = f'business/{str(self.business_id)}/menu-images/' + \
+            file_name
+
     def dto_serialize(self):
         attribute_names = list(self.__dict__.keys())
         attributes = list(self.__dict__.values())
@@ -62,7 +65,7 @@ class Drink_Domain(object):
 class Order_Domain(object):
     def __init__(self, order_object=None, order_json=None, drinks=None):
         self.id = ''
-        self.customer= ''
+        self.customer = ''
         self.customer_first_name = ''
         self.customer_last_name = ''
         self.cost = 0
@@ -92,7 +95,9 @@ class Order_Domain(object):
             self.customer_last_name = order_object.customer_last_name
             # the order db model object is nested inside the result as "Order"
             self.id = order_object.Order.id
-            self.customer = order_object.Order.customer
+            self.customer = Customer_Domain(
+                customer_object=order_object.Order.customer)
+            self.customer_id = self.customer.id
             self.cost = order_object.Order.cost
             self.subtotal = order_object.Order.subtotal
             self.tip_percentage = order_object.Order.tip_percentage
@@ -110,9 +115,10 @@ class Order_Domain(object):
             self.rejected = order_object.Order.rejected
             self.refunded = order_object.Order.refunded
         elif order_json:
-            print('order_json',order_json)
             self.id = order_json["id"]
-            self.customer = Customer_Domain(customer_json=order_json['customer'])
+            if "customer" in order_json.keys():
+                self.customer = Customer_Domain(
+                customer_json=order_json['customer'])
             self.merchant_stripe_id = order_json["merchant_stripe_id"]
             self.cost = order_json["cost"]
             self.subtotal = order_json["subtotal"]
@@ -136,7 +142,14 @@ class Order_Domain(object):
             # UUID is not json serializable so i have to stringify it
             if attribute_names[i] == "id" or attribute_names[i] == "business_id":
                 serialized_attributes[attribute_names[i]] = str(attributes[i])
+            elif attribute_names[i] == "date_time":
+                serialized_attributes[attribute_names[i]] = attributes[i].strftime(
+                "%m/%d/%Y") 
+
             elif attribute_names[i] == "order_drink" and not isinstance(attributes[i], list):
+                serialized_attributes[attribute_names[i]
+                                      ] = attributes[i].dto_serialize()
+            elif attribute_names[i] == "customer":
                 serialized_attributes[attribute_names[i]
                                       ] = attributes[i].dto_serialize()
             else:
@@ -190,8 +203,6 @@ class Customer_Domain(object):
             self.first_name = customer_object.first_name
             self.last_name = customer_object.last_name
             self.email_verified = customer_object.email_verified
-            for key in customer_object.__dict__.keys():
-                print('customer key', key)
             if "has_registered" in customer_object.__dict__.keys():
                 self.has_registered = customer_object.has_registered
             # self.has_registered = False
