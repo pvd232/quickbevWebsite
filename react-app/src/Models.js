@@ -1,5 +1,28 @@
-export const setLocalStorage = (key, object) => {
-  localStorage.setItem(key, JSON.stringify(object));
+export class LocalStorageManager {
+  static shared = new LocalStorageManager();
+  getLocalStorage(key) {
+    return JSON.parse(localStorage.getItem(key));
+  }
+  setLocalStorage(key, object) {
+    localStorage.setItem(key, JSON.stringify(object));
+  }
+  get firstLogin() {
+    return JSON.parse(localStorage.getItem("first_login"));
+  }
+  get currentMerchant() {
+    return new Merchant("localStorage", localStorage.getItem("merchant"));
+  }
+  get currentBusiness() {
+    return new Business(localStorage.getItem("business"), false, true, false);
+  }
+  get sessionToken() {
+    return JSON.parse(localStorage.getItem("session_token"));
+  }
+}
+
+export const nonCamelCaseWords = (name) => {
+  var words = name.match(/[A-Za-z][a-z]*/g) || [];
+  return words.join(" ");
 };
 const capitalize = (word) => {
   return word.charAt(0).toUpperCase() + word.substring(1);
@@ -79,22 +102,24 @@ export class Order {
   constructor(order_object) {
     this.id = order_object.id;
     this.customerId = order_object.customer_id;
-    this.cost = order_object.cost;
+    this.total = order_object.total;
     this.subtotal = order_object.subtotal;
     this.tipPercentage = order_object.tip_percentage;
-    this.tipAmount = order_object.tip_amount;
-    this.salesTax = order_object.sales_tax;
+    this.tipTotal = order_object.tip_total;
+    this.salesTaxTotal = order_object.sales_tax_total;
+    this.preSalesTaxTotal = order_object.pre_sales_tax_total;
+    this.preServiceFeeTotal = order_object.pre_service_fee_total;
     this.businessId = order_object.business_id;
     // this property will be extracted from the business in the front end and set after the business is initialized
     this.businessName = "";
     this.businessAddress = order_object.business_address;
-    this.dateTime = order_object.date_time;
-    this.serviceFee = parseFloat(order_object.service_fee);
+    this.dateTime = order_object.formatted_date_time;
+    this.serviceFee = order_object.service_fee;
     this.orderDrink = [];
     // if there are no orders then the backend will send an empty order so we dont need to construct an order drink
     if (
-      Array.isArray(order_object.orderDrink) &&
-      order_object.orderDrink[0].cost > 0
+      Array.isArray(order_object.order_drink.order_drink) &&
+      order_object.order_drink.order_drink[0].id !== ""
     ) {
       this.orderDrink = new OrderDrink(order_object.order_drink);
       this.orderDrink.orderId = this.id;
@@ -122,14 +147,11 @@ export class Order {
 
 export class Merchant {
   constructor(objectType, object) {
-    console.log("objectType", objectType);
-
-    console.log("object", object);
     this.isAdministrator = false;
     if (objectType === "json") {
       // the merchant object will be pre-populated with values from the form thus it will use camelCase notation
       this.id = object.id;
-      this.stripeId = object.stripe_id
+      this.stripeId = object.stripe_id;
       this.password = object.password;
       this.firstName = object.first_name;
       this.lastName = object.last_name;
@@ -180,11 +202,12 @@ export class Merchant {
 export class Business {
   constructor(
     businessObject,
-    isCamelCase = false,
+    isSnakeCase = false,
     isJSON = false,
     tableDisplay = false
   ) {
-    if (businessObject && !isCamelCase && !isJSON && !tableDisplay) {
+    // this is the business that is created from the form during the signup process
+    if (businessObject && !isSnakeCase && !isJSON && !tableDisplay) {
       this.id = businessObject.id;
       this.name = businessObject.name;
       this.merchantId = businessObject.merchantId;
@@ -195,12 +218,14 @@ export class Business {
       this.state = businessObject.state;
       this.zipcode = businessObject.zipcode;
       this.phoneNumber = businessObject.phoneNumber;
-      this.tablet = businessObject.tablet;
       this.menuUrl = businessObject.menuUrl;
       this.classification = businessObject.classification;
       this.salesTaxRate = businessObject.salesTaxRate;
       this.menu = businessObject.menu;
-    } else if (businessObject && isCamelCase && !isJSON && !tableDisplay) {
+      this.atCapacity = false;
+      this.schedule = businessObject.schedule;
+      // this is the business that is saved in local storage when received as a confirmed business from the backend
+    } else if (businessObject && isSnakeCase && !isJSON && !tableDisplay) {
       this.id = businessObject.id;
       this.name = businessObject.name;
       this.merchantId = businessObject.merchant_id;
@@ -211,12 +236,13 @@ export class Business {
       this.state = businessObject.state;
       this.zipcode = businessObject.zipcode;
       this.phoneNumber = businessObject.phone_number;
-      this.tablet = businessObject.tablet;
       this.menuUrl = businessObject.menu_url;
       this.classification = businessObject.classification;
       this.salesTaxRate = businessObject.sales_tax_rate;
       this.menu = businessObject.menu;
-    } else if (businessObject && isJSON && isCamelCase) {
+      this.atCapacity = businessObject.at_capacity;
+      this.schedule = businessObject.schedule;
+    } else if (businessObject && isJSON && isSnakeCase) {
       const businessJson = JSON.parse(businessObject);
       this.id = businessJson.id;
       this.name = businessJson.name;
@@ -228,17 +254,17 @@ export class Business {
       this.state = businessJson.state;
       this.zipcode = businessJson.zipcode;
       this.phoneNumber = businessJson.phone_number;
-      this.tablet = businessJson.tablet;
       this.menuUrl = businessJson.menu_url;
       this.classification = businessJson.classification;
       this.salesTaxRate = businessJson.sales_tax_rate;
       this.menu = businessJson.menu;
+      this.atCapacity = businessJson.at_capacity;
+      this.schedule = businessObject.schedule;
     } else if (businessObject && !isJSON && tableDisplay) {
       this.id = businessObject.id;
       this.name = businessObject.name;
       this.address = businessObject.address;
       this.phoneNumber = businessObject.phone_number;
-      this.tablet = businessObject.tablet;
       this.classification = businessObject.classification;
       this.salesTaxRate = businessObject.sales_tax_rate;
     } else {
@@ -254,14 +280,14 @@ export class Business {
       this.zipcode = null;
       this.phoneNumber = null;
       this.numberOfBusinesses = null;
-      this.tablet = null;
       this.menuUrl = null;
       this.classification = null;
       this.salesTaxRate = null;
       this.menu = null;
+      this.atCapacity = null;
+      this.schedule = null;
     }
   }
-
   toJSON() {
     const data = {
       id: this.id,
@@ -275,11 +301,145 @@ export class Business {
       zipcode: this.zipcode,
       phone_number: this.phoneNumber,
       number_of_businesses: this.numberOfBusinesses,
-      tablet: this.tablet,
       menu_url: this.menuUrl,
       classification: this.classification,
       sales_tax: this.salesTaxRate,
+      at_capacity: this.atCapacity,
+      schedule: this.schedule,
     };
+    return data;
+  }
+}
+export class QuickPass {
+  constructor(quickPassObject) {
+    if (quickPassObject) {
+      console.log("quickPassObject", quickPassObject);
+      this.id = quickPassObject.id;
+      this.customerFirstName = quickPassObject.customer_first_name;
+      this.customerLastName = quickPassObject.customer_last_name;
+      this.customerId = quickPassObject.customer_id;
+      this.businessId = quickPassObject.business_id;
+      this.activationTime = quickPassObject.activation_time;
+      this.timeCheckedIn = quickPassObject.time_checked_in;
+    } else {
+      this.id = "";
+      this.customerFirstName = "";
+      this.customerLastName = "";
+      this.customerId = "";
+      this.businessId = "";
+      this.activationTime = "";
+      this.timeCheckedIn = "";
+    }
+  }
+  toJSON() {
+    const data = {
+      id: this.id,
+      customer_first_name: this.customerFirstName,
+      customer_last_name: this.customerLastName,
+      customer_id: this.customerId,
+      business_id: this.businessId,
+      activation_time: this.activationTime,
+      time_checked_in: this.timeCheckedIn,
+    };
+    return data;
+  }
+  formatTimestamp() {
+    // Create a new JavaScript Date object based on the timestamp
+    // multiplied by 1000 so that the argument is in milliseconds, not seconds.
+    const unixTimestamp = this.activationTime;
+    console.log("this.activationTime", this.activationTime);
+    console.log("unixTimestamp", unixTimestamp);
+    const date = new Date(unixTimestamp * 1000);
+    // console.log("date", date);
+    // // Hours part from the timestamp
+    // const hours = date.getHours();
+    // console.log("hours", hours);
+    // // Minutes part from the timestamp
+    // const minutes = "0" + date.getMinutes();
+    // // Seconds part from the timestamp
+    // const seconds = "0" + date.getSeconds();
+
+    // Will display time in 10:30:23 format
+    // const formattedTime =
+    //   hours + ":" + minutes.substr(-2) + ":" + seconds.substr(-2);
+    return date.toLocaleString("en-US", {
+      hour: "numeric",
+      minute: "numeric",
+      hour12: true,
+    });
+  }
+}
+export class MerchantEmployee {
+  constructor(merchantEmployeeObject) {
+    if (merchantEmployeeObject) {
+      this.id = merchantEmployeeObject.id;
+      this.firstName = merchantEmployeeObject.first_name;
+      this.lastName = merchantEmployeeObject.last_name;
+      this.phoneNumber = merchantEmployeeObject.phone_number;
+      this.loggedIn = merchantEmployeeObject.logged_in;
+      this.businessId = merchantEmployeeObject.business_id;
+      this.status = merchantEmployeeObject.status;
+    } else {
+      this.id = "";
+      this.firstName = "";
+      this.lastName = "";
+      this.phoneNumber = "";
+      this.loggedIn = "";
+      this.businessId = "";
+      this.status = "pending";
+    }
+  }
+  toJSON() {
+    const data = {
+      id: this.id,
+      first_name: this.firstName,
+      last_name: this.lastName,
+      phone_number: this.phoneNumber,
+      logged_in: this.loggedIn,
+      business_id: this.businessId,
+    };
+    return data;
+  }
+}
+export class Bouncer {
+  constructor(bouncerObject, isForm) {
+    if (bouncerObject && !isForm) {
+      this.id = bouncerObject.id;
+      this.firstName = bouncerObject.first_name;
+      this.lastName = bouncerObject.last_name;
+      this.loggedIn = bouncerObject.logged_in;
+      this.businessId = bouncerObject.business_id;
+      this.merchantId = bouncerObject.merchant_id;
+      this.status = bouncerObject.status;
+    } else if (bouncerObject && isForm) {
+      this.id = bouncerObject.id;
+      this.firstName = bouncerObject.firstName;
+      this.lastName = bouncerObject.lastName;
+      this.loggedIn = bouncerObject.loggedIn;
+      this.businessId = bouncerObject.businessId;
+      this.merchantId = bouncerObject.merchantId;
+      this.status = bouncerObject.status;
+    } else {
+      this.id = "";
+      this.firstName = "";
+      this.lastName = "";
+      this.loggedIn = "";
+      this.businessId = "";
+      this.merchantId = "";
+      this.status = "pending";
+    }
+  }
+  toJSON() {
+    const data = {
+      id: this.id,
+      first_name: this.firstName,
+      last_name: this.lastName,
+      logged_in: !this.loggedIn ? false : this.loggedIn,
+      status: !this.status ? "pending" : this.status,
+      merchant_id: this.merchantId,
+      business_id: this.businessId,
+    };
+
     return data;
   }
 }

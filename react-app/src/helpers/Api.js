@@ -1,9 +1,9 @@
-import { Merchant, setLocalStorage } from "../Models.js";
+import { Merchant, LocalStorageManager } from "../Models.js";
 
 class Client {
   constructor() {
-    this.baseUrl = "";
-    this.url = "";
+    this.baseUrl = "https://quickbev.us";
+    // this.mode = "cors";
   }
   async makeRequest(
     method,
@@ -13,24 +13,31 @@ class Client {
     isForm = false
   ) {
     let requestData = data || {};
+    console.log("requestData", requestData);
+    console.log("data", data);
     try {
       this.url = this.baseUrl + path;
+      const request = new Request(this.url);
       var requestHeaders = false;
       if (headersParam) {
+        console.log('headersParam',headersParam)
         requestHeaders = new Headers();
         for (const [key, value] of Object.entries(headersParam)) {
           requestHeaders.set(key, value);
         }
       }
-      const response = await fetch(this.url, {
+      const response = await fetch(request, {
         method: method,
         body:
           method === "POST" && !isForm && data
+            ? JSON.stringify(requestData)
+            : method === "PUT" && !isForm && data
             ? JSON.stringify(requestData)
             : method === "POST" && isForm && data
             ? requestData
             : null,
         headers: headersParam ? requestHeaders : {},
+        mode: this.mode,
       });
 
       if (response) {
@@ -71,52 +78,50 @@ class Client {
   }
   // this is hitting the same endpoint as the api request made to verify that the merchant email is not taken when the merchant is signing up
   getMerchant = async (credentials) => {
-    this.url = this.baseUrl + "/merchant";
-    var requestHeaders = new Headers();
+    const requestUrl = this.baseUrl + "/merchant";
+    const requestHeaders = new Headers();
     for (const [key, value] of Object.entries(credentials)) {
       requestHeaders.set(key, value);
     }
-    const response = await fetch(this.url, {
+    const request = new Request(requestUrl);
+    const requestParams = {
+      method: "GET",
       headers: requestHeaders,
-    });
+      mode: this.mode,
+      cache: "default",
+    };
+    const response = await fetch(request, requestParams);
+
     const headers = {};
     for (const [key, value] of response.headers.entries()) {
       headers[key] = value;
     }
     if (response.status === 204) {
-      console.log("response status 204 to log in merchant");
       return false;
     } else {
       const loggedInMerchant = new Merchant("json", await response.json());
-      console.log("loggedInMerchant", loggedInMerchant);
-
-      setLocalStorage("merchant", loggedInMerchant);
-      console.log("response.headers.jwt_token", headers.jwt_token);
-
-      setLocalStorage("session_token", headers.jwt_token);
+      LocalStorageManager.shared.setLocalStorage("merchant", loggedInMerchant);
+      LocalStorageManager.shared.setLocalStorage(
+        "session_token",
+        headers.jwt_token
+      );
       return true;
     }
   };
   getOrders = async () => {
-    console.log(
-      'ORDERS JSON.parse(localStorage.getItem("sessionToken"))',
-      JSON.parse(localStorage.getItem("session_token"))
-    );
     this.url =
-      this.baseUrl +
-      "/order/" +
-      JSON.parse(localStorage.getItem("session_token"));
+      this.baseUrl + "/order/" + LocalStorageManager.shared.sessionToken;
     console.log("this.url", this.url);
 
-    var headers = new Headers();
-    const currentMerchant = new Merchant(
-      "localStorage",
-      localStorage.getItem("merchant")
-    );
-    console.log("currentMerchant", currentMerchant);
+    const headers = new Headers();
     headers.set(
       "Authorization",
-      "Basic " + btoa(currentMerchant.id + ":" + currentMerchant.password)
+      "Basic " +
+        btoa(
+          LocalStorageManager.shared.currentMerchant.id +
+            ":" +
+            LocalStorageManager.shared.currentMerchant.password
+        )
     );
     headers.set("filterBy", "merchant");
     return fetch(this.url, {
@@ -128,54 +133,129 @@ class Client {
     this.url =
       this.baseUrl +
       "/customer?session_token=" +
-      JSON.parse(localStorage.getItem("session_token"));
+      LocalStorageManager.shared.sessionToken;
     console.log("this.url", this.url);
 
-    var headers = new Headers();
-    const currentMerchant = new Merchant(
-      "localStorage",
-      localStorage.getItem("merchant")
-    );
+    const headers = new Headers();
     // will uncomment this when i have added menu for new businesses
-    headers.set("Authorization", "Basic " + btoa(currentMerchant.id));
+    headers.set(
+      "Authorization",
+      "Basic " + btoa(LocalStorageManager.shared.currentMerchant.id)
+    );
     return fetch(this.url, {
       credentials: "include",
       headers: headers,
     }).then((data) => data.json());
   };
+  getMerchantEmployees = async () => {
+    this.url =
+      this.baseUrl +
+      "/merchant_employee/" +
+      LocalStorageManager.shared.sessionToken;
+
+    const requestHeaders = new Headers();
+    const myRequest = new Request(this.url);
+    requestHeaders.set(
+      "merchant_id",
+      LocalStorageManager.shared.currentMerchant.id
+    );
+
+    const requestParams = {
+      method: "GET",
+      headers: requestHeaders,
+      mode: this.mode,
+      cache: "default",
+    };
+    return fetch(myRequest, requestParams).then((data) => data.json());
+  };
+  getQuickPasses = async (businessId) => {
+    this.url =
+      this.baseUrl +
+      "/quick_pass/bouncer"
+
+    const requestHeaders = new Headers();
+    const myRequest = new Request(this.url);
+    requestHeaders.set(
+      "business_id",
+      businessId
+    );
+
+    const requestParams = {
+      method: "GET",
+      headers: requestHeaders,
+      mode: this.mode,
+      cache: "default",
+    };
+    return fetch(myRequest, requestParams).then((data) => data.json());
+  };
+  getBouncers = async () => {
+    this.url =
+      this.baseUrl + "/bouncer/" + LocalStorageManager.shared.sessionToken;
+
+    const requestHeaders = new Headers();
+    const myRequest = new Request(this.url);
+    requestHeaders.set(
+      "merchant_id",
+      LocalStorageManager.shared.currentMerchant.id
+    );
+
+    const requestParams = {
+      method: "GET",
+      headers: requestHeaders,
+      mode: this.mode,
+      cache: "default",
+    };
+    return fetch(myRequest, requestParams).then((data) => data.json());
+  };
   checkStripeStatus = async () => {
-    const currentMerchant = new Merchant(
-      "localStorage",
-      localStorage.getItem("merchant")
+    console.log(
+      "LocalStorageManager.shared.currentMerchant.stripeId",
+      LocalStorageManager.shared.currentMerchant.stripeId
     );
     this.url =
       this.baseUrl +
-      `/validate-merchant-stripe-account?stripe=${currentMerchant.stripeId}`;
+      `/validate-merchant-stripe-account?stripe=${LocalStorageManager.shared.currentMerchant.stripeId}`;
+
+    const requestParams = {
+      method: "GET",
+      mode: this.mode,
+      cache: "default",
+    };
     // will uncomment this when i have added menu for new businesses
-    const response = await fetch(this.url, {});
+    const response = await fetch(this.url, requestParams);
     if (response.status === 200) {
-      console.log("merchant stripe id good");
       return true;
     } else {
-      console.log("merchant stripe id bad");
+      return false;
+    }
+  };
+  checkTokenStatus = async (sessionToken) => {
+    this.url =
+      this.baseUrl + `/bouncer/verify_jwt?session_token=${sessionToken}`;
+
+    const requestParams = {
+      method: "GET",
+      mode: this.mode,
+      cache: "default",
+    };
+    // will uncomment this when i have added menu for new businesses
+    const response = await fetch(this.url, requestParams);
+    if (response.status === 200) {
+      return true;
+    } else {
       return false;
     }
   };
   getBusinesses = async () => {
     this.url =
-      this.baseUrl +
-      "/business/" +
-      JSON.parse(localStorage.getItem("session_token"));
-    var headers = new Headers();
-    const currentMerchant = new Merchant(
-      "localStorage",
-      localStorage.getItem("merchant")
-    );
+      this.baseUrl + "/business/" + LocalStorageManager.shared.sessionToken;
+    const headers = new Headers();
     // will uncomment this when i have added menu for new businesses
-    console.log("currentMerchant in business", currentMerchant);
-    headers.set("merchantId", currentMerchant.id);
+    headers.set("merchantId", LocalStorageManager.shared.currentMerchant.id);
+
     return fetch(this.url, {
       headers: headers,
+      mode: this.mode,
     }).then((data) => data.json());
   };
 }

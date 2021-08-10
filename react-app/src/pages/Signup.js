@@ -1,5 +1,5 @@
 import React, { useState, useReducer } from "react";
-import { Merchant, Business, setLocalStorage } from "../Models.js";
+import { Merchant, Business, LocalStorageManager } from "../Models.js";
 import API from "../helpers/Api.js";
 import Navbar from "../Navbar.js";
 // import logo from "../static/landscapeLogo.svg";
@@ -82,8 +82,6 @@ const CreateYourAccountFieldset = (props) => {
         confirmPwdDisplay: "none",
       };
       if (formValue.password !== formValue.confirmPassword) {
-        console.log("passwords dont match");
-
         newErrorMsgState["confirmPasswordErrorMsg"] =
           "* Your passwords do not match";
         newErrorMsgState["confirmPwdDisplay"] = "inline-block";
@@ -93,10 +91,9 @@ const CreateYourAccountFieldset = (props) => {
         const newMerchant = new Merchant("merchantStateObject", formValue);
         const merchantData = {
           email: newMerchant.id,
-          password: newMerchant.password,
-          validate: true
         };
-        API.makeRequest("GET", "/merchant", false, merchantData).then(
+        const validateHeader = { validate: true };
+        API.makeRequest("GET", "/merchant", validateHeader, merchantData).then(
           (response) => {
             console.log("response", response);
             if (response.status === 204) {
@@ -168,7 +165,7 @@ const CreateYourAccountFieldset = (props) => {
             </div>
             <Form.Label>Email</Form.Label>
             <Form.Control
-              type="id"
+              type="email"
               name="id"
               required
               onChange={(e) => {
@@ -254,8 +251,6 @@ const PromoteYourMenuFieldset = (props) => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [selectedFileName, setSelectedFileName] = useState("");
 
-  const [tablet, setTablet] = useState(false);
-
   const onFileChange = (event) => {
     console.log("event", event);
     // Update the state
@@ -281,9 +276,6 @@ const PromoteYourMenuFieldset = (props) => {
   const handleNext = (event) => {
     event.preventDefault();
     const form = event.target;
-    console.log(selectedFile);
-    console.log(selectedFileName);
-
     if (validate(form)) {
       if (!(formValue.menuUrl || selectedFile)) {
         const newErrorMsgState = {};
@@ -297,9 +289,6 @@ const PromoteYourMenuFieldset = (props) => {
       // Update the formData object
       formDataObject.numberOfBusinesses = formValue.numberOfBusinesses;
       formDataObject.classification = formValue.classification;
-      formDataObject.tablet = tablet;
-      console.log("formDataObject", formDataObject);
-
       if (formValue.menuUrl) {
         formDataObject.menuUrl = formValue.menuUrl;
       }
@@ -307,7 +296,6 @@ const PromoteYourMenuFieldset = (props) => {
         formDataObject.menuFile = selectedFile;
         formDataObject.menuFileName = selectedFileName;
       }
-      console.log("formDataObject", formDataObject);
       props.onClick("next", "formDataObject", formDataObject);
     } else {
       return false;
@@ -466,11 +454,6 @@ const PromoteYourMenuFieldset = (props) => {
                     required
                     name="tablet"
                     id="formHorizontalRadios2"
-                    onClick={() => {
-                      console.log("tablet true");
-
-                      setTablet(true);
-                    }}
                   />
                 </Col>
                 <Col xs={10}>
@@ -480,11 +463,11 @@ const PromoteYourMenuFieldset = (props) => {
                     style={{
                       textIndent: "0",
                       textAlign: "left",
-                      fontSize: "13px",
+                      fontSize: "14px",
                       fontWeight: "bold",
                     }}
                   >
-                    $0 for 30 days, then $9/month for 12 months
+                    The tablet will be shipped to your business free of charge!
                   </Card.Text>
 
                   <Card.Text
@@ -492,12 +475,12 @@ const PromoteYourMenuFieldset = (props) => {
                     style={{
                       textIndent: "0",
                       textAlign: "left",
-                      fontSize: "12px",
+                      fontSize: "14px",
                       fontWeight: "bolder",
                     }}
                   >
-                    Your orders will be sent to your tablet for convenience and
-                    efficiency.
+                    Included in the shipment will be a charger and stand to hold
+                    the tablet.
                   </Card.Text>
                 </Col>
               </Row>
@@ -527,15 +510,24 @@ const BusinessFieldset = (props) => {
     {
       name: "",
       phoneNumber: "",
-      email: "",
       address: "",
       street: "",
       suite: "",
       city: "",
       state: "",
       zipcode: "",
+      schedule: [],
     }
   );
+  const [schedule, setSchedule] = useState([
+    { day: "monday", openingTime: "", closingTime: "", isClosed: false },
+    { day: "tuesday", openingTime: "", closingTime: "", isClosed: false },
+    { day: "wednesday", openingTime: "", closingTime: "", isClosed: false },
+    { day: "thursday", openingTime: "", closingTime: "", isClosed: false },
+    { day: "friday", openingTime: "", closingTime: "", isClosed: false },
+    { day: "saturday", openingTime: "", closingTime: "", isClosed: false },
+    { day: "sunday", openingTime: "", closingTime: "", isClosed: false },
+  ]);
   const setAddress = (address) => {
     if (address.split(",").length === 4) {
       const addressObject = {};
@@ -549,6 +541,33 @@ const BusinessFieldset = (props) => {
       setFormValue(addressObject);
     }
   };
+  const handleScheduleChange = (event) => {
+    const name = event.target.name;
+    const dayIndex = parseInt(name.split("-")[0]);
+    const isOpenOrClosed = name.split("-")[1];
+    // must create new date object outside the scope of the setSchedule callback or the state doesnt update
+    const newDateObject = {
+      day: dayIndex,
+      openingTime: "",
+      closingTime: "",
+      isClosed: false,
+    };
+    setSchedule((prevSchedule) => {
+      if (isOpenOrClosed === "closed") {
+        newDateObject.isClosed = !prevSchedule[dayIndex].isClosed;
+      } else if (isOpenOrClosed === "open") {
+        newDateObject.openingTime = event.target.value;
+        newDateObject.closingTime = prevSchedule[dayIndex].closingTime;
+      } else if (isOpenOrClosed === "closing") {
+        newDateObject.closingTime = event.target.value;
+        newDateObject.openingTime = prevSchedule[dayIndex].openingTime;
+      }
+      // creating new object makes setState func work for some reason
+      const newSchedule = prevSchedule.map((a) => ({ ...a }));
+      newSchedule[dayIndex] = newDateObject;
+      return newSchedule;
+    });
+  };
   const formChangeHandler = (event) => {
     let name = event.target.name;
     let value = event.target.value;
@@ -560,13 +579,14 @@ const BusinessFieldset = (props) => {
   };
 
   const handleSubmit = async (eventTarget, merchantStripeId) => {
-    console.log('merchantStripeId',merchantStripeId)
     // the event target is the button that was clicked inside the payout setup component inside the business fieldset
     const form = eventTarget.closest("form");
     if (validate(form)) {
       // set all the values for the business
       // if the user comes back to this page before submitting to change stuff it will reset the values
-      const newBusiness = new Business(formValue);
+      const copyOfFormValue = { ...formValue };
+      copyOfFormValue.schedule = schedule;
+      const newBusiness = new Business(copyOfFormValue);
       const result = await props.onSubmit(newBusiness, merchantStripeId);
       return result;
     } else {
@@ -577,6 +597,16 @@ const BusinessFieldset = (props) => {
     form.classList.add("was-validated");
     return form.checkValidity();
   };
+  const daysOfWeek = [
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday",
+    "sunday",
+  ];
+  console.log("schedule", schedule);
   return (
     <Form autoComplete="off">
       <fieldset>
@@ -593,7 +623,7 @@ const BusinessFieldset = (props) => {
             formChangeHandler(e);
           }}
         />
-        <Form.Label>Phone Number</Form.Label>
+        <Form.Label>Phone number</Form.Label>
         <Form.Control
           type="tel"
           name="phoneNumber"
@@ -606,7 +636,76 @@ const BusinessFieldset = (props) => {
             formChangeHandler(e);
           }}
         />
-        <Form.Label>Address</Form.Label>
+        ,
+        {daysOfWeek.map((day, i) => (
+          <>
+            <Form.Label>Closed on {day}</Form.Label>
+            <Row
+              key={i}
+              style={{
+                display: "flex",
+                height: "1vh",
+                marginTop: "0",
+                alignItems: "flex-start",
+                justifyContent: "flex-start",
+              }}
+            >
+              <Col
+                xs={2}
+                key={"col" + i}
+                style={{
+                  display: "flex",
+                  height: "1vh",
+                  alignItems: "flex-start",
+                  justifyContent: "flex-start",
+                }}
+              >
+                <Form.Check
+                  type="checkbox"
+                  key={i + "-closed"}
+                  name={i + "-closed"}
+                  value={schedule[i].isClosed}
+                  onChange={(e) => {
+                    handleScheduleChange(e);
+                  }}
+                />
+              </Col>
+            </Row>
+
+            <Form.Label>{day} opening time</Form.Label>
+
+            <Form.Control
+              type="time"
+              key={i + "-open"}
+              name={i + "-open"}
+              className="mb-3"
+              required={!schedule[i].isClosed}
+              pattern="[0-9]{10}"
+              placeholder="06:00 PM"
+              disabled={schedule[i].isClosed}
+              value={schedule[i].openingTime}
+              onChange={(e) => {
+                handleScheduleChange(e);
+              }}
+            />
+
+            <Form.Label>Closing time</Form.Label>
+            <Form.Control
+              type="time"
+              key={i + "-closing"}
+              name={i + "-closing"}
+              className="mb-3"
+              required={schedule[i].isClosed}
+              placeholder="04:00 AM"
+              disabled={schedule[i].isClosed}
+              value={schedule[i].closingTime}
+              onChange={(e) => {
+                handleScheduleChange(e);
+              }}
+            />
+          </>
+        ))}
+        ,<Form.Label>Address</Form.Label>
         <SearchLocationInput onUpdate={(address) => setAddress(address)} />
         <Row>
           <Col
@@ -627,6 +726,7 @@ const BusinessFieldset = (props) => {
             name="previous"
             className="previous action-button"
             value="Previous"
+            style={{ marginTop: "10%" }}
             onClick={() => {
               props.onClick("previous");
             }}
@@ -647,9 +747,7 @@ const Signup = () => {
       console.log("objectData", objectData);
 
       setMerchant({ ...merchant, ...objectData });
-    }
-    // TODO: modify models class to allow a business to have a list of possible locations in step three of the form filling ? or maybe do this after the account has already been created. probably do this because we dont want to make this form too complicated and combersome to complete
-    else if (objectType === "formDataObject") {
+    } else if (objectType === "formDataObject") {
       console.log("formDataObject", formDataObject);
 
       setformDataObject({ ...formDataObject, ...objectData });
@@ -669,7 +767,6 @@ const Signup = () => {
     console.log("merchantStripeId", merchantStripeId);
     const newForm = new FormData();
     // set values from formDataObject into business object
-    newBusiness.tablet = formDataObject.tablet;
     newBusiness.classification = formDataObject.classification;
     newBusiness.merchantStripeId = merchantStripeId;
     if (formDataObject.menuUrl) {
@@ -685,11 +782,10 @@ const Signup = () => {
 
     // the merchant in state was being converted back to a regular object
     const newMerchant = new Merchant("merchantStateObject", merchant);
-    console.log("newMerchant", newMerchant);
 
     newMerchant.numberOfBusinesses = formDataObject.numberOfBusinesses;
     newMerchant.stripeId = merchantStripeId;
-    console.log('newMerchant',newMerchant)
+    console.log("newMerchant", newMerchant);
 
     // set the stripe ID returned from the backend
     newForm.append("merchant", JSON.stringify(newMerchant));
@@ -699,16 +795,8 @@ const Signup = () => {
     console.log("newBusiness", newBusiness);
     newForm.append("business", JSON.stringify(newBusiness));
 
-    setLocalStorage("merchant", newMerchant);
-    setLocalStorage("business", newBusiness);
-    console.log(
-      "fuck this shit in signup",
-      JSON.parse(localStorage.getItem("merchant"))
-    );
-    console.log(
-      "fuck this shit in siggup 2",
-      JSON.parse(localStorage.getItem("business"))
-    );
+    LocalStorageManager.shared.setLocalStorage("merchant", newMerchant);
+    LocalStorageManager.shared.setLocalStorage("business", newBusiness);
     // set in local storage if user has multiple businesses so we can display a tab to add more businesses late
     let responseBody = await API.makeRequest(
       "POST",
@@ -724,21 +812,25 @@ const Signup = () => {
       true,
       false
     );
+    const confirmed_new_merchant = new Merchant(
+      "json",
+      responseBody.confirmed_new_merchant
+    );
     console.log("confirmed_new_business", confirmed_new_business);
     console.log("responseBody.jwt_token", responseBody.jwt_token);
 
-    setLocalStorage("business", confirmed_new_business);
-    setLocalStorage("session_token", responseBody.headers.jwt_token);
-    const currentMerchant = new Merchant(
-      "localStorage",
-      localStorage.getItem("merchant")
+    LocalStorageManager.shared.setLocalStorage(
+      "business",
+      confirmed_new_business
     );
-    const currentBusiness = new Business(
-      "localStorage",
-      localStorage.getItem("business")
+    LocalStorageManager.shared.setLocalStorage(
+      "merchant",
+      confirmed_new_merchant
     );
-    console.log("currentMerchant after signing up", currentMerchant);
-    console.log("currentMerchant after signing up", currentBusiness);
+    LocalStorageManager.shared.setLocalStorage(
+      "session_token",
+      responseBody.headers.jwt_token
+    );
     return true;
   };
   const fieldSets = [
@@ -760,6 +852,7 @@ const Signup = () => {
     ></BusinessFieldset>,
   ];
   const [currentFieldsetIndex, setCurrentFieldsetIndex] = useState(0);
+
   return (
     <>
       <Navbar />
@@ -776,4 +869,3 @@ const Signup = () => {
   );
 };
 export default Signup;
-

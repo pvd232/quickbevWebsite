@@ -1,17 +1,20 @@
 import React, { useState, useReducer, useEffect } from "react";
-import { Merchant } from "../Models.js";
 import API from "../helpers/Api.js";
 import Navbar from "../Navbar.js";
-
 import Form from "react-bootstrap/Form";
 import Row from "react-bootstrap/Row";
 import Button from "react-bootstrap/Button";
 import Col from "react-bootstrap/Col";
 import "../css/Signup.css";
-
+import { Link } from "react-router-dom";
+import "../css/Signup.css";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faSpinner } from "@fortawesome/free-solid-svg-icons";
+import { LocalStorageManager } from "../Models";
 const Signin = () => {
   const [redirect, setRedirect] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
+  const [isSpinning, setIsSpinning] = useState(null);
   const [authorization, setAuthorization] = useReducer(
     (state, newState) => ({ ...state, ...newState }),
     {
@@ -38,19 +41,28 @@ const Signin = () => {
 
     return () => (mount = false);
   }, [redirect]);
-
+  const Spinner = () => (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <p style={{ marginBottom: "0", marginRight: ".4rem" }}>Submit</p>
+      <FontAwesomeIcon icon={faSpinner} className="fa-spin" />
+    </div>
+  );
   const onSubmit = (event) => {
     event.preventDefault();
     const form = event.target;
     if (validate(form)) {
       API.getMerchant(authorization).then((response) => {
         if (response) {
-          console.log("successfully logged in merchant!!");
-          const currentMerchant = new Merchant(
-            "localStorage",
-            localStorage.getItem("merchant")
+          console.log(
+            "LocalStorageManager.shared.currentMerchant",
+            LocalStorageManager.shared.currentMerchant
           );
-          console.log("currentMerchant after logging in", currentMerchant);
           setRedirect("/home");
         } else {
           const newErrorMsgState = {};
@@ -59,6 +71,7 @@ const Signin = () => {
             "Invalid username or password, please try again";
           newErrorMsgState["errorDisplay"] = "inline-block";
           setErrorMsg(newErrorMsgState);
+          setIsSpinning(false);
           return false;
         }
       });
@@ -99,7 +112,7 @@ const Signin = () => {
               <Col xs={10}>
                 <Form.Label>Password</Form.Label>
                 <Form.Control
-                  type="text"
+                  type="password"
                   name="password"
                   required
                   onChange={(e) => {
@@ -110,16 +123,32 @@ const Signin = () => {
               </Col>
             </Row>
             <Row>
-              <Col>
+              <Col
+                style={{
+                  display: "flex",
+                  alignItems: "flex-end",
+                  justifyContent: "center",
+                }}
+              >
                 <Button
                   className="btn btn-primary text-center"
-                  style={{ marginTop: "10%" }}
+                  disabled={isSpinning}
+                  style={{
+                    marginTop: "10%",
+                  }}
                   onClick={(event) => {
+                    setIsSpinning(true);
                     onSubmit(event);
                   }}
                 >
-                  Submit
+                  {isSpinning ? <Spinner></Spinner> : "Submit"}
                 </Button>
+                <Link
+                  to="/password-reset-email-form"
+                  style={{ marginLeft: "1vw" }}
+                >
+                  Forgot password
+                </Link>
               </Col>
             </Row>
           </fieldset>
