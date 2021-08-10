@@ -235,7 +235,7 @@ def orders(session_token):
             # device_token = Customer_Service.get_device_token(order_to_update.customer_id)
             device_token = Customer_Service().get_device_token(
                 order_to_update["customer_id"])
-            send_apn(device_token, 'order_completed', 'sandbox')
+            send_apn(device_token, 'order_completed', 'production')
             # send_apn(device_token, "order_ready")
 
         Order_Service().update_order(order_to_update)
@@ -719,7 +719,7 @@ def verify_email(session_token):
     if Customer_Service().update_email_verification(customer_id):
         Customer_Service().get_device_token(customer_id)
         device_token = Customer_Service().get_device_token(customer_id)
-        send_apn(device_token, "email", 'sandbox')
+        send_apn(device_token, "email", 'production')
         response = {"msg": "successfully registered"}
         return Response(response=json.dumps(response), status=200)
     else:
@@ -1392,8 +1392,8 @@ def create_stripe_account():
             account=new_account.id,
             refresh_url='https://quickbev.us/payout-setup-callback',
             return_url='https://quickbev.us/home',
-            # refresh_url='http://localhost:3000/payout-setup-callback',
-            # return_url='http://localhost:3000/home',
+            refresh_url='http://localhost:3000/payout-setup-callback',
+            return_url='http://localhost:3000/home',
             type='account_onboarding',
         )
         headers["stripe_id"] = new_account.id
