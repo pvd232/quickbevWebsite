@@ -301,7 +301,7 @@ export default function Chart(props) {
     }
   };
   const prepareData = () => {
-    if (orders.length === 1 && orders[0].cost === 0) {
+    if (orders.length === 1 && orders[0].total === 0) {
       return;
     }
     var dataGroupedByDate = [];
