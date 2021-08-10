@@ -320,7 +320,7 @@ def send_info_email(jwt_token, email_type, user=None):
     #     s.quit()
 
     if email_type == "quick_pass_link":
-        host = '192.168.1.192:3000'
+        # host = '192.168.1.192:3000'
         button_url = f"https://{host}/bouncer-quick-pass/{jwt_token}/{user.business_id}"
 
         logo = "https://storage.googleapis.com/my-new-quickbev-bucket/landscape-logo-purple.png"
@@ -433,10 +433,10 @@ def send_confirmation_email(jwt_token, email_type, user=None, business=None, str
         s.sendmail(message['From'], message['To'], message.as_string())
         s.quit()
     elif email_type == "staged_bouncer_confirmation":
-        host = '192.168.1.192:3000'
+        # host = '192.168.1.192:3000'
         logo = "https://storage.googleapis.com/my-new-quickbev-bucket/landscape-logo-purple.png"
         # button_url = f"https://{host}/bouncer/get-info/{jwt_token}"
-        button_url = f"http://{host}/bouncer-email-confirmed/{jwt_token}"
+        button_url = f"https://{host}/bouncer-email-confirmed/{jwt_token}"
 
         verify_button = f'<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="margin-right: auto; margin-top:5vh; margin-left:auto; margin-bottom:2vh;   border-collapse:separate;line-height:100%;"><tr><td><div><!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="http://www.activecampaign.com" style="height:40px;v-text-anchor:middle;width:130px;" arcsize="5%" strokecolor="#8682E6" fillcolor="#8682E6;width: 130;"><w:anchorlock/></v:roundrect><![endif]--><a href={button_url} style="display: inline-block; mso-hide:all; background-color: #8682E6; color: #FFFFFF; border:1px solid #8682E6; border-radius: 6px; line-height: 220%; width: 200px; font-family: Helvetica, sans-serif; font-size:18px; font-weight:600; text-align: center; text-decoration: none; -webkit-text-size-adjust:none;" target="_blank">Verify email</a></a></div></td></tr></table>'
         mail_body_text = f'<p style="margin-top: 3vh;margin-bottom: 15px;">Hello,</p><p style="margin-top: 15px;margin-bottom: 15px;">Welcome to QuickBev!</p><p style="margin-top: 15px;margin-bottom: 15px;">This email has been registered with Quickbev as a bouncer. The Merchant who registered you is listed below.</p><p>Merchant Name: {user.first_name} {user.last_name}</p> <p> Please click the button below to confirm your email. You will then receive another email with a link to the QuickPass Page.<p style="margin-top: 15px;margin-bottom: 15px;">Let the good times begin,</p><p style="margin-top: 15px;margin-bottom: 15px;">—The QuickBev Team</p></div><div style="width:100%; height:3vh;">{verify_button}</div>'
@@ -978,10 +978,10 @@ def merchant_employee_stripe_account():
     stripe_id = Merchant_Employee_Service().get_stripe_account(merchant_employee_id)
     account_links = stripe.AccountLink.create(
         account=stripe_id,
-        refresh_url='http://192.168.1.192:3000/merchant-employee-payout-setup-callback',
-        return_url='http://192.168.1.192:3000/merchant-employee-payout-setup-complete',
-        # refresh_url='https://quickbev.us/merchant-employee-payout-setup-callback',
-        # return_url='https://quickbev.us/merchant-employee-payout-setup-complete',
+        # refresh_url='http://192.168.1.192:3000/merchant-employee-payout-setup-callback',
+        # return_url='http://192.168.1.192:3000/merchant-employee-payout-setup-complete',
+        refresh_url='https://quickbev.us/merchant-employee-payout-setup-callback',
+        return_url='https://quickbev.us/merchant-employee-payout-setup-complete',
         type='account_onboarding',
     )
     headers["stripe_id"] = stripe_id
@@ -1379,10 +1379,10 @@ def create_stripe_account():
     if callback_stripe_id:
         account_links = stripe.AccountLink.create(
             account=callback_stripe_id,
-            # refresh_url='https://quickbev.us/payout-setup-callback',
-            # return_url='https://quickbev.us/home',
-            refresh_url='http://localhost:3000/payout-setup-callback',
-            return_url='http://localhost:3000/home',
+            refresh_url='https://quickbev.us/payout-setup-callback',
+            return_url='https://quickbev.us/home',
+            # refresh_url='http://localhost:3000/payout-setup-callback',
+            # return_url='http://localhost:3000/home',
             type='account_onboarding',
         )
         headers["stripe_id"] = callback_stripe_id
@@ -1390,10 +1390,10 @@ def create_stripe_account():
         new_account = Merchant_Service().create_stripe_account()
         account_links = stripe.AccountLink.create(
             account=new_account.id,
-            # refresh_url='https://quickbev.us/payout-setup-callback',
-            # return_url='https://quickbev.us/home',
-            refresh_url='http://localhost:3000/payout-setup-callback',
-            return_url='http://localhost:3000/home',
+            refresh_url='https://quickbev.us/payout-setup-callback',
+            return_url='https://quickbev.us/home',
+            # refresh_url='http://localhost:3000/payout-setup-callback',
+            # return_url='http://localhost:3000/home',
             type='account_onboarding',
         )
         headers["stripe_id"] = new_account.id
