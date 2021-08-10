@@ -8,7 +8,7 @@ import ShoppingCartIcon from "@material-ui/icons/ShoppingCart";
 import PeopleIcon from "@material-ui/icons/People";
 import PinDropIcon from "@material-ui/icons/PinDrop";
 import RestaurantMenuIcon from "@material-ui/icons/RestaurantMenu";
-// import AssignmentIcon from "@material-ui/icons/Assignment";
+import EmojiPeopleIcon from "@material-ui/icons/EmojiPeople";
 
 const MainListItems = (props) => {
   return (
@@ -42,6 +42,28 @@ const MainListItems = (props) => {
         }}
       >
         <ListItemIcon>
+          <EmojiPeopleIcon />
+        </ListItemIcon>
+        <ListItemText primary="Employees" />
+      </ListItem>
+      <ListItem
+        button
+        onClick={() => {
+          props.handleDashboardButtonClick(3);
+        }}
+      >
+        <ListItemIcon>
+          <EmojiPeopleIcon />
+        </ListItemIcon>
+        <ListItemText primary="Bouncers" />
+      </ListItem>
+      <ListItem
+        button
+        onClick={() => {
+          props.handleDashboardButtonClick(4);
+        }}
+      >
+        <ListItemIcon>
           <ShoppingCartIcon />
         </ListItemIcon>
         <ListItemText primary="Orders" />
@@ -49,7 +71,7 @@ const MainListItems = (props) => {
       <ListItem
         button
         onClick={() => {
-          props.handleDashboardButtonClick(3);
+          props.handleDashboardButtonClick(5);
         }}
       >
         <ListItemIcon>
@@ -60,7 +82,7 @@ const MainListItems = (props) => {
       <ListItem
         button
         onClick={() => {
-          props.handleDashboardButtonClick(4);
+          props.handleDashboardButtonClick(6);
         }}
       >
         <ListItemIcon>
@@ -72,26 +94,3 @@ const MainListItems = (props) => {
   );
 };
 export default MainListItems;
-// export const secondaryListItems = (
-//   <div>
-//     <ListSubheader inset>Saved reports</ListSubheader>
-//     <ListItem button>
-//       <ListItemIcon>
-//         <AssignmentIcon />
-//       </ListItemIcon>
-//       <ListItemText primary="Current month" />
-//     </ListItem>
-//     <ListItem button>
-//       <ListItemIcon>
-//         <AssignmentIcon />
-//       </ListItemIcon>
-//       <ListItemText primary="Last quarter" />
-//     </ListItem>
-//     <ListItem button>
-//       <ListItemIcon>
-//         <AssignmentIcon />
-//       </ListItemIcon>
-//       <ListItemText primary="Year-end sale" />
-//     </ListItem>
-//   </div>
-// );

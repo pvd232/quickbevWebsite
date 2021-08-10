@@ -19,16 +19,12 @@ const useStyles = makeStyles({
     width: "100%",
   },
 });
-const nonCamelCaseWords = (name) => {
-  var words = name.match(/[A-Za-z][a-z]*/g) || [];
-  return words.join(" ");
-};
 const Customers = (props) => {
   const classes = useStyles();
   const mappedCustomers = props.customers.map((customerJSON) => {
     return new Customer(customerJSON);
   });
-  var csvData = mappedCustomers.map((customer) => {
+  const csvData = mappedCustomers.map((customer) => {
     const customerData = [customer.id, customer.firstName, customer.lastName];
     return customerData;
   });
@@ -85,16 +81,19 @@ const Customers = (props) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {mappedCustomers.map((row, i) => (
+              {
+              mappedCustomers[0].id !== '' ?
+              mappedCustomers.map((row, i) => (
                 <TableRow key={i}>
                   <TableCell>{i}</TableCell>
                   {Object.values(row).map((key, i) => (
                     <TableCell align="left" key={i}>
-                      {nonCamelCaseWords(key)}
+                      {key}
                     </TableCell>
                   ))}
                 </TableRow>
-              ))}
+              )) : <></>
+            }
             </TableBody>
           </Table>
         </Paper>

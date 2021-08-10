@@ -24,6 +24,8 @@ import MainListItems from "./listItems";
 import Customers from "./Customers";
 import Orders from "./Orders";
 import Businesses from "./Businesses";
+import MerchantEmployees from "./MerchantEmployees";
+import Bouncers from "./Bouncers";
 import Menu from "./Menu";
 
 import HomeSplash from "./HomeSplash";
@@ -35,13 +37,12 @@ import Grow from "@material-ui/core/Grow";
 import Paper from "@material-ui/core/Paper";
 import Popper from "@material-ui/core/Popper";
 import MenuList from "@material-ui/core/MenuList";
-import { setLocalStorage } from "../../Models";
+import { LocalStorageManager } from "../../Models";
 function Copyright() {
   return (
     <Typography variant="body2" color="textSecondary" align="center">
       {"Copyright © "}
-      <Link to="https://material-ui.com/">Your Website</Link>{" "}
-      {new Date().getFullYear()}
+      <Link to="#">The Quick Company</Link> {new Date().getFullYear()}
       {"."}
     </Typography>
   );
@@ -152,13 +153,14 @@ const Dashboard = (props) => {
     setCurrentPageIndex(newIndex);
   };
   const [modalOpen, setModalOpen] = useState(
-    JSON.parse(localStorage.getItem("first_login")) 
+    LocalStorageManager.shared.firstLogin === "true" ? true : false
   );
+
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
 
   const modalHandleClose = () => {
-    setLocalStorage("first_login", false);
+    LocalStorageManager.shared.setLocalStorage("first_login", false);
     setModalOpen(false);
   };
   const settingsAnchorRef = useRef(null);
@@ -210,6 +212,16 @@ const Dashboard = (props) => {
       fixedHeightPaper={fixedHeightPaper}
       classes={classes}
     />,
+    <MerchantEmployees
+      merchantEmployees={props.merchantEmployees}
+      fixedHeightPaper={fixedHeightPaper}
+      classes={classes}
+    />,
+    <Bouncers
+      bouncers={props.bouncers}
+      fixedHeightPaper={fixedHeightPaper}
+      classes={classes}
+    />,
     <Orders
       orders={props.orders}
       businesses={props.businesses}
@@ -225,8 +237,10 @@ const Dashboard = (props) => {
       businesses={props.businesses}
       fixedHeightPaper={fixedHeightPaper}
       classes={classes}
+      onUpdate={(newBusinesses) => props.updateBusinesses(newBusinesses)}
     />,
   ];
+
   const handleDrawerOpen = () => {
     setOpen(true);
   };
@@ -303,7 +317,7 @@ const Dashboard = (props) => {
           >
             Dashboard
           </Typography>
-          {JSON.parse(localStorage.getItem("merchant")).is_administrator ===
+          {LocalStorageManager.shared.currentMerchant.isAdministrator ===
           true ? (
             <IconButton color="inherit" href="/menubuilder">
               <SmokeFreeIcon></SmokeFreeIcon>

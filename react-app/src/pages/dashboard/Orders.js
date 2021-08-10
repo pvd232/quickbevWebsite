@@ -49,11 +49,11 @@ const Orders = (props) => {
     const bDate = new Date(b.dateTime);
     return bDate.getTime() - aDate.getTime();
   });
-  var csvData = formattedMappedOrders.map((order) => {
-    var orderData = [];
-    Object.values(order).forEach((key) => {
+  const csvData = formattedMappedOrders.map((order) => {
+    const orderData = [];
+    Object.values(order).map((key) => {
       if (key instanceof OrderDrink) {
-        Object.values(key.orderDrink).forEach((drink) => {
+        Object.values(key.orderDrink).map((drink) => {
           orderData.push(String(drink.quantity) + "x " + drink.name);
         });
       } else {
@@ -117,28 +117,34 @@ const Orders = (props) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {formattedMappedOrders.map((row, i) => (
-                <TableRow key={row.id}>
-                  <TableCell>{i}</TableCell>
-                  {Object.values(row).map((key, i) => {
-                    if (key instanceof OrderDrink) {
-                      return (
-                        <TableCell align="left" key={i}>
-                          {Object.values(key.orderDrink).map((drink) => {
-                            return String(drink.quantity) + "x " + drink.name;
-                          })}
-                        </TableCell>
-                      );
-                    } else {
-                      return (
-                        <TableCell align="left" key={i}>
-                          {key}
-                        </TableCell>
-                      );
-                    }
-                  })}
-                </TableRow>
-              ))}
+              {formattedMappedOrders[0].id !== "" ? (
+                formattedMappedOrders.map((row, i) => (
+                  <TableRow key={row.id}>
+                    <TableCell>{i}</TableCell>
+                    {Object.values(row).map((key, i) => {
+                      console.log("key", key);
+                      if (key instanceof OrderDrink) {
+                        console.log("orderDrink key", key);
+                        return (
+                          <TableCell align="left" key={i}>
+                            {Object.values(key.orderDrink).map((drink) => {
+                              return String(drink.quantity) + "x " + drink.name;
+                            })}
+                          </TableCell>
+                        );
+                      } else {
+                        return (
+                          <TableCell align="left" key={i}>
+                            {key}
+                          </TableCell>
+                        );
+                      }
+                    })}
+                  </TableRow>
+                ))
+              ) : (
+                <></>
+              )}
             </TableBody>
           </Table>
         </Paper>
