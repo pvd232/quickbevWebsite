@@ -1392,8 +1392,8 @@ def create_stripe_account():
             account=new_account.id,
             refresh_url='https://quickbev.us/payout-setup-callback',
             return_url='https://quickbev.us/home',
-            refresh_url='http://localhost:3000/payout-setup-callback',
-            return_url='http://localhost:3000/home',
+            # refresh_url='http://localhost:3000/payout-setup-callback',
+            # return_url='http://localhost:3000/home',
             type='account_onboarding',
         )
         headers["stripe_id"] = new_account.id
