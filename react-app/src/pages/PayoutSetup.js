@@ -2,23 +2,25 @@ import React, { useState, useEffect } from "react";
 import Button from "react-bootstrap/Button";
 import API from "../helpers/Api.js";
 import bankIcon from "../static/icon-bank.svg";
-import { setLocalStorage, Merchant } from "../Models.js";
-
+import { LocalStorageManager } from "../Models.js";
+import "../css/Signup.css";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 const PayoutSetup = (props) => {
   const [redirect, setRedirect] = useState(null);
+  const [isPlacingOrder, setIsPlacingOrder] = useState(null);
+  const Spinner = () => (
+    <FontAwesomeIcon icon={faSpinner} className="fa-spin" />
+  );
   var redirectUrl = null;
   const getRedirectInfo = async () => {
     if (!props.callback) {
       console.log("not callback");
       return API.makeRequest("GET", `/create-stripe-account`);
     } else {
-      const currentMerchant = new Merchant(
-        "localStorage",
-        localStorage.getItem("merchant")
-      );
       return API.makeRequest(
         "GET",
-        `/create-stripe-account?stripe=${currentMerchant.stripeId}`
+        `/create-stripe-account?stripe=${LocalStorageManager.shared.currentMerchant.stripeId}`
       );
     }
   };
@@ -58,13 +60,14 @@ const PayoutSetup = (props) => {
 
           <Button
             className="btn btn-primary text-center"
+            disabled={isPlacingOrder}
             onClick={(event) => {
               // if this is the payout redirect then all values for business and merchant have been set in the backend and we dont need to propogate back upwards
               event.preventDefault();
               handleConnect().then(() => setRedirect(redirectUrl));
             }}
           >
-            Set up payouts
+            {isPlacingOrder ? <Spinner></Spinner> : "Set up payouts"}
           </Button>
         </div>
       </>
@@ -84,18 +87,24 @@ const PayoutSetup = (props) => {
           </p>
           <Button
             className="btn btn-primary text-center"
+            style={{ display: "inline-block" }}
+            disabled={isPlacingOrder}
             onClick={(event) => {
+              setIsPlacingOrder(true);
               event.preventDefault();
               const eventTarget = event.target;
               handleConnect().then((merchantStripeId) =>
                 props.onSubmit(eventTarget, merchantStripeId).then(() => {
-                  setLocalStorage("first_login", true);
+                  LocalStorageManager.shared.setLocalStorage(
+                    "first_login",
+                    true
+                  );
                   setRedirect(redirectUrl);
                 })
               );
             }}
           >
-            Set up payouts
+            {isPlacingOrder ? <Spinner></Spinner> : "Set up payouts"}
           </Button>
           <p className="text-center notice">
             You'll be redirected to Stripe to complete the onboarding proces.
