@@ -1495,18 +1495,11 @@ def add_menu():
         return response
 
 
-@app.route('/quick_pass/<string:session_token>', methods=['POST', 'PUT', 'GET', 'OPTIONS'])
+@app.route('/quick_pass/<string:session_token>', methods=['POST', 'PUT', 'GET'])
 def quick_pass(session_token):
     response = {}
     headers = {}
-    headers["Access-Control-Allow-Origin"] = request.origin
-    headers["Access-Control-Allow-Headers"] = request.headers.get(
-            'Access-Control-Request-Headers')
-    print('request.headers.get',request.headers.get(
-            'Access-Control-Request-Headers'))
-    headers["Access-Control-Expose-Headers"] = "*"
-    if request.method == 'OPTIONS':
-        return Response(status=200, headers=headers)
+  
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
     if request.method == 'PUT':
