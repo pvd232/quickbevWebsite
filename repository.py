@@ -94,7 +94,7 @@ class Order_Repository(object):
         return orders, drinks
 
     def create_stripe_ephemeral_key(self, session, request):
-        customer = request['stripe-id']
+        customer = request['stripe_id']
         customer_bool = False
         if customer:
             confirm_customer_existence = session.query(Stripe_Customer).filter(
@@ -113,7 +113,7 @@ class Order_Repository(object):
             session.add(new_stripe)
             stripe_header = {"stripe-id": new_customer.id}
             key = stripe.EphemeralKey.create(
-                customer=new_customer.id, stripe_version=request['api-version'])
+                customer=new_customer.id, stripe_version=request['api_version'])
             return key, stripe_header
 
     def refund_stripe_order(self, session, order):
