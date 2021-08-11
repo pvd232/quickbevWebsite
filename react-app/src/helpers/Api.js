@@ -13,8 +13,6 @@ class Client {
     isForm = false
   ) {
     let requestData = data || {};
-    console.log("requestData", requestData);
-    console.log("data", data);
     try {
       this.url = this.baseUrl + path;
       const request = new Request(this.url);
@@ -111,7 +109,6 @@ class Client {
   getOrders = async () => {
     this.url =
       this.baseUrl + "/order/" + LocalStorageManager.shared.sessionToken;
-    console.log("this.url", this.url);
 
     const headers = new Headers();
     headers.set(
@@ -156,7 +153,7 @@ class Client {
     const requestHeaders = new Headers();
     const myRequest = new Request(this.url);
     requestHeaders.set(
-      "merchant_id",
+      "merchant-id",
       LocalStorageManager.shared.currentMerchant.id
     );
 
@@ -176,7 +173,7 @@ class Client {
     const requestHeaders = new Headers();
     const myRequest = new Request(this.url);
     requestHeaders.set(
-      "business_id",
+      "business-id",
       businessId
     );
 
@@ -195,7 +192,7 @@ class Client {
     const requestHeaders = new Headers();
     const myRequest = new Request(this.url);
     requestHeaders.set(
-      "merchant_id",
+      "merchant-id",
       LocalStorageManager.shared.currentMerchant.id
     );
 
@@ -208,10 +205,6 @@ class Client {
     return fetch(myRequest, requestParams).then((data) => data.json());
   };
   checkStripeStatus = async () => {
-    console.log(
-      "LocalStorageManager.shared.currentMerchant.stripeId",
-      LocalStorageManager.shared.currentMerchant.stripeId
-    );
     this.url =
       this.baseUrl +
       `/validate-merchant-stripe-account?stripe=${LocalStorageManager.shared.currentMerchant.stripeId}`;
@@ -251,7 +244,7 @@ class Client {
       this.baseUrl + "/business/" + LocalStorageManager.shared.sessionToken;
     const headers = new Headers();
     // will uncomment this when i have added menu for new businesses
-    headers.set("merchantId", LocalStorageManager.shared.currentMerchant.id);
+    headers.set("merchant-id", LocalStorageManager.shared.currentMerchant.id);
 
     return fetch(this.url, {
       headers: headers,

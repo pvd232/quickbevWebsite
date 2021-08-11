@@ -142,7 +142,7 @@ def fcm_token(business_id, session_token):
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
     else:
-        business_id = request.headers.get('business_id')
+        business_id = request.headers.get('business-id')
         device_token = json.loads(request.data)
         print('device_token', device_token)
         Business_Service().update_device_token(
@@ -256,7 +256,7 @@ def orders(session_token):
         return Response(status=200, headers=headers)
     elif request.method == "GET":
         # for tablet get request
-        business_id = request.headers.get('business')
+        business_id = request.headers.get('business-id')
         if business_id:
             orders = [x.dto_serialize()
                       for x in Order_Service().get_business_orders(business_id)]
@@ -666,8 +666,8 @@ def customer():
 
 @app.route("/customer/device_token", methods=["GET"])
 def update_device_token():
-    device_token = request.headers.get("device_token")
-    customer_id = request.headers.get("customer_id")
+    device_token = request.headers.get("device-token")
+    customer_id = request.headers.get("customer-id")
     if device_token and customer_id:
         Customer_Service().update_device_token(device_token, customer_id)
     return Response(status=200)
@@ -879,8 +879,7 @@ def ephemeral_keys(session_token):
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
     request_data = json.loads(request.data)
-    order_service = Order_Service()
-    key, header = order_service.create_stripe_ephemeral_key(request_data)
+    key, header = Order_Service().create_stripe_ephemeral_key(request_data)
     if key and header:
         return Response(status=200, response=json.dumps(key), headers=header)
     else:
@@ -995,7 +994,7 @@ def merchant_employee_stripe_account():
 
 @app.route('/merchant_employee/stripe_id', methods=['GET'])
 def merchant_employee_stripe_id_authenticate():
-    merchant_employee_stripe_id = request.headers.get("stripe_id")
+    merchant_employee_stripe_id = request.headers.get("stripe-id")
     status = Merchant_Employee_Service().authenticate_merchant_employee_stripe(
         merchant_employee_stripe_id)
     if status:
@@ -1025,7 +1024,7 @@ def merchant_employee(session_token):
         Quick_Pass_Service().set_business_quick_pass(quick_pass_initial_values)
         return Response(status=200, response=json.dumps(new_merchant_employee.dto_serialize()))
     elif request.method == 'GET':
-        merchant_id = request.headers.get('merchant_id')
+        merchant_id = request.headers.get('merchant-id')
         merchant_employees = [x.dto_serialize(
         ) for x in Merchant_Employee_Service().get_merchant_employees(merchant_id)]
         if len(merchant_employees) < 1:
@@ -1098,7 +1097,7 @@ def bouncer(session_token):
                     email_type="quick_pass_link", user=new_bouncer)
         return Response(status=200, response=json.dumps(new_bouncer.dto_serialize()))
     elif request.method == 'GET':
-        merchant_id = request.headers.get('merchant_id')
+        merchant_id = request.headers.get('merchant-id')
         bouncers = [x.dto_serialize(
         ) for x in Bouncer_Service().get_bouncers(merchant_id)]
         if len(bouncers) < 1:
@@ -1518,10 +1517,9 @@ def quick_pass(session_token):
         response['quick_pass_order'] = updated_quick_pass.dto_serialize()
         return Response(status=200, response=json.dumps(response), headers=headers)
     elif request.method == 'GET':
-        print('request.headers.g',request.headers.get('customer_id'))
-        customer_id = request.headers.get('customer_id')
+        customer_id = request.headers.get('customer-id')
         print('customer_id',customer_id)
-        business_id = request.headers.get('business_id')
+        business_id = request.headers.get('business-id')
         quick_pass = Quick_Pass_Service().get_current_queue(
             business_id=business_id, customer_id=customer_id)
 
@@ -1541,7 +1539,7 @@ def get_bouncer_quick_passes():
     if request.method == 'OPTIONS':
         return Response(status=200, headers=headers)
     if request.method == 'GET':
-        business_id = request.headers.get("business_id")
+        business_id = request.headers.get("business-id")
         quick_passes = Quick_Pass_Service().get_quick_passes(business_id = business_id)
         # if len(quick_passes) <1:
         #     dummy_quick_pass = Quick_Pass_Domain()
