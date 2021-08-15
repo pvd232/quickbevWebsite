@@ -523,7 +523,7 @@ def create_business():
         business_id = uuid.uuid4()
         for day in days_of_week:
             new_business_schedule_day = Business_Schedule_Day(business_id = business_id, day = day, opening_time = datetime.strptime(
-                "16:00", '%H:%M').time(), closing_time = datetime.strptime(
+                "10:00", '%H:%M').time(), closing_time = datetime.strptime(
                 "02:00", '%H:%M').time(), is_closed = False )
             db.session.add(new_business_schedule_day)
         new_business = Business(id=business_id, merchant_id=merchant_id, merchant_stripe_id=new_account.id,

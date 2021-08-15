@@ -66,7 +66,7 @@ def send_apn(device_token, action, env):
         client.send(
             ids=[device_token],
             title="Order Refunded",
-            message="Items in your order are out of stock. We refunded you.",
+            message="Items in your order are out of stock. You'll receive a full refund on your original form of payment in 5-10 business days.",
             category=action
         )
 
@@ -1541,11 +1541,7 @@ def get_bouncer_quick_passes():
     if request.method == 'GET':
         business_id = request.headers.get("business-id")
         quick_passes = Quick_Pass_Service().get_quick_passes(business_id = business_id)
-        # if len(quick_passes) <1:
-        #     dummy_quick_pass = Quick_Pass_Domain()
-        #     quick_passes.append(dummy_quick_pass)
         response['quick_passes'] = [x.dto_serialize() for x in quick_passes]
-        print('response',response)
         return Response(status=200, headers=headers, response=json.dumps(response))
 
 
