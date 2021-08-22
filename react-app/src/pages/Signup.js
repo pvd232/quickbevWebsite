@@ -89,11 +89,8 @@ const CreateYourAccountFieldset = (props) => {
         return false;
       } else {
         const newMerchant = new Merchant("merchantStateObject", formValue);
-        const merchantData = {
-          email: newMerchant.id,
-        };
-        const validateHeader = { validate: true };
-        API.makeRequest("GET", "/merchant", validateHeader, merchantData).then(
+        const validateHeader = { validate: true, email: newMerchant.id };
+        API.makeRequest("GET", "/merchant", false, validateHeader).then(
           (response) => {
             console.log("response", response);
             if (response.status === 204) {
