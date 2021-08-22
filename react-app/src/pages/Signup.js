@@ -542,9 +542,13 @@ const BusinessFieldset = (props) => {
     }
   };
   const handleScheduleChange = (event) => {
+    console.log("event", event);
     const name = event.target.name;
+    console.log("name", name);
     const dayIndex = parseInt(name.split("-")[0]);
+    console.log("dayIndex", dayIndex);
     const isOpenOrClosed = name.split("-")[1];
+    console.log("isOpenOrClosed", isOpenOrClosed);
     // must create new date object outside the scope of the setSchedule callback or the state doesnt update
     const newDateObject = {
       day: dayIndex,
@@ -552,7 +556,10 @@ const BusinessFieldset = (props) => {
       closingTime: "",
       isClosed: false,
     };
+    console.log("newDateObject", newDateObject);
+
     setSchedule((prevSchedule) => {
+      console.log("prevSchedule", prevSchedule);
       if (isOpenOrClosed === "closed") {
         newDateObject.isClosed = !prevSchedule[dayIndex].isClosed;
       } else if (isOpenOrClosed === "open") {
@@ -665,9 +672,7 @@ const BusinessFieldset = (props) => {
                   key={i + "-closed"}
                   name={i + "-closed"}
                   value={schedule[i].isClosed}
-                  onChange={(e) => {
-                    handleScheduleChange(e);
-                  }}
+                  onChange={(e) => handleScheduleChange(e)}
                 />
               </Col>
             </Row>
@@ -684,9 +689,7 @@ const BusinessFieldset = (props) => {
               placeholder="06:00 PM"
               disabled={schedule[i].isClosed}
               value={schedule[i].openingTime}
-              onChange={(e) => {
-                handleScheduleChange(e);
-              }}
+              onChange={(e) => handleScheduleChange(e)}
             />
 
             <Form.Label>Closing time</Form.Label>
@@ -699,9 +702,7 @@ const BusinessFieldset = (props) => {
               placeholder="04:00 AM"
               disabled={schedule[i].isClosed}
               value={schedule[i].closingTime}
-              onChange={(e) => {
-                handleScheduleChange(e);
-              }}
+              onChange={(e) => handleScheduleChange(e)}
             />
           </>
         ))}
