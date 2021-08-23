@@ -1309,10 +1309,10 @@ def create_stripe_account():
     if callback_stripe_id:
         account_links = stripe.AccountLink.create(
             account=callback_stripe_id,
-            # refresh_url='https://quickbev.us/payout-setup-callback',
-            # return_url='https://quickbev.us/home',
-            refresh_url='http://localhost:3000/payout-setup-callback',
-            return_url='http://localhost:3000/home',
+            refresh_url='https://quickbev.us/payout-setup-callback',
+            return_url='https://quickbev.us/home',
+            # refresh_url='http://localhost:3000/payout-setup-callback',
+            # return_url='http://localhost:3000/home',
             type='account_onboarding',
         )
         headers["stripe_id"] = callback_stripe_id
@@ -1320,10 +1320,10 @@ def create_stripe_account():
         new_account = Merchant_Service().create_stripe_account()
         account_links = stripe.AccountLink.create(
             account=new_account.id,
-            # refresh_url='https://quickbev.us/payout-setup-callback',
-            # return_url='https://quickbev.us/home',
-            refresh_url='http://localhost:3000/payout-setup-callback',
-            return_url='http://localhost:3000/home',
+            refresh_url='https://quickbev.us/payout-setup-callback',
+            return_url='https://quickbev.us/home',
+            # refresh_url='http://localhost:3000/payout-setup-callback',
+            # return_url='http://localhost:3000/home',
             type='account_onboarding',
         )
         headers["stripe_id"] = new_account.id
