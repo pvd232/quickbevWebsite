@@ -83,11 +83,10 @@ class Order_Service(object):
             Order_Repository().update_order(session, new_order_domain)
 
     def create_order(self, order):
-        print('order', order.dto_serialize())
         # calculate order values on backend to prevent malicious clients
         new_order_domain = Order_Domain(order_json=order)
         subtotal = 0
-        for drink in order.order_drink.order_drink:
+        for drink in new_order_domain.order_drink.order_drink:
             drink_cost = drink.price * drink.quantity
             subtotal += drink_cost
 

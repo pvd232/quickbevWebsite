@@ -46,7 +46,7 @@ class Order_Repository(object):
 
     def create_order(self, session, order):
         new_order = Order(id=order.id, customer_id=order.customer.id, merchant_stripe_id=order.merchant_stripe_id,
-                          business_id=order.business_id, total=order.total, subtotal=order.subtotal, tip_percentage=order.tip_percentage, tip_amount=order.tip_amount, sales_tax=order.sales_tax, sales_tax_percentage=order.sales_tax_percentage, service_fee=order.service_fee, payment_intent_id=order.payment_intent_id)
+                          business_id=order.business_id, total=order.total, stripe_charge_total = order.stripe_charge_total, pre_sales_tax_total = order.pre_sales_tax_total, pre_service_fee_total = order.pre_service_fee_total, subtotal=order.subtotal, tip_percentage=order.tip_percentage, tip_total=order.tip_total, sales_tax_total =order.sales_tax_total, sales_tax_percentage=order.sales_tax_percentage, service_fee=order.service_fee, payment_intent_id=order.payment_intent_id)
         session.add(new_order)
         print('order after', order.dto_serialize())
 

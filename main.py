@@ -66,7 +66,7 @@ def send_apn(device_token, action, env):
         client.send(
             ids=[device_token],
             title="Order Refunded",
-            message="Items in your order are out of stock. You'll receive a full refund on your original form of payment in 5-10 business days.",
+            message="Items in your order are out of stock. We refunded you.",
             category=action
         )
 
@@ -142,7 +142,7 @@ def fcm_token(business_id, session_token):
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
     else:
-        business_id = request.headers.get('business-id')
+        business_id = request.headers.get('business_id')
         device_token = json.loads(request.data)
         print('device_token', device_token)
         Business_Service().update_device_token(
@@ -235,7 +235,7 @@ def orders(session_token):
             # device_token = Customer_Service.get_device_token(order_to_update.customer_id)
             device_token = Customer_Service().get_device_token(
                 order_to_update["customer_id"])
-            send_apn(device_token, 'order_completed', 'production')
+            send_apn(device_token, 'order_completed', 'sandbox')
             # send_apn(device_token, "order_ready")
 
         Order_Service().update_order(order_to_update)
@@ -251,12 +251,10 @@ def orders(session_token):
         response['order'] = updated_order.dto_serialize()
         return Response(status=200, response=json.dumps(response))
     elif request.method == 'OPTIONS':
-        print('headers', headers)
-
         return Response(status=200, headers=headers)
     elif request.method == "GET":
         # for tablet get request
-        business_id = request.headers.get('business-id')
+        business_id = request.headers.get('business')
         if business_id:
             orders = [x.dto_serialize()
                       for x in Order_Service().get_business_orders(business_id)]
@@ -278,7 +276,6 @@ def orders(session_token):
 
             # elif filter_orders_by == 'customer':
             #     orders = Order_Service().get_merchant_orders(username=username)
-        print('orders', orders)
         response['orders'] = orders
 
         return Response(status=200, response=json.dumps(response), headers=headers)
@@ -288,39 +285,8 @@ def send_info_email(jwt_token, email_type, user=None):
     # host = request.headers.get('Host')
     # host = '192.168.1.192:3000'
 
-    # if email_type == "request_link_info":
-    #     host = request.headers.get('Host')
-
-    #     button_url = f"https://{host}/quick_pass/bouncer/{jwt_token}"
-
-    #     logo = "https://storage.googleapis.com/my-new-quickbev-bucket/landscape-logo-purple.png"
-
-    #     queue_page_button = f'<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="margin-right: auto; margin-top:5vh; margin-left:auto; margin-bottom:2vh;   border-collapse:separate;line-height:100%;"><tr><td><div><!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="http://www.activecampaign.com" style="height:40px;v-text-anchor:middle;width:130px;" arcsize="5%" strokecolor="#8682E6" fillcolor="#8682E6;width: 130;"><w:anchorlock/><center style="color:#ffffff;font-family:Helvetica, sans-serif;font-size:18px; font-weight: 600;">QuickPass Page</center></v:roundrect><![endif]--><a href={button_url} style="display: inline-block; mso-hide:all; background-color: #8682E6; color: #FFFFFF; border:1px solid #8682E6; border-radius: 6px; line-height: 220%; width: 200px; font-family: Helvetica, sans-serif; font-size:18px; font-weight:600; text-align: center; text-decoration: none; -webkit-text-size-adjust:none;" target="_blank">Verify email</a></a></div></td></tr></table>'
-    #     mail_body_text = f'<p style="margin-top: 3vh;margin-bottom: 15px;">Hey {user.first_name.capitalize()},</p><p style="margin-top: 15px;margin-bottom: 15px;">Each time you want to access the QuickPass page you must request a link by pressing the button below. The link will be sent to your email. It will only be active during your shift</p><p style="margin-top: 15px;margin-bottom: 15px;">Please click the button below to verify your account.</p><br /><p style="margin-top: 15px;margin-bottom: 15px;">Let the good times begin,</p><p style="margin-top: 15px;margin-bottom: 15px;">—The QuickBev Team</p></div><div style="width:100%; height:3vh;">{queue_page_button}</div>'
-    #     mail_body = f'<div style="height: 100%;"><div style="width: 100%;height: 100%;background-color: #e8e8e8;"><div style="width: 100%;max-width: 500px;height: 80vh; margin-top: 0%;margin-bottom: 10%; margin-right:auto; margin-left:auto; background-color: #e8e8e8;"><tr style="width:100%;height:5vh;"></tr><div style="width:calc(100% - 30px); height:50vh; padding:30px 30px 30px 30px; background-color:white; margin-top:auto; margin-bottom:auto"><div style="width:100%; text-align:center; justify-content:center"><img src="{logo}" style="width:50%; height:12%; margin-right:auto; margin-left:auto" alt="img" /></div><div  style="margin-top: 30px;">{mail_body_text}</div><tr style="width:100%;height:5vh;"></tr></div></div></div>'
-
-    #     sender_address = 'confirmation@quickbev.us'
-    #     email = user.id
-
-    #     # Setup the MIME
-    #     message = MIMEMultipart()
-    #     message['From'] = sender_address
-    #     message['To'] = email
-
-    #     message['Subject'] = 'QuickPass Page Link'  # The subject line
-
-    #     mail_content = mail_body
-    #     # The body and the attachments for the mail
-    #     message.attach(MIMEText(mail_content, 'html'))
-    #     s = smtplib.SMTP('smtp.mailgun.org', 587)
-    #     # this password was generated ay the domain settings page on mailgun. its a really shitty confusing service.
-    #     s.login('postmaster@quickbev.us',
-    #             '77bf9d60999ee72f1f72f98dd1a57152-1f1bd6a9-a4533d5f')
-    #     s.sendmail(message['From'], message['To'], message.as_string())
-    #     s.quit()
-
     if email_type == "quick_pass_link":
-        # host = '192.168.1.192:3000'
+        host = '192.168.1.192:3000'
         button_url = f"https://{host}/bouncer-quick-pass/{jwt_token}/{user.business_id}"
 
         logo = "https://storage.googleapis.com/my-new-quickbev-bucket/landscape-logo-purple.png"
@@ -433,10 +399,10 @@ def send_confirmation_email(jwt_token, email_type, user=None, business=None, str
         s.sendmail(message['From'], message['To'], message.as_string())
         s.quit()
     elif email_type == "staged_bouncer_confirmation":
-        # host = '192.168.1.192:3000'
+        host = '192.168.1.192:3000'
         logo = "https://storage.googleapis.com/my-new-quickbev-bucket/landscape-logo-purple.png"
         # button_url = f"https://{host}/bouncer/get-info/{jwt_token}"
-        button_url = f"https://{host}/bouncer-email-confirmed/{jwt_token}"
+        button_url = f"http://{host}/bouncer-email-confirmed/{jwt_token}"
 
         verify_button = f'<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="margin-right: auto; margin-top:5vh; margin-left:auto; margin-bottom:2vh;   border-collapse:separate;line-height:100%;"><tr><td><div><!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="http://www.activecampaign.com" style="height:40px;v-text-anchor:middle;width:130px;" arcsize="5%" strokecolor="#8682E6" fillcolor="#8682E6;width: 130;"><w:anchorlock/></v:roundrect><![endif]--><a href={button_url} style="display: inline-block; mso-hide:all; background-color: #8682E6; color: #FFFFFF; border:1px solid #8682E6; border-radius: 6px; line-height: 220%; width: 200px; font-family: Helvetica, sans-serif; font-size:18px; font-weight:600; text-align: center; text-decoration: none; -webkit-text-size-adjust:none;" target="_blank">Verify email</a></a></div></td></tr></table>'
         mail_body_text = f'<p style="margin-top: 3vh;margin-bottom: 15px;">Hello,</p><p style="margin-top: 15px;margin-bottom: 15px;">Welcome to QuickBev!</p><p style="margin-top: 15px;margin-bottom: 15px;">This email has been registered with Quickbev as a bouncer. The Merchant who registered you is listed below.</p><p>Merchant Name: {user.first_name} {user.last_name}</p> <p> Please click the button below to confirm your email. You will then receive another email with a link to the QuickPass Page.<p style="margin-top: 15px;margin-bottom: 15px;">Let the good times begin,</p><p style="margin-top: 15px;margin-bottom: 15px;">—The QuickBev Team</p></div><div style="width:100%; height:3vh;">{verify_button}</div>'
@@ -666,46 +632,12 @@ def customer():
 
 @app.route("/customer/device_token", methods=["GET"])
 def update_device_token():
-    device_token = request.headers.get("device-token")
-    customer_id = request.headers.get("customer-id")
+    device_token = request.headers.get("device_token")
+    customer_id = request.headers.get("customer_id")
     if device_token and customer_id:
         Customer_Service().update_device_token(device_token, customer_id)
     return Response(status=200)
 
-
-# @app.route("/bouncer/get-info/<string:session_token>")
-# def verify_bouncer_email(session_token):
-#     status = jwt.decode(session_token, secret, algorithms=["HS256"])
-#     if not status:
-#         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
-#     # verify the hashed username that was embedded in the verification link
-#     bouncer_id = status["sub"]
-#     bouncer = Bouncer_Service().get_bouncer(bouncer_id)
-
-#     new_bouncer = Bouncer_Service(
-#         ).add_bouncer(bouncer)
-#     jwt_token = jwt.encode(
-#         {"sub": bouncer_id}, key=secret, algorithm="HS256")
-
-#     send_info_email(jwt_token=jwt_token,
-#                     email_type="quick_pass_link", user=bouncer)
-#     return Response(status=200, response=json.dumps(new_bouncer.dto_serialize()))
-
-
-
-# @app.route("/bouncer/quick_pass_link/<string:session_token>")
-# def get_quick_pass_link(session_token):
-#     status = jwt.decode(session_token, secret, algorithms=["HS256"])
-#     if not status:
-#         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
-#     # verify the hashed username that was embedded in the verification link
-#     bouncer_id = status["sub"]
-#     bouncer = Bouncer_Service().get_bouncer(bouncer_id)
-#     jwt_token = jwt.encode(
-#         {"sub": bouncer_id}, key=secret, algorithm="HS256")
-#     send_info_email(jwt_token=jwt_token,
-#                         email_type="quick_pass_link", user=bouncer)
-#     return Response(status=200)
 
 
 # strongly typed url argument ;)
@@ -719,7 +651,7 @@ def verify_email(session_token):
     if Customer_Service().update_email_verification(customer_id):
         Customer_Service().get_device_token(customer_id)
         device_token = Customer_Service().get_device_token(customer_id)
-        send_apn(device_token, "email", 'production')
+        send_apn(device_token, "email", 'sandbox')
         response = {"msg": "successfully registered"}
         return Response(response=json.dumps(response), status=200)
     else:
@@ -787,8 +719,8 @@ def business(session_token):
         headers["Access-Control-Expose-Headers"] = "Access-Control-Allow-Headers"
 
         business_list = []
-        if request.headers.get('merchantId'):
-            merchant_id = request.headers.get('merchantId')
+        if request.headers.get('merchant-id'):
+            merchant_id = request.headers.get('merchant-id')
             merchant_businesses = [x.dto_serialize(
             ) for x in Business_Service().get_merchant_business(merchant_id)]
 
@@ -803,7 +735,6 @@ def business(session_token):
                 return Response(status=404, response=json.dumps(response), headers=headers)
         else:
             businesses = Business_Service().get_businesses()
-            print('businesses', businesses)
             client_etag = json.loads(request.headers.get("If-None-Match"))
             if client_etag:
                 if not ETag_Service().validate_etag(client_etag):
@@ -813,7 +744,6 @@ def business(session_token):
                         businessDTO['business'] = business.dto_serialize()
                         business_list.append(businessDTO)
                     response['businesses'] = business_list
-                    print('response', response)
 
                     etag = ETag_Service().get_etag("business")
                     headers["e-tag-category"] = etag.category
@@ -879,7 +809,8 @@ def ephemeral_keys(session_token):
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
     request_data = json.loads(request.data)
-    key, header = Order_Service().create_stripe_ephemeral_key(request_data)
+    order_service = Order_Service()
+    key, header = order_service.create_stripe_ephemeral_key(request_data)
     if key and header:
         return Response(status=200, response=json.dumps(key), headers=header)
     else:
@@ -977,10 +908,10 @@ def merchant_employee_stripe_account():
     stripe_id = Merchant_Employee_Service().get_stripe_account(merchant_employee_id)
     account_links = stripe.AccountLink.create(
         account=stripe_id,
-        # refresh_url='http://192.168.1.192:3000/merchant-employee-payout-setup-callback',
-        # return_url='http://192.168.1.192:3000/merchant-employee-payout-setup-complete',
-        refresh_url='https://quickbev.us/merchant-employee-payout-setup-callback',
-        return_url='https://quickbev.us/merchant-employee-payout-setup-complete',
+        refresh_url='http://192.168.1.192:3000/merchant-employee-payout-setup-callback',
+        return_url='http://192.168.1.192:3000/merchant-employee-payout-setup-complete',
+        # refresh_url='https://quickbev.us/merchant-employee-payout-setup-callback',
+        # return_url='https://quickbev.us/merchant-employee-payout-setup-complete',
         type='account_onboarding',
     )
     headers["stripe_id"] = stripe_id
@@ -1024,7 +955,7 @@ def merchant_employee(session_token):
         Quick_Pass_Service().set_business_quick_pass(quick_pass_initial_values)
         return Response(status=200, response=json.dumps(new_merchant_employee.dto_serialize()))
     elif request.method == 'GET':
-        merchant_id = request.headers.get('merchant-id')
+        merchant_id = request.headers.get('merchant_id')
         merchant_employees = [x.dto_serialize(
         ) for x in Merchant_Employee_Service().get_merchant_employees(merchant_id)]
         if len(merchant_employees) < 1:
@@ -1097,7 +1028,7 @@ def bouncer(session_token):
                     email_type="quick_pass_link", user=new_bouncer)
         return Response(status=200, response=json.dumps(new_bouncer.dto_serialize()))
     elif request.method == 'GET':
-        merchant_id = request.headers.get('merchant-id')
+        merchant_id = request.headers.get('merchant_id')
         bouncers = [x.dto_serialize(
         ) for x in Bouncer_Service().get_bouncers(merchant_id)]
         if len(bouncers) < 1:
@@ -1378,10 +1309,10 @@ def create_stripe_account():
     if callback_stripe_id:
         account_links = stripe.AccountLink.create(
             account=callback_stripe_id,
-            refresh_url='https://quickbev.us/payout-setup-callback',
-            return_url='https://quickbev.us/home',
-            # refresh_url='http://localhost:3000/payout-setup-callback',
-            # return_url='http://localhost:3000/home',
+            # refresh_url='https://quickbev.us/payout-setup-callback',
+            # return_url='https://quickbev.us/home',
+            refresh_url='http://localhost:3000/payout-setup-callback',
+            return_url='http://localhost:3000/home',
             type='account_onboarding',
         )
         headers["stripe_id"] = callback_stripe_id
@@ -1389,10 +1320,10 @@ def create_stripe_account():
         new_account = Merchant_Service().create_stripe_account()
         account_links = stripe.AccountLink.create(
             account=new_account.id,
-            refresh_url='https://quickbev.us/payout-setup-callback',
-            return_url='https://quickbev.us/home',
-            # refresh_url='http://localhost:3000/payout-setup-callback',
-            # return_url='http://localhost:3000/home',
+            # refresh_url='https://quickbev.us/payout-setup-callback',
+            # return_url='https://quickbev.us/home',
+            refresh_url='http://localhost:3000/payout-setup-callback',
+            return_url='http://localhost:3000/home',
             type='account_onboarding',
         )
         headers["stripe_id"] = new_account.id
@@ -1494,11 +1425,17 @@ def add_menu():
         return response
 
 
-@app.route('/quick_pass/<string:session_token>', methods=['POST', 'PUT', 'GET'])
+@app.route('/quick_pass/<string:session_token>', methods=['POST', 'PUT', 'GET', 'OPTIONS'])
 def quick_pass(session_token):
     response = {}
     headers = {}
-  
+    headers["Access-Control-Allow-Origin"] = request.origin
+    headers["Access-Control-Allow-Headers"] = request.headers.get(
+            'Access-Control-Request-Headers')
+
+    headers["Access-Control-Expose-Headers"] = "*"
+    if request.method == 'OPTIONS':
+        return Response(status=200, headers=headers)
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
     if request.method == 'PUT':
@@ -1517,14 +1454,14 @@ def quick_pass(session_token):
         response['quick_pass_order'] = updated_quick_pass.dto_serialize()
         return Response(status=200, response=json.dumps(response), headers=headers)
     elif request.method == 'GET':
-        customer_id = request.headers.get('customer-id')
+        print('request.headers.g',request.headers.get('customer_id'))
+        customer_id = request.headers.get('customer_id')
         print('customer_id',customer_id)
-        business_id = request.headers.get('business-id')
+        business_id = request.headers.get('business_id')
         quick_pass = Quick_Pass_Service().get_current_queue(
             business_id=business_id, customer_id=customer_id)
 
         response["quick_pass"] = quick_pass.dto_serialize()
-        print('response', response)
         return Response(status=200, response=json.dumps(response), headers=headers)
 
 # get quickpasses for the bouncer to validate at the door. goes to front end page with list of active passes
@@ -1539,9 +1476,13 @@ def get_bouncer_quick_passes():
     if request.method == 'OPTIONS':
         return Response(status=200, headers=headers)
     if request.method == 'GET':
-        business_id = request.headers.get("business-id")
+        business_id = request.headers.get("business_id")
         quick_passes = Quick_Pass_Service().get_quick_passes(business_id = business_id)
+        # if len(quick_passes) <1:
+        #     dummy_quick_pass = Quick_Pass_Domain()
+        #     quick_passes.append(dummy_quick_pass)
         response['quick_passes'] = [x.dto_serialize() for x in quick_passes]
+        print('response',response)
         return Response(status=200, headers=headers, response=json.dumps(response))
 
 

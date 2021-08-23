@@ -89,8 +89,11 @@ const CreateYourAccountFieldset = (props) => {
         return false;
       } else {
         const newMerchant = new Merchant("merchantStateObject", formValue);
-        const validateHeader = { validate: true, email: newMerchant.id };
-        API.makeRequest("GET", "/merchant", false, validateHeader).then(
+        const merchantData = {
+          email: newMerchant.id,
+        };
+        const validateHeader = { validate: true };
+        API.makeRequest("GET", "/merchant", validateHeader, merchantData).then(
           (response) => {
             console.log("response", response);
             if (response.status === 204) {
@@ -539,13 +542,9 @@ const BusinessFieldset = (props) => {
     }
   };
   const handleScheduleChange = (event) => {
-    console.log("event", event);
     const name = event.target.name;
-    console.log("name", name);
     const dayIndex = parseInt(name.split("-")[0]);
-    console.log("dayIndex", dayIndex);
     const isOpenOrClosed = name.split("-")[1];
-    console.log("isOpenOrClosed", isOpenOrClosed);
     // must create new date object outside the scope of the setSchedule callback or the state doesnt update
     const newDateObject = {
       day: dayIndex,
@@ -553,10 +552,7 @@ const BusinessFieldset = (props) => {
       closingTime: "",
       isClosed: false,
     };
-    console.log("newDateObject", newDateObject);
-
     setSchedule((prevSchedule) => {
-      console.log("prevSchedule", prevSchedule);
       if (isOpenOrClosed === "closed") {
         newDateObject.isClosed = !prevSchedule[dayIndex].isClosed;
       } else if (isOpenOrClosed === "open") {
