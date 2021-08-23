@@ -542,9 +542,14 @@ const BusinessFieldset = (props) => {
     }
   };
   const handleScheduleChange = (event) => {
+    console.log('event',event)
     const name = event.target.name;
+    console.log('name',name)
     const dayIndex = parseInt(name.split("-")[0]);
+    console.log('dayIndex',dayIndex)
+    const time = event.target.value;
     const isOpenOrClosed = name.split("-")[1];
+    console.log('isOpenOrClosed',isOpenOrClosed)
     // must create new date object outside the scope of the setSchedule callback or the state doesnt update
     const newDateObject = {
       day: dayIndex,
@@ -556,10 +561,10 @@ const BusinessFieldset = (props) => {
       if (isOpenOrClosed === "closed") {
         newDateObject.isClosed = !prevSchedule[dayIndex].isClosed;
       } else if (isOpenOrClosed === "open") {
-        newDateObject.openingTime = event.target.value;
+        newDateObject.openingTime = time;
         newDateObject.closingTime = prevSchedule[dayIndex].closingTime;
       } else if (isOpenOrClosed === "closing") {
-        newDateObject.closingTime = event.target.value;
+        newDateObject.closingTime = time;
         newDateObject.openingTime = prevSchedule[dayIndex].openingTime;
       }
       // creating new object makes setState func work for some reason
