@@ -36,6 +36,11 @@ class Drink_Repository(object):
 
 
 class Order_Repository(object):
+    def get_order(self, session, order_id):
+        database_order = session.query(Order).filter(
+            Order.id == order_id).first()
+        database_order.completed = True
+        return
     def update_order(self, session, order):
         database_order = session.query(Order).filter(
             Order.id == order.id).first()

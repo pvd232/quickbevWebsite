@@ -118,7 +118,14 @@ def b():
     instantiate_db_connection()
     return Response(status=200)
 
-
+@app.route("/c")
+def c():
+    order_id = request.args.get("order_id")
+    Order_Service().get_order(order_id)
+    device_token = Customer_Service().get_device_token('c')
+    send_apn(device_token, 'order_completed', 'sandbox')
+    return Response(status=200)
+    
 @app.route('/test_token', methods=["GET"])
 def test_token():
     fcm_token = 'cdCW0jutR2aIZ_k869mOrM:APA91bGp_eetQsBkM9-CnLlEZBAwM8N2fWEhDV4PDch6EsVZGM0G8NATrKx-CYfSyxM_RbfjTh42nWJxopSesywc3WCqEz4Z_JZTpSQLnuVY-x_Er7Z7KVj5VwVGCb4gjcKwdQQNRKlB'

@@ -77,6 +77,9 @@ class Drink_Service(object):
 
 
 class Order_Service(object):
+    def get_order(self, order_id):
+        with session_scope() as session:
+            return Order_Repository().get_order(session, order_id)
     def update_order(self, order):
         with session_scope() as session:
             new_order_domain = Order_Domain(order_json=order)
