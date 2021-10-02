@@ -237,7 +237,7 @@ def orders(session_token):
             # 1. send push notification to device
             device_token = Customer_Service().get_device_token(
                 order_to_update["customer_id"])
-            send_apn(device_token, 'order_refunded')
+            send_apn(device_token, 'order_refunded', 'sandbox')
             Order_Service().refund_stripe_order(order_to_update)
         elif order_to_update["completed"] == True:
             # 1. send push notification to device saying the order is ready
