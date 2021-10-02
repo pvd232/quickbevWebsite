@@ -147,7 +147,7 @@ def apn_token(customer_id, session_token):
         return Response(status=200)
 
 
-@app.route('/fcm_token/', methods=["POST"])
+@app.route('/fcm_token', methods=["POST"])
 def fcm_token(business_id, session_token):
     # if not jwt.decode(session_token, secret, algorithms=["HS256"]):
     #     return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
