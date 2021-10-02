@@ -287,7 +287,7 @@ def orders(session_token):
             # elif filter_orders_by == 'customer':
             #     orders = Order_Service().get_merchant_orders(username=username)
         response['orders'] = orders
-
+        print('orders', response['orders'])
         return Response(status=200, response=json.dumps(response), headers=headers)
 
 
