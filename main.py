@@ -147,17 +147,17 @@ def apn_token(customer_id, session_token):
         return Response(status=200)
 
 
-@app.route('/fcm_token/<string:session_token>', methods=["POST"])
+@app.route('/fcm_token/', methods=["POST"])
 def fcm_token(business_id, session_token):
-    if not jwt.decode(session_token, secret, algorithms=["HS256"]):
-        return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
-    else:
-        business_id = request.headers.get('business_id')
-        device_token = json.loads(request.data)
-        print('device_token', device_token)
-        Business_Service().update_device_token(
-            device_token, business_id)
-        return Response(status=200)
+    # if not jwt.decode(session_token, secret, algorithms=["HS256"]):
+    #     return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
+    # else:
+    business_id = request.headers.get('business_id')
+    device_token = json.loads(request.data)
+    print('device_token', device_token)
+    Business_Service().update_device_token(
+        device_token, business_id)
+    return Response(status=200)
 
 
 @app.route("/test")
