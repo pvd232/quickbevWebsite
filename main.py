@@ -957,10 +957,10 @@ def merchant_employee(session_token):
         request_json = json.loads(request.data)
         print('request_json',request_json)
         requested_new_merchant_employee = request_json
-        quick_pass_initial_values = request_json['quick_pass_initial_values']
+        # quick_pass_initial_values = request_json['quick_pass_initial_values']
         new_merchant_employee = Merchant_Employee_Service(
         ).add_merchant_employee(requested_new_merchant_employee)
-        Quick_Pass_Service().set_business_quick_pass(quick_pass_initial_values)
+        # Quick_Pass_Service().set_business_quick_pass(quick_pass_initial_values)
         return Response(status=200, response=json.dumps(new_merchant_employee.dto_serialize()))
     elif request.method == 'GET':
         merchant_id = request.headers.get('merchant_id')
