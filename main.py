@@ -1145,7 +1145,7 @@ def validate_pin_number():
         merchant_employee_pin_number_status = Merchant_Employee_Service(
         ).validate_pin_number(business_id, merchant_employee_pin_number)
         if merchant_employee_pin_number_status == True:
-            jwt_token = jwt.encode({"sub": business_id}, key=secret, algorithm="HS256")
+            headers["jwt_token"] = jwt.encode({"sub": business_id}, key=secret, algorithm="HS256")
             return Response(status=200, headers = headers)
         else:
             return Response(status=400)
