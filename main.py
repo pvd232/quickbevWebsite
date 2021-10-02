@@ -955,7 +955,8 @@ def merchant_employee(session_token):
         return Response(status=200, headers=headers)
     elif request.method == 'POST':
         request_json = json.loads(request.data)
-        requested_new_merchant_employee = request_json['merchant']
+        print('request_json',request_json)
+        requested_new_merchant_employee = request_json
         quick_pass_initial_values = request_json['quick_pass_initial_values']
         new_merchant_employee = Merchant_Employee_Service(
         ).add_merchant_employee(requested_new_merchant_employee)
