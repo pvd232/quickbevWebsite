@@ -1138,30 +1138,29 @@ def add_staged_merchant_employee(session_token):
         return Response(status=200)
 
 
-@app.route('/merchant_employee/validate_pin_number', methods=['POST'])
+@app.route('/merchant_employee/validate_pin_number', methods=['POST', 'GET'])
 def validate_pin_number():
     headers = {}
     print("hi")
-    if request.method == 'POST':
-        print("request")
-        merchant_employee_pin_number = request.args.get('pin_number')
-        business_id = request.args.get('business_id')
-        merchant_employee_pin_number_status = Merchant_Employee_Service(
-        ).validate_pin_number(business_id, merchant_employee_pin_number)
-        if merchant_employee_pin_number_status == True:
-            print("status")
-            headers["jwt_token"] = jwt.encode(
-                {"sub": business_id}, key=secret, algorithm="HS256")
-            headers["jwt-token"] = jwt.encode({"sub": business_id},
-                                              key=secret, algorithm="HS256")
-            print('headers["jwt-token"]', headers["jwt-token"])
-            print("headers", headers)
-            response_jwt = {}
-            response_jwt["jwt_token"] = jwt.encode(
-                {"sub": business_id}, key=secret, algorithm="HS256")
-            return Response(status=200, headers=headers, response = json.dumps(response_jwt))
-        else:
-            return Response(status=400)
+    print("request", request)
+    merchant_employee_pin_number = request.args.get('pin_number')
+    business_id = request.args.get('business_id')
+    merchant_employee_pin_number_status = Merchant_Employee_Service(
+    ).validate_pin_number(business_id, merchant_employee_pin_number)
+    if merchant_employee_pin_number_status == True:
+        print("status")
+        headers["jwt_token"] = jwt.encode(
+            {"sub": business_id}, key=secret, algorithm="HS256")
+        headers["jwt-token"] = jwt.encode({"sub": business_id},
+                                            key=secret, algorithm="HS256")
+        print('headers["jwt-token"]', headers["jwt-token"])
+        print("headers", headers)
+        response_jwt = {}
+        response_jwt["jwt_token"] = jwt.encode(
+            {"sub": business_id}, key=secret, algorithm="HS256")
+        return Response(status=200, headers=headers, response = json.dumps(response_jwt))
+    else:
+        return Response(status=400)
 
 
 @app.route('/authenticate_business/<string:session_token>', methods=['POST'])
@@ -1179,6 +1178,7 @@ def authenticate_business(session_token):
 @app.route('/merchant_employee_login', methods=['POST', 'OPTIONS'])
 def merchant_employee_login():
     headers = {}
+    print("merchant employee login")
     if request.method == 'OPTIONS':
         headers["Access-Control-Allow-Origin"] = request.origin
         headers["Access-Control-Allow-Headers"] = request.headers.get(
@@ -1290,6 +1290,7 @@ def authenticate_merchant():
 @app.route('/merchant/pin_number/<string:session_token>', methods=['POST'])
 def authenticate_pin_number(session_token):
     headers = {}
+    print("merchant pin")
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
     data = json.loads(request.data)
@@ -1531,4 +1532,4 @@ def quick_pass_payment_intent(session_token):
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True, port='5000')
+    app.run(host='0.0.0.0')
