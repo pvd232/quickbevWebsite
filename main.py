@@ -1159,7 +1159,7 @@ def validate_pin_number():
             response_jwt = {}
             response_jwt["jwt_token"] = jwt.encode(
                 {"sub": business_id}, key=secret, algorithm="HS256")
-            return Response(status=200, headers=headers, response = json.dums(response_jwt))
+            return Response(status=200, headers=headers, response = json.dumps(response_jwt))
         else:
             return Response(status=400)
 
