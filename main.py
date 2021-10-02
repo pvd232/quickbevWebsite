@@ -1141,12 +1141,15 @@ def add_staged_merchant_employee(session_token):
 @app.route('/merchant_employee/validate_pin_number', methods=['POST'])
 def validate_pin_number():
     headers = {}
+    print("hi")
     if request.method == 'POST':
+        print("request")
         merchant_employee_pin_number = request.args.get('pin_number')
         business_id = request.args.get('business_id')
         merchant_employee_pin_number_status = Merchant_Employee_Service(
         ).validate_pin_number(business_id, merchant_employee_pin_number)
         if merchant_employee_pin_number_status == True:
+            print("status")
             headers["jwt_token"] = jwt.encode(
                 {"sub": business_id}, key=secret, algorithm="HS256")
             headers["jwt-token"] = jwt.encode({"sub": business_id},
