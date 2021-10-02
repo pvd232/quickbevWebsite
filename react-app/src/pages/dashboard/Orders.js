@@ -27,9 +27,7 @@ const Orders = (props) => {
   });
 
   const formattedMappedOrders = mappedOrders.map((order) => {
-    console.log("order", order);
-
-    order.cost = Math.round(order.cost);
+    order.total = Math.round(order.total);
     order.subtotal = Math.round(order.subtotal);
     order.tipAmount = Math.round(order.tipAmount);
     order.salesTax = Math.round(order.salesTax);
@@ -38,8 +36,6 @@ const Orders = (props) => {
       (business) => order.businessId === business.id
     );
     if (orderBusiness.length > 0) {
-      console.log("orderBusiness", orderBusiness);
-
       order.businessName = orderBusiness[0].name;
     }
     return order;

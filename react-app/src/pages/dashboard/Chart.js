@@ -95,7 +95,7 @@ export default function Chart(props) {
     const orderDay = dateWithYear[1];
     const orderMonth = dateWithYear[0];
     const date = orderMonth + "/" + orderDay;
-    const amount = order.cost;
+    const amount = order.total;
     const orderDateTime = new Date(order.dateTime);
     const monthIndex = monthsLookup.indexOf(month);
     const monthPresentIndex = intermediaryMonths.indexOf(

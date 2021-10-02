@@ -119,6 +119,7 @@ export class Order {
     // if there are no orders then the backend will send an empty order so we dont need to construct an order drink
     if (
       Array.isArray(order_object.order_drink.order_drink) &&
+      order_object.order_drink.order_drink.length >= 1 &&
       order_object.order_drink.order_drink[0].id !== ""
     ) {
       this.orderDrink = new OrderDrink(order_object.order_drink);
@@ -130,7 +131,7 @@ export class Order {
     const data = {
       id: this.id,
       customer_id: this.userId,
-      cost: this.cost,
+      cost: this.total,
       subtotal: this.subtotal,
       tip_percentage: this.tipPercentage,
       tip_amount: this.tipAmount,

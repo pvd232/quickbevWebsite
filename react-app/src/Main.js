@@ -19,6 +19,7 @@ const Main = () => {
   return (
     <Switch>
       {/* The Switch decides which component to show based on the current URL.*/}
+      <Route exact path="/privacy" component={Privacy}></Route>
       <Route exact path="/home" component={Home}></Route>
       <Route exact path="/signup" component={Signup}></Route>
       <Route
@@ -55,7 +56,7 @@ const Main = () => {
           path="/reset-password/:sessionToken"
           children={<ResetPassword />}
         />
-          <Route
+        <Route
           path="/bouncer-email-confirmed/:sessionToken"
           children={<BouncerEmailConfirmed />}
         />

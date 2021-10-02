@@ -92,7 +92,6 @@ class Order_Domain(object):
         self.formatted_date_time = datetime.now().strftime(
             "%m/%d/%Y")
         if order_object:
-            print('order_object Order', order_object.Order.serialize)
             # these attributes were from the join and are not nested in the result object
             self.business_name = order_object.business_name
             self.business_id = order_object.business_id
