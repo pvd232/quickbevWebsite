@@ -70,12 +70,12 @@ class Order_Repository(object):
         charge = payment_intent.charges.data[0]
         for server in servers:
             tip_per_server = int(round(order.tip_total/len(servers), 2) * 100)
-            transfer = stripe.Transfer.create(
-                amount=tip_per_server,
-                currency='usd',
-                destination=server.stripe_id,
-                source_transaction=charge.id
-            )
+            # transfer = stripe.Transfer.create(
+            #     amount=tip_per_server,
+            #     currency='usd',
+            #     destination=server.stripe_id,
+            #     source_transaction=charge.id
+            # )
         return order
 
     def get_customer_orders(self, session, username):
