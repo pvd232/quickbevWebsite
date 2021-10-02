@@ -69,7 +69,7 @@ class Order_Repository(object):
         payment_intent = stripe.PaymentIntent.retrieve(order.payment_intent_id)
         charge = payment_intent.charges.data[0]
         for server in servers:
-            tip_per_server = int(round(order.tip_amount/len(servers), 2) * 100)
+            tip_per_server = int(round(order.tip_total/len(servers), 2) * 100)
             transfer = stripe.Transfer.create(
                 amount=tip_per_server,
                 currency='usd',
