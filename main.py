@@ -289,11 +289,11 @@ def orders(session_token):
 
 
 def send_info_email(jwt_token, email_type, user=None):
-    # host = request.headers.get('Host')
+    host = request.headers.get('Host')
     # host = '192.168.1.192:3000'
 
     if email_type == "quick_pass_link":
-        host = '192.168.1.192:3000'
+        # host = '192.168.1.192:3000'
         button_url = f"https://{host}/bouncer-quick-pass/{jwt_token}/{user.business_id}"
 
         logo = "https://storage.googleapis.com/my-new-quickbev-bucket/landscape-logo-purple.png"
@@ -406,7 +406,7 @@ def send_confirmation_email(jwt_token, email_type, user=None, business=None, str
         s.sendmail(message['From'], message['To'], message.as_string())
         s.quit()
     elif email_type == "staged_bouncer_confirmation":
-        host = '192.168.1.192:3000'
+        # host = '192.168.1.192:3000'
         logo = "https://storage.googleapis.com/my-new-quickbev-bucket/landscape-logo-purple.png"
         # button_url = f"https://{host}/bouncer/get-info/{jwt_token}"
         button_url = f"http://{host}/bouncer-email-confirmed/{jwt_token}"
@@ -915,10 +915,10 @@ def merchant_employee_stripe_account():
     stripe_id = Merchant_Employee_Service().get_stripe_account(merchant_employee_id)
     account_links = stripe.AccountLink.create(
         account=stripe_id,
-        refresh_url='http://192.168.1.192:3000/merchant-employee-payout-setup-callback',
-        return_url='http://192.168.1.192:3000/merchant-employee-payout-setup-complete',
-        # refresh_url='https://quickbev.us/merchant-employee-payout-setup-callback',
-        # return_url='https://quickbev.us/merchant-employee-payout-setup-complete',
+        # refresh_url='http://192.168.1.192:3000/merchant-employee-payout-setup-callback',
+        # return_url='http://192.168.1.192:3000/merchant-employee-payout-setup-complete',
+        refresh_url='https://quickbev.us/merchant-employee-payout-setup-callback',
+        return_url='https://quickbev.us/merchant-employee-payout-setup-complete',
         type='account_onboarding',
     )
     headers["stripe_id"] = stripe_id
@@ -1015,10 +1015,6 @@ def bouncer(session_token):
         headers["Access-Control-Expose-Headers"] = "*"
         return Response(status=200, headers=headers)
     elif request.method == 'POST':
-        # request_json = json.loads(request.data)
-        # requested_new_bouncer = request_json['merchant']
-        # new_bouncer = Bouncer_Service(
-        # ).add_bouncer(requested_new_bouncer)
         status = jwt.decode(session_token, secret, algorithms=["HS256"])
         if not status:
             return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
