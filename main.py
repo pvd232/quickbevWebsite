@@ -23,7 +23,8 @@ merchant_menu_upload_folder = os.getcwd() + "/files"
 app.config['UPLOAD_FOLDER'] = merchant_menu_upload_folder
 
 # stripe.api_key = "sk_test_51I0xFxFseFjpsgWvh9b1munh6nIea6f5Z8bYlIDfmKyNq6zzrgg8iqeKEHwmRi5PqIelVkx4XWcYHAYc1omtD7wz00JiwbEKzj"
-stripe.api_key = "pk_live_51I0xFxFseFjpsgWvD9dTResiaTt2yDWUuPNR6aVq4mJ1XIG6TLpKHVT9BxmezxcytTugPEkzs0wCSJ6VV74Pb1VJ00Flau56PH"
+# stripe.api_key = "pk_live_51I0xFxFseFjpsgWvD9dTResiaTt2yDWUuPNR6aVq4mJ1XIG6TLpKHVT9BxmezxcytTugPEkzs0wCSJ6VV74Pb1VJ00Flau56PH"
+stripe.api_key = "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"
 secret = '3327aa0ee1f61998369e815c17b1dc5eaf7e728bca14f6fe557af366ee6e20f9'
 # theme color RGB = rgb(134,130,230), hex = #8682E6
 # nice seafoam color #19cca3

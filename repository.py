@@ -13,8 +13,8 @@ from sqlalchemy.inspection import inspect
 from werkzeug.security import generate_password_hash, check_password_hash
 
 # stripe.api_key = "sk_test_51I0xFxFseFjpsgWvh9b1munh6nIea6f5Z8bYlIDfmKyNq6zzrgg8iqeKEHwmRi5PqIelVkx4XWcYHAYc1omtD7wz00JiwbEKzj"
-stripe.api_key = "pk_live_51I0xFxFseFjpsgWvD9dTResiaTt2yDWUuPNR6aVq4mJ1XIG6TLpKHVT9BxmezxcytTugPEkzs0wCSJ6VV74Pb1VJ00Flau56PH"
-
+# stripe.api_key = "pk_live_51I0xFxFseFjpsgWvD9dTResiaTt2yDWUuPNR6aVq4mJ1XIG6TLpKHVT9BxmezxcytTugPEkzs0wCSJ6VV74Pb1VJ00Flau56PH"
+stripe.api_key = "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"
 
 class Drink_Repository(object):
     def get_drinks(self, session):
