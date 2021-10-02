@@ -5,6 +5,7 @@ import Home from "./pages/Home.js";
 import Signup from "./pages/Signup.js";
 import Signin from "./pages/Signin.js";
 import Splash from "./pages/Splash.js";
+import Privacy from "./pages/Privacy.js";
 import PayoutSetupCallback from "./pages/PayoutSetupCallback.js";
 import MerchantEmployeePayoutSetup from "./pages/MerchantEmployeePayoutSetup.js";
 import MerchantEmployeePayoutSetupCallback from "./pages/MerchantEmployeePayoutSetupCallback.js";
