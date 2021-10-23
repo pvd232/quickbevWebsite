@@ -24,7 +24,7 @@ app.config['UPLOAD_FOLDER'] = merchant_menu_upload_folder
 
 stripe.api_key = "sk_test_51I0xFxFseFjpsgWvh9b1munh6nIea6f5Z8bYlIDfmKyNq6zzrgg8iqeKEHwmRi5PqIelVkx4XWcYHAYc1omtD7wz00JiwbEKzj"
 secret = '3327aa0ee1f61998369e815c17b1dc5eaf7e728bca14f6fe557af366ee6e20f9'
-ip_address = "192.168.1.192"
+# ip_address = "192.168.1.192"
 # theme color RGB = rgb(134,130,230), hex = #8682E6
 # nice seafoam color #19cca3
 
@@ -922,10 +922,10 @@ def merchant_employee_stripe_account():
     stripe_id = Merchant_Employee_Service().get_stripe_account(merchant_employee_id)
     account_links = stripe.AccountLink.create(
         account=stripe_id,
-        refresh_url= f'http://${ip_address}:3000/merchant-employee-payout-setup-callback',
-        return_url= f'http://{ip_address}:3000/merchant-employee-payout-setup-complete',
-        # refresh_url='https://quickbev.us/merchant-employee-payout-setup-callback',
-        # return_url='https://quickbev.us/merchant-employee-payout-setup-complete',
+        # refresh_url= f'http://${ip_address}:3000/merchant-employee-payout-setup-callback',
+        # return_url= f'http://{ip_address}:3000/merchant-employee-payout-setup-complete',
+        refresh_url='https://quickbev.us/merchant-employee-payout-setup-callback',
+        return_url='https://quickbev.us/merchant-employee-payout-setup-complete',
         type='account_onboarding',
     )
     headers["stripe_id"] = stripe_id
@@ -1336,10 +1336,10 @@ def create_stripe_account():
     if callback_stripe_id:
         account_links = stripe.AccountLink.create(
             account=callback_stripe_id,
-            # refresh_url='https://quickbev.us/payout-setup-callback',
-            # return_url='https://quickbev.us/home',
-            refresh_url= f'http://{ip_address}:3000/payout-setup-callback',
-            return_url= f'http://{ip_address}:3000/home',
+            refresh_url='https://quickbev.us/payout-setup-callback',
+            return_url='https://quickbev.us/home',
+            # refresh_url= f'http://{ip_address}:3000/payout-setup-callback',
+            # return_url= f'http://{ip_address}:3000/home',
             type='account_onboarding',
         )
         headers["stripe_id"] = callback_stripe_id
@@ -1347,10 +1347,10 @@ def create_stripe_account():
         new_account = Merchant_Service().create_stripe_account()
         account_links = stripe.AccountLink.create(
             account=new_account.id,
-            # refresh_url='https://quickbev.us/payout-setup-callback',
-            # return_url='https://quickbev.us/home',
-            refresh_url= f'http://{ip_address}:3000/payout-setup-callback',
-            return_url= f'http://{ip_address}:3000/home',
+            refresh_url='https://quickbev.us/payout-setup-callback',
+            return_url='https://quickbev.us/home',
+            # refresh_url= f'http://{ip_address}:3000/payout-setup-callback',
+            # return_url= f'http://{ip_address}:3000/home',
             type='account_onboarding',
         )
         headers["stripe_id"] = new_account.id
