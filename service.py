@@ -79,7 +79,11 @@ class Drink_Service(object):
 class Order_Service(object):
     def get_order(self, order_id):
         with session_scope() as session:
-            return Order_Repository().get_order(session, order_id)
+            orders, drinks = Order_Repository().get_order(session, order_id)
+            order = orders[0]
+            new_order_domain = Order_Domain(order_object=order, drinks=drinks)
+            return new_order_domain
+
     def update_order(self, order):
         with session_scope() as session:
             new_order_domain = Order_Domain(order_json=order)
@@ -301,7 +305,11 @@ class Merchant_Service(object):
 
     def validate_merchant(self, email):
         with session_scope() as session:
-            return Merchant_Repository().validate_merchant(session, email)
+            status = Merchant_Repository().validate_merchant(session, email)
+            if status:
+                return Merchant_Domain(merchant_object=status)
+            else:
+                return False
 
     def authenticate_merchant_stripe(self, stripe_id):
         with session_scope() as session:
@@ -322,7 +330,7 @@ class Bouncer_Service(object):
     def add_bouncer(self, bouncer_id):
         with session_scope() as session:
             return Bouncer_Domain(bouncer_object=Bouncer_Repository().add_bouncer(
-                session, bouncer_id)) 
+                session, bouncer_id))
 
     def authenticate_username(self, username):
         with session_scope() as session:
@@ -338,14 +346,14 @@ class Bouncer_Service(object):
 
             # when a merchant employee domain is created without a merchant employee object or merchant employee json the c
             staged_bouncer_domains = [
-                Bouncer_Domain(bouncer_object = x, isStagedBouncer=True) for x in staged_bouncers]
+                Bouncer_Domain(bouncer_object=x, isStagedBouncer=True) for x in staged_bouncers]
             for staged_domain in staged_bouncer_domains:
                 bouncer_domains.insert(0, staged_domain)
             return bouncer_domains
 
     def add_staged_bouncer(self, bouncer):
         with session_scope() as session:
-            return Bouncer_Domain(bouncer_object = Bouncer_Repository().add_staged_bouncer(session, Bouncer_Domain(bouncer_json=bouncer)), isStagedBouncer = True)
+            return Bouncer_Domain(bouncer_object=Bouncer_Repository().add_staged_bouncer(session, Bouncer_Domain(bouncer_json=bouncer)), isStagedBouncer=True)
 
     def remove_staged_bouncer(self, bouncer_id):
         with session_scope() as session:
@@ -356,6 +364,7 @@ class Bouncer_Service(object):
             bouncer_domain = Bouncer_Domain(
                 bouncer_object=Bouncer_Repository().get_bouncer(session, bouncer_id))
             return bouncer_domain
+
 
 class Merchant_Employee_Service(object):
     def get_stripe_account(self, merchant_employee_id):
@@ -683,13 +692,14 @@ class Quick_Pass_Service(object):
 
     def update_quick_pass(self, quick_pass_to_update):
         with session_scope() as session:
-            quick_pass_domain = Quick_Pass_Domain(js_object=quick_pass_to_update)
+            quick_pass_domain = Quick_Pass_Domain(
+                js_object=quick_pass_to_update)
             return Quick_Pass_Repository().update_quick_pass(session, quick_pass_domain)
 
     def get_quick_passes(self, business_id):
         with session_scope() as session:
             quick_pass_domains = [Quick_Pass_Domain(quick_pass_object=x) for x in Quick_Pass_Repository().get_quick_passes(
-                session=session, business_id= business_id)]
+                session=session, business_id=business_id)]
             return quick_pass_domains
 
     def get_current_queue(self, business_id, customer_id):
@@ -709,26 +719,29 @@ class Quick_Pass_Service(object):
                 print('activation_hour = current_hour')
             if activation_hour > 24:
                 print('if activation_hour > 24')
-                activation_hour = datetime(datetime.now().year, datetime.now().month, datetime.now().day + 1, activation_hour - 24)
-                print('activation_hour',activation_hour)
+                activation_hour = datetime(datetime.now().year, datetime.now(
+                ).month, datetime.now().day + 1, activation_hour - 24)
+                print('activation_hour', activation_hour)
             else:
                 print('less than 24')
-                activation_hour = datetime(datetime.now().year, datetime.now().month, datetime.now().day, activation_hour)
-                print('activation_hour',activation_hour)
-                
+                activation_hour = datetime(
+                    datetime.now().year, datetime.now().month, datetime.now().day, activation_hour)
+                print('activation_hour', activation_hour)
+
             new_quick_pass = Quick_Pass_Domain()
             # new_quick_pass
             activation_time_date_time = datetime(
                 datetime.now().year, datetime.now().month, datetime.now().day, activation_hour.hour)
             new_quick_pass.activation_time = activation_time_date_time
-            print('business.schedule[datetime.today().weekday()]',business.schedule[datetime.today().weekday()].serialize)
+            print('business.schedule[datetime.today().weekday()]',
+                  business.schedule[datetime.today().weekday()].serialize)
             if business.schedule[datetime.today().weekday()].closing_time.hour <= 6 and new_quick_pass.activation_time.hour >= 10:
                 expiration_day = datetime.now().day + 1
             else:
                 expiration_day = datetime.now().day
             expiration_date_time = datetime(
                 datetime.now().year, datetime.now().month, expiration_day, business.schedule[datetime.today().weekday()].closing_time.hour)
-            
+
             new_quick_pass.expiration_time = expiration_date_time
             new_quick_pass.current_queue = business.current_queue
             new_quick_pass.price = business.quick_pass_price
@@ -740,5 +753,5 @@ class Quick_Pass_Service(object):
 
             # must create a dummy id for swift data type
             new_quick_pass.id = uuid.uuid4()
-            print('new_quick_pass',new_quick_pass.dto_serialize())
+            print('new_quick_pass', new_quick_pass.dto_serialize())
             return new_quick_pass

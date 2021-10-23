@@ -89,14 +89,12 @@ const CreateYourAccountFieldset = (props) => {
         return false;
       } else {
         const newMerchant = new Merchant("merchantStateObject", formValue);
-        const merchantData = {
-          email: newMerchant.id,
-        };
-        const validateHeader = { validate: true };
-        API.makeRequest("GET", "/merchant", validateHeader, merchantData).then(
+        const headers = { email: newMerchant.id };
+        API.makeRequest("GET", "/merchant/validate", false, headers).then(
           (response) => {
             console.log("response", response);
-            if (response.status === 204) {
+            console.log("response.status", response.status);
+            if (response.status === 200) {
               // if the username is available the response from the API will be true
               props.onClick("next", "merchant", newMerchant);
             } else {
@@ -542,14 +540,14 @@ const BusinessFieldset = (props) => {
     }
   };
   const handleScheduleChange = (event) => {
-    console.log('event',event)
+    console.log("event", event);
     const name = event.target.name;
-    console.log('name',name)
+    console.log("name", name);
     const dayIndex = parseInt(name.split("-")[0]);
-    console.log('dayIndex',dayIndex)
+    console.log("dayIndex", dayIndex);
     const time = event.target.value;
     const isOpenOrClosed = name.split("-")[1];
-    console.log('isOpenOrClosed',isOpenOrClosed)
+    console.log("isOpenOrClosed", isOpenOrClosed);
     // must create new date object outside the scope of the setSchedule callback or the state doesnt update
     const newDateObject = {
       day: dayIndex,

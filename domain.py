@@ -123,6 +123,7 @@ class Order_Domain(object):
             self.refunded = order_object.Order.refunded
             self.payment_intent_id = order_object.Order.payment_intent_id
         elif order_json:
+            # an order received as order_json will be an order sent from an iOS device, thus service fee is not included as a value because it is calculated in the backend
             self.id = order_json["id"]
             if "customer" in order_json.keys():
                 self.customer = Customer_Domain(

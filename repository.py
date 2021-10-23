@@ -12,9 +12,9 @@ from sqlalchemy.sql import text
 from sqlalchemy.inspection import inspect
 from werkzeug.security import generate_password_hash, check_password_hash
 
-# stripe.api_key = "sk_test_51I0xFxFseFjpsgWvh9b1munh6nIea6f5Z8bYlIDfmKyNq6zzrgg8iqeKEHwmRi5PqIelVkx4XWcYHAYc1omtD7wz00JiwbEKzj"
+stripe.api_key = "sk_test_51I0xFxFseFjpsgWvh9b1munh6nIea6f5Z8bYlIDfmKyNq6zzrgg8iqeKEHwmRi5PqIelVkx4XWcYHAYc1omtD7wz00JiwbEKzj"
 # stripe.api_key = "pk_live_51I0xFxFseFjpsgWvD9dTResiaTt2yDWUuPNR6aVq4mJ1XIG6TLpKHVT9BxmezxcytTugPEkzs0wCSJ6VV74Pb1VJ00Flau56PH"
-stripe.api_key = "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"
+# secret stripe.api_key = "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"
 
 class Drink_Repository(object):
     def get_drinks(self, session):
@@ -38,16 +38,21 @@ class Drink_Repository(object):
 
 class Order_Repository(object):
     def get_order(self, session, order_id):
-        database_order = session.query(Order).filter(
-            Order.id == order_id).first()
-        database_order.completed = True
-        return
+        # database_order = session.query(Order).filter(
+        #     Order.id == order_id).first()
+        database_order = session.query(Order, Business.id.label("business_id"),  # select from allows me to pull the entire Order from the database so I can get the Order_Drink relationship values
+                               Business.address.label("business_address"), Business.name.label("business_name"), Customer.first_name.label('customer_first_name'), Customer.last_name.label('customer_last_name')).select_from(Order).join(Business, Order.business_id == Business.id).join(Customer, Order.customer_id == Customer.id).filter(Order.id == order_id).all()
+        # database_order.completed = True
+        drinks = session.query(Drink)
+        print('database_order',database_order)
+        return database_order, drinks
     def update_order(self, session, order):
         database_order = session.query(Order).filter(
             Order.id == order.id).first()
         if database_order:
             database_order.completed = order.completed
             database_order.refunded = order.refunded
+            print('database_order',database_order.serialize)
             return
 
     def create_order(self, session, order):
@@ -94,9 +99,9 @@ class Order_Repository(object):
         return orders, drinks
 
     def get_business_orders(self, session, business_id):
+        # only get active orders
         orders = session.query(Order, Business.id.label("business_id"),  # select from allows me to pull the entire Order from the database so I can get the Order_Drink relationship values
-                               Business.address.label("business_address"), Business.name.label("business_name"), Customer.first_name.label('customer_first_name'), Customer.last_name.label('customer_last_name')).select_from(Order).join(Business, Order.business_id == Business.id).join(Customer, Order.customer_id == Customer.id).filter(Business.id == business_id).all()
-
+                               Business.address.label("business_address"), Business.name.label("business_name"), Customer.first_name.label('customer_first_name'), Customer.last_name.label('customer_last_name')).select_from(Order).join(Business, Order.business_id == Business.id).join(Customer, Order.customer_id == Customer.id).filter(Business.id == business_id, Order.completed != True, Order.refunded != True).all()
         drinks = session.query(Drink)
         return orders, drinks
 
@@ -346,6 +351,7 @@ class Business_Repository(object):
             return False
 
     def update_device_token(self, session, device_token, business_id):
+        print('business_id',business_id)
         business_to_update = session.query(Business).filter(
             Business.id == business_id).first()
         if business_to_update:
@@ -403,13 +409,17 @@ class Merchant_Repository(object):
         return new_account
 
     def authenticate_merchant(self, session, email, password):
+        print('password',password)
+        print('email',email)
         for merchant in session.query(Merchant):
             if merchant.id == email and check_password_hash(merchant.password, password) == True:
                 return merchant
         return False
 
     def validate_merchant(self, session, email):
+        print('email',email)
         for merchant in session.query(Merchant):
+            print('merchant',merchant.serialize)
             if merchant.id == email:
                 return merchant
         return False
