@@ -66,10 +66,11 @@ class Drink(db.Model):
             serialized_attributes[attribute_names[i]] = attributes[i]
         return serialized_attributes
 
+
 class Business_Schedule_Day(db.Model):
     __tablename__ = 'business_schedule_day'
     business_id = db.Column(UUID(as_uuid=True), db.ForeignKey('business.id'), primary_key=True,
-                    nullable=False)
+                            nullable=False)
     day = db.Column(db.String(80), primary_key=True, nullable=False)
     is_closed = db.Column(db.Boolean(), default=False, nullable=False)
     opening_time = db.Column(db.Time(), nullable=True)
@@ -85,6 +86,7 @@ class Business_Schedule_Day(db.Model):
             serialized_attributes[attribute_names[i]] = attributes[i]
         return serialized_attributes
 
+
 class Business(db.Model):
     __tablename__ = 'business'
     id = db.Column(UUID(as_uuid=True), primary_key=True,
@@ -93,7 +95,7 @@ class Business(db.Model):
         'merchant_stripe_account.id'), nullable=False)
     merchant_id = db.Column(db.String(80), db.ForeignKey(
         'merchant.id'), nullable=False)
-    merchant_pin_number = db.Column(db.String(200), nullable=True)
+    merchant_pin = db.Column(db.String(200), nullable=True)
     name = db.Column(db.String(80), nullable=False)
     classification = db.Column(db.String(80), nullable=False)
     date_joined = db.Column(
@@ -112,9 +114,9 @@ class Business(db.Model):
     suite = db.Column(db.String(80), nullable=True)
     address = db.Column(db.String(80), nullable=False)
     at_capacity = db.Column(db.Boolean(), default=True, nullable=False)
-    quick_pass_price = db.Column(db.Float(), default = 20.0, nullable=False)
-    quick_passes_per_hour = db.Column(db.Integer(), default = 30, nullable=False)
-    current_queue = db.Column(db.Integer(), default = 0, nullable=True)
+    quick_pass_price = db.Column(db.Float(), default=20.0, nullable=False)
+    quick_passes_per_hour = db.Column(db.Integer(), default=30, nullable=False)
+    current_queue = db.Column(db.Integer(), default=0, nullable=True)
     schedule = relationship(
         "Business_Schedule_Day", lazy=True,  uselist=True)
     merchant_employee = relationship(
@@ -131,6 +133,7 @@ class Business(db.Model):
         for i in range(len(attributes)):
             serialized_attributes[attribute_names[i]] = attributes[i]
         return serialized_attributes
+
 
 class Staged_Bouncer(db.Model):
     __tablename__ = 'staged_bouncer'
@@ -176,6 +179,7 @@ class Bouncer(db.Model):
             serialized_attributes[attribute_names[i]] = attributes[i]
         return serialized_attributes
 
+
 class Staged_Merchant_Employee(db.Model):
     __tablename__ = 'staged_merchant_employee'
     id = db.Column(db.String(80), primary_key=True,
@@ -198,7 +202,7 @@ class Merchant_Employee(db.Model):
     __tablename__ = 'merchant_employee'
     id = db.Column(db.String(80), primary_key=True,
                    unique=True, nullable=False)
-    pin_number = db.Column(db.String(200), nullable=False)
+    pin = db.Column(db.String(200), nullable=False)
     first_name = db.Column(db.String(80), nullable=False)
     last_name = db.Column(db.String(80), nullable=False)
     phone_number = db.Column(db.BigInteger(), nullable=False)
@@ -299,6 +303,7 @@ class Order(db.Model):
     payment_intent_id = db.Column(db.String(80), unique=True, nullable=False)
     completed = db.Column(db.Boolean(), default=False, nullable=True)
     refunded = db.Column(db.Boolean(), default=False, nullable=True)
+    active = db.Column(db.Boolean(), default=True, nullable=True)
     order_drink = relationship(
         "Order_Drink", lazy=True, backref="order", uselist=True)
 
@@ -338,7 +343,8 @@ class Quick_Pass(db.Model):
     # the time the pass will become active and the user is able to enter the bar with it
     activation_time = db.Column(db.DateTime(), nullable=True)
     expiration_time = db.Column(db.DateTime(), nullable=True)
-    customer=relationship("Customer", back_populates="quick_pass")
+    customer = relationship("Customer", back_populates="quick_pass")
+
     @property
     def serialize(self):
         attribute_names = list(self.__dict__.keys())
@@ -347,6 +353,7 @@ class Quick_Pass(db.Model):
         for i in range(len(attributes)):
             serialized_attributes[attribute_names[i]] = attributes[i]
         return serialized_attributes
+
 
 class Order_Drink(db.Model):
     __tablename__ = 'order_drink'
@@ -499,14 +506,14 @@ def create_business():
 
     db.session.add(new_merchant)
     days_of_week = [
-    "monday",
-    "tuesday",
-    "wednesday",
-    "thursday",
-    "friday",
-    "saturday",
-    "sunday",
-  ]
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+        "sunday",
+    ]
     test_business = load_json("test_business.json")
     for business in test_business:
         merchant_id = business["merchant_id"]
@@ -522,9 +529,9 @@ def create_business():
         address = f"{street}, {city}, {state} {zipcode}"
         business_id = uuid.uuid4()
         for day in days_of_week:
-            new_business_schedule_day = Business_Schedule_Day(business_id = business_id, day = day, opening_time = datetime.strptime(
-                "10:00", '%H:%M').time(), closing_time = datetime.strptime(
-                "02:00", '%H:%M').time(), is_closed = False )
+            new_business_schedule_day = Business_Schedule_Day(business_id=business_id, day=day, opening_time=datetime.strptime(
+                "12:00", '%H:%M').time(), closing_time=datetime.strptime(
+                "02:00", '%H:%M').time(), is_closed=False)
             db.session.add(new_business_schedule_day)
         new_business = Business(id=business_id, merchant_id=merchant_id, merchant_stripe_id=new_account.id,
                                 name=name, date_joined=date_joined, sales_tax_rate=sales_tax_rate, classification=classification, street=street, city=city,

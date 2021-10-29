@@ -18,7 +18,7 @@ class Client {
       const request = new Request(this.url);
       var requestHeaders = false;
       if (headersParam) {
-        console.log('headersParam',headersParam)
+        console.log("headersParam", headersParam);
         requestHeaders = new Headers();
         for (const [key, value] of Object.entries(headersParam)) {
           requestHeaders.set(key, value);
@@ -101,7 +101,7 @@ class Client {
       LocalStorageManager.shared.setLocalStorage("merchant", loggedInMerchant);
       LocalStorageManager.shared.setLocalStorage(
         "session_token",
-        headers.jwt_token
+        headers["jwt-token"]
       );
       return true;
     }
@@ -166,16 +166,11 @@ class Client {
     return fetch(myRequest, requestParams).then((data) => data.json());
   };
   getQuickPasses = async (businessId) => {
-    this.url =
-      this.baseUrl +
-      "/quick_pass/bouncer"
+    this.url = this.baseUrl + "/quick_pass/bouncer";
 
     const requestHeaders = new Headers();
     const myRequest = new Request(this.url);
-    requestHeaders.set(
-      "business-id",
-      businessId
-    );
+    requestHeaders.set("business-id", businessId);
 
     const requestParams = {
       method: "GET",
@@ -207,7 +202,7 @@ class Client {
   checkStripeStatus = async () => {
     this.url =
       this.baseUrl +
-      `/validate-merchant-stripe-account?stripe=${LocalStorageManager.shared.currentMerchant.stripeId}`;
+      `/merchant/stripe/validate?stripe=${LocalStorageManager.shared.currentMerchant.stripeId}`;
 
     const requestParams = {
       method: "GET",

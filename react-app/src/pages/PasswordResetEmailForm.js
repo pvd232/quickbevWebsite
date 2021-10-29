@@ -33,7 +33,7 @@ const Signin = () => {
       console.log("authorization.email", authorization.email);
       API.makeRequest(
         "GET",
-        `/reset-password/${authorization.email}`,
+        `/password/reset/${authorization.email}`,
         false,
         entityHeader
       ).then((response) => {

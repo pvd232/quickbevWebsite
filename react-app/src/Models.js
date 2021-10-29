@@ -148,6 +148,7 @@ export class Order {
 
 export class Merchant {
   constructor(objectType, object) {
+    console.log("object", object);
     this.isAdministrator = false;
     if (objectType === "json") {
       // the merchant object will be pre-populated with values from the form thus it will use camelCase notation
@@ -169,6 +170,8 @@ export class Merchant {
     } else if (objectType === "localStorage") {
       // number of businessess and stripe id is set extraneously after object initialization so it will only need to be recalled from local storage
       const data = JSON.parse(object);
+      console.log("object", object);
+      console.log("data", data);
       this.id = data.id;
       this.password = data.password;
       this.firstName = data.first_name;

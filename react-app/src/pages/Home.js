@@ -26,34 +26,41 @@ const Home = () => {
       }
     });
     API.getOrders().then((items) => {
-      LocalStorageManager.shared.setLocalStorage("orders", items.orders);
       if (mounted && items) {
+        console.log("items", items);
+        LocalStorageManager.shared.setLocalStorage("orders", items.orders);
+
         setOrders(items.orders);
       }
     });
     API.getCustomers().then((items) => {
-      LocalStorageManager.shared.setLocalStorage("customers", items.customers);
       if (mounted && items) {
+        console.log("items", items);
+        LocalStorageManager.shared.setLocalStorage(
+          "customers",
+          items.customers
+        );
+
         setCustomers(items.customers);
       }
     });
     API.getBusinesses().then((items) => {
-      LocalStorageManager.shared.setLocalStorage(
-        "businesses",
-        items.businesses
-      );
       if (mounted && items) {
+        LocalStorageManager.shared.setLocalStorage(
+          "businesses",
+          items.businesses
+        );
         setBusinesses(items.businesses);
       }
     });
     API.getMerchantEmployees().then((items) => {
-      console.log("items", items);
-      console.log("items", items.merchant_employees);
-      LocalStorageManager.shared.setLocalStorage(
-        "merchant_employees",
-        items.merchant_employees
-      );
       if (mounted && items) {
+        console.log("items", items);
+        console.log("items", items.merchant_employees);
+        LocalStorageManager.shared.setLocalStorage(
+          "merchant_employees",
+          items.merchant_employees
+        );
         setMerchantEmployees(items.merchant_employees);
       }
     });
@@ -71,7 +78,20 @@ const Home = () => {
 
     return () => (mounted = false);
   }, []);
-  if (orders && customers && businesses && merchantEmployees && bouncers && validated) {
+  if (
+    orders &&
+    customers &&
+    businesses &&
+    merchantEmployees &&
+    bouncers &&
+    validated
+  ) {
+    console.log("validated", validated);
+    console.log("merchantEmployees", merchantEmployees);
+    console.log("bouncers", bouncers);
+    console.log("businesses", businesses);
+    console.log("customers", customers);
+    console.log("orders", orders);
     return (
       <Dashboard
         orders={orders}

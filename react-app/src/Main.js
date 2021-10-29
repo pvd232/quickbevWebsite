@@ -3,9 +3,9 @@ import { Switch, Route } from "react-router-dom";
 
 import Home from "./pages/Home.js";
 import Signup from "./pages/Signup.js";
+import Privacy from "./pages/Privacy.js";
 import Signin from "./pages/Signin.js";
 import Splash from "./pages/Splash.js";
-import Privacy from "./pages/Privacy.js";
 import PayoutSetupCallback from "./pages/PayoutSetupCallback.js";
 import MerchantEmployeePayoutSetup from "./pages/MerchantEmployeePayoutSetup.js";
 import MerchantEmployeePayoutSetupCallback from "./pages/MerchantEmployeePayoutSetupCallback.js";
@@ -40,11 +40,11 @@ const Main = () => {
         path="/payout-setup-callback"
         component={PayoutSetupCallback}
       ></Route>
-      <Route
+      {/* <Route
         exact
         path="/merchant-employee-payout-setup-callback"
         component={MerchantEmployeePayoutSetupCallback}
-      ></Route>
+      ></Route> */}
       <Route exact path="/menubuilder" component={MenuBuilder}></Route>
 
       <Route exact path="/" component={Splash}></Route>
@@ -64,6 +64,10 @@ const Main = () => {
         <Route
           path="/merchant-employee-payout-setup/:merchantEmployeeId"
           children={<MerchantEmployeePayoutSetup />}
+        />
+        <Route
+          path="/merchant-employee-payout-setup-callback/:merchantEmployeeId"
+          children={<MerchantEmployeePayoutSetupCallback />}
         />
       </Switch>
     </Switch>

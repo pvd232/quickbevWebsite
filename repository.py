@@ -16,6 +16,7 @@ stripe.api_key = "sk_test_51I0xFxFseFjpsgWvh9b1munh6nIea6f5Z8bYlIDfmKyNq6zzrgg8i
 # stripe.api_key = "pk_live_51I0xFxFseFjpsgWvD9dTResiaTt2yDWUuPNR6aVq4mJ1XIG6TLpKHVT9BxmezxcytTugPEkzs0wCSJ6VV74Pb1VJ00Flau56PH"
 # secret stripe.api_key = "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"
 
+
 class Drink_Repository(object):
     def get_drinks(self, session):
         drinks = session.query(Drink)
@@ -37,30 +38,38 @@ class Drink_Repository(object):
 
 
 class Order_Repository(object):
+    def get_customer_order_status(self, session, customer_id):
+        customer_orders = session.query(Order).filter(
+            Order.customer_id == customer_id).all()
+        return customer_orders
+
     def get_order(self, session, order_id):
         # database_order = session.query(Order).filter(
         #     Order.id == order_id).first()
         database_order = session.query(Order, Business.id.label("business_id"),  # select from allows me to pull the entire Order from the database so I can get the Order_Drink relationship values
-                               Business.address.label("business_address"), Business.name.label("business_name"), Customer.first_name.label('customer_first_name'), Customer.last_name.label('customer_last_name')).select_from(Order).join(Business, Order.business_id == Business.id).join(Customer, Order.customer_id == Customer.id).filter(Order.id == order_id).all()
+                                       Business.address.label("business_address"), Business.name.label("business_name"), Customer.first_name.label('customer_first_name'), Customer.last_name.label('customer_last_name')).select_from(Order).join(Business, Order.business_id == Business.id).join(Customer, Order.customer_id == Customer.id).filter(Order.id == order_id).all()
         # database_order.completed = True
         drinks = session.query(Drink)
-        print('database_order',database_order)
+        print('database_order in get_order', database_order)
         return database_order, drinks
+
     def update_order(self, session, order):
         database_order = session.query(Order).filter(
             Order.id == order.id).first()
         if database_order:
+            print('database_order in update_order', database_order.serialize)
+            database_order.active = order.active
             database_order.completed = order.completed
             database_order.refunded = order.refunded
-            print('database_order',database_order.serialize)
             return
 
     def create_order(self, session, order):
+        print('order in create_order', order.dto_serialize())
         new_order = Order(id=order.id, customer_id=order.customer.id, merchant_stripe_id=order.merchant_stripe_id,
-                          business_id=order.business_id, total=order.total, stripe_charge_total = order.stripe_charge_total, pre_sales_tax_total = order.pre_sales_tax_total, pre_service_fee_total = order.pre_service_fee_total, subtotal=order.subtotal, tip_percentage=order.tip_percentage, tip_total=order.tip_total, sales_tax_total =order.sales_tax_total, sales_tax_percentage=order.sales_tax_percentage, service_fee=order.service_fee, payment_intent_id=order.payment_intent_id)
-        
+                          business_id=order.business_id, total=order.total, stripe_charge_total=order.stripe_charge_total, pre_sales_tax_total=order.pre_sales_tax_total, pre_service_fee_total=order.pre_service_fee_total, subtotal=order.subtotal, tip_percentage=order.tip_percentage, tip_total=order.tip_total, sales_tax_total=order.sales_tax_total, sales_tax_percentage=order.sales_tax_percentage, service_fee=order.service_fee, payment_intent_id=order.payment_intent_id, refunded=order.refunded, completed=order.completed, active=order.active)
+
         session.add(new_order)
-        print('order after', order.dto_serialize())
+        print('order after', new_order.serialize)
 
         for each_order_drink in order.order_drink.order_drink:
             # create a unique instance of Order_Drink for the number of each type of drink that were ordered. the UUID for the Order_Drink is generated in the database
@@ -101,7 +110,8 @@ class Order_Repository(object):
     def get_business_orders(self, session, business_id):
         # only get active orders
         orders = session.query(Order, Business.id.label("business_id"),  # select from allows me to pull the entire Order from the database so I can get the Order_Drink relationship values
-                               Business.address.label("business_address"), Business.name.label("business_name"), Customer.first_name.label('customer_first_name'), Customer.last_name.label('customer_last_name')).select_from(Order).join(Business, Order.business_id == Business.id).join(Customer, Order.customer_id == Customer.id).filter(Business.id == business_id, Order.completed != True, Order.refunded != True).all()
+                               Business.address.label("business_address"), Business.name.label("business_name"), Customer.first_name.label('customer_first_name'), Customer.last_name.label('customer_last_name')).select_from(Order).join(Business, Order.business_id == Business.id).join(Customer, Order.customer_id == Customer.id).filter(Business.id == business_id, Order.active == True).all()
+        print('orders', orders)
         drinks = session.query(Drink)
         return orders, drinks
 
@@ -322,9 +332,11 @@ class Business_Repository(object):
         for i in range(len(days_of_week)):
             day = days_of_week[i]
             if business.schedule[i].is_closed == True:
-                new_business_schedule_day = Business_Schedule_Day(business_id = new_business.id, day = day, is_closed = business.schedule[i].is_closed)
+                new_business_schedule_day = Business_Schedule_Day(
+                    business_id=new_business.id, day=day, is_closed=business.schedule[i].is_closed)
             elif business.schedule[i].is_closed == False:
-                new_business_schedule_day = Business_Schedule_Day(business_id = new_business.id, day = day, opening_time = business.schedule[i].opening_time, closing_time = business.schedule[i].closing_time, is_closed = business.schedule[i].is_closed)
+                new_business_schedule_day = Business_Schedule_Day(
+                    business_id=new_business.id, day=day, opening_time=business.schedule[i].opening_time, closing_time=business.schedule[i].closing_time, is_closed=business.schedule[i].is_closed)
             session.add(new_business_schedule_day)
         return business
 
@@ -351,7 +363,7 @@ class Business_Repository(object):
             return False
 
     def update_device_token(self, session, device_token, business_id):
-        print('business_id',business_id)
+        print('business_id', business_id)
         business_to_update = session.query(Business).filter(
             Business.id == business_id).first()
         if business_to_update:
@@ -369,19 +381,22 @@ class Business_Repository(object):
         else:
             return False
 
-    def set_merchant_pin_number(self, session, business_id, pin_number):
+    def set_merchant_pin(self, session, business_id, pin):
         requested_business = session.query(Business).filter(
             Business.id == business_id).first()
         print('requested_business', requested_business)
-        requested_business.merchant_pin_number = generate_password_hash(
-            pin_number)
+        requested_business.merchant_pin = generate_password_hash(
+            pin)
         return
 
-    def authenticate_merchant_pin_number(self, session, business_id, pin_number):
+    def authenticate_merchant_pin(self, session, business_id, pin):
         requested_business = session.query(Business).filter(
             Business.id == business_id).first()
         if requested_business:
-            return check_password_hash(requested_business.merchant_pin_number, pin_number)
+            if check_password_hash(requested_business.merchant_pin, pin) == True:
+                merchant = session.query(Merchant).filter(
+                    Merchant.id == requested_business.merchant_id).first()
+                return merchant
 
     def update_capacity_status(self, session, business_id, capacity):
         business_to_update = session.query(Business).filter(
@@ -409,17 +424,17 @@ class Merchant_Repository(object):
         return new_account
 
     def authenticate_merchant(self, session, email, password):
-        print('password',password)
-        print('email',email)
+        print('password', password)
+        print('email', email)
         for merchant in session.query(Merchant):
             if merchant.id == email and check_password_hash(merchant.password, password) == True:
                 return merchant
         return False
 
     def validate_merchant(self, session, email):
-        print('email',email)
+        print('email', email)
         for merchant in session.query(Merchant):
-            print('merchant',merchant.serialize)
+            print('merchant', merchant.serialize)
             if merchant.id == email:
                 return merchant
         return False
@@ -507,36 +522,29 @@ class Merchant_Employee_Repository(object):
     def get_stripe_account(self, session, merchant_employee_id):
         merchant_employee = session.query(Merchant_Employee).filter(
             Merchant_Employee.id == merchant_employee_id).first()
+        print('merchant_employee', merchant_employee)
         return merchant_employee.stripe_id
 
-    def authenticate_merchant_employee(self, session, email, password):
+    # this validates that the pin number is unique for the tablet upon which the merchant employee is registering
+    def validate_pin(self, session, business_id, pin):
+        for merchant_employee in session.query(Merchant_Employee).filter(Merchant_Employee.business_id == business_id):
+            if check_password_hash(merchant_employee.pin, pin) == True:
+                return False
+        return True
+
+    def authenticate_pin(self, session, business_id, pin, login_status):
         for merchant_employee in session.query(Merchant_Employee):
-            if merchant_employee.id == email and check_password_hash(merchant_employee.password, password):
+            if check_password_hash(merchant_employee.pin, pin) == True:
+                merchant_employee.logged_in = login_status
                 return merchant_employee
         else:
             return False
 
-    # this validates that the pin number is unique for the tablet upon which the merchant employee is registering
-    def validate_pin_number(self, session, business_id, pin_number):
-        for merchant_employee in session.query(Merchant_Employee).filter(Merchant_Employee.business_id == business_id):
-            if check_password_hash(merchant_employee.pin_number, pin_number) == True:
-                return False
-        return True
-
-    def authenticate_pin_number(self, session, merchant_employee_id, pin_number, login_status):
+    def reset_pin(self, session, merchant_employee_id, pin):
         for merchant_employee in session.query(Merchant_Employee):
             if merchant_employee.id == merchant_employee_id:
-                if check_password_hash(merchant_employee.pin_number, pin_number) == True:
-                    merchant_employee.logged_in = login_status
-                    return merchant_employee
-        else:
-            return False
-
-    def reset_pin_number(self, session, merchant_employee_id, pin_number):
-        for merchant_employee in session.query(Merchant_Employee):
-            if merchant_employee.id == merchant_employee_id:
-                merchant_employee.pin_number = generate_password_hash(
-                    pin_number)
+                merchant_employee.pin = generate_password_hash(
+                    pin)
                 return merchant_employee
         else:
             return False
@@ -565,7 +573,7 @@ class Merchant_Employee_Repository(object):
         new_stripe_account_id = Merchant_Employee_Stripe_Account(
             id=new_account.id)
         session.add(new_stripe_account_id)
-        new_merchant_employee = Merchant_Employee(id=requested_merchant_employee.id, pin_number=generate_password_hash(requested_merchant_employee.pin_number), first_name=requested_merchant_employee.first_name,
+        new_merchant_employee = Merchant_Employee(id=requested_merchant_employee.id, pin=generate_password_hash(requested_merchant_employee.pin), first_name=requested_merchant_employee.first_name,
                                                   last_name=requested_merchant_employee.last_name, phone_number=requested_merchant_employee.phone_number, merchant_id=requested_merchant_employee.merchant_id, business_id=requested_merchant_employee.business_id, stripe_id=new_account.id)
         requested_merchant_employee.stripe_id = new_account.id
         session.add(new_merchant_employee)
@@ -625,27 +633,26 @@ class Quick_Pass_Repository(object):
         return new_quick_pass
 
     def update_quick_pass(self, session, quick_pass_to_update):
-        quick_pass = session.query(Quick_Pass).filter(Quick_Pass.id == quick_pass_to_update.id).first()
+        quick_pass = session.query(Quick_Pass).filter(
+            Quick_Pass.id == quick_pass_to_update.id).first()
         quick_pass.time_checked_in = quick_pass_to_update.time_checked_in
         return
 
-
     def get_quick_passes(self, session, business_id=None, merchant_id=None):
-        print('business_id',business_id)
+        print('business_id', business_id)
         # quick passes to be displayed in dashboard
         if merchant_id != None:
             quick_passes = session.query(Quick_Pass, Business.id.label("business_id"),  # select from allows me to pull the entire Order from the database so I can get the Order_Drink relationship values
                                          Business.address.label("business_address"), Business.name.label("business_name"), Customer.first_name.label('customer_first_name'), Customer.last_name.label('customer_last_name')).select_from(Quick_Pass).join(Business, Quick_Pass.business_id == Business.id).join(Customer, Quick_Pass.customer_id == Customer.id).filter(Business.merchant_id == merchant_id).all()
-           
+
         elif business_id != None:
             # quick passes for bouncer
             quick_passes = session.query(Quick_Pass).filter(
                 Quick_Pass.business_id == business_id, Quick_Pass.activation_time <= datetime.now()).all()
             for quick_pass in quick_passes:
-                print('quick_pass',quick_pass.customer)
-                print('quick_pass',quick_pass.serialize)
-                
-            
+                print('quick_pass', quick_pass.customer)
+                print('quick_pass', quick_pass.serialize)
+
         return quick_passes
 
     def set_business_quick_pass(self, session, quick_pass_values):

@@ -18,13 +18,14 @@ import calendar
 from pushjack_http2_mod import APNSHTTP2Client, APNSHTTP2SandboxClient, APNSAuthToken
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.datastructures import MultiDict
+from pushjack_http2_mod import GCMClient
 
 merchant_menu_upload_folder = os.getcwd() + "/files"
 app.config['UPLOAD_FOLDER'] = merchant_menu_upload_folder
 
 stripe.api_key = "sk_test_51I0xFxFseFjpsgWvh9b1munh6nIea6f5Z8bYlIDfmKyNq6zzrgg8iqeKEHwmRi5PqIelVkx4XWcYHAYc1omtD7wz00JiwbEKzj"
 secret = '3327aa0ee1f61998369e815c17b1dc5eaf7e728bca14f6fe557af366ee6e20f9'
-# ip_address = "192.168.1.192"
+ip_address = "192.168.1.192"
 # theme color RGB = rgb(134,130,230), hex = #8682E6
 # nice seafoam color #19cca3
 
@@ -73,22 +74,22 @@ def send_apn(device_token, action, env):
 
 
 def send_fcm(device_token, new_order):
-    from pushjack_http2_mod import GCMClient
-
+    print("sending fcm")
     client = GCMClient(
         api_key='AAAATofs8JE:APA91bFkb9kmo-sZuDwJIs4PNAh-6oxnN4XoR5RhTAB06qWJ9VMi3vFBTtgi6kIXGLwJfTUmzph-UTnKpXmZcyQ59uFSAOY1saTLdiobNmspqIU7uSQsM0nlPCM-VRH8A8QSNJvzuCxt')
 
     notification = {
         'title': new_order["customer"]['first_name'], 'body': new_order["customer"]['last_name']}
-    message = {"message": "new_order", "notification":notification, "order":new_order["id"] }
+    message = {"message": "new_order",
+               "notification": notification, "order": new_order["id"]}
 
-    
     # Send to single device.
     # NOTE: Keyword arguments are optional.
     res = client.send(device_token,
                       message,
-                    #   notification=notification,
+                      #   notification=notification,
                       time_to_live=604800)
+    return
 
     # Send to multiple devices by passing a list of ids.
     # client.send([registration_id], alert, **options)
@@ -115,47 +116,48 @@ def b():
 def c():
     # order_id = request.args.get("order_id")
     # Order_Service().get_order(order_id)
-    device_token = Customer_Service().get_device_token('c')
-    send_apn(device_token, 'order_completed', 'sandbox')
+    device_token = Customer_Service().get_device_token('peter.driscoll@pwc.com')
+    send_apn(device_token, 'order_completed', 'production')
     return Response(status=200)
+
 
 @app.route("/d")
 def d():
     order_id = request.args.get("order_id")
     Order_Service().get_order(order_id)
     device_token = Customer_Service().get_device_token('c')
-    send_apn(device_token, 'order_completed', 'sandbox')
+    send_apn(device_token, 'order_completed', 'production')
     return Response(status=200)
 
+
 @app.route('/test_token/<string:business_id>', methods=["GET"])
-def test_token_a(business_id):
+def test_token(business_id):
     fcm_token = Business_Service().get_device_token(business_id)
-    print('fcm_token',fcm_token)
+    print('fcm_token', fcm_token)
     customer = {"first_name": "peter", "last_name": "driscoll"}
-    new_order = {"customer": customer, "id": "7f1d9f95-5313-462f-880c-5d700f9f77f0"}
+    new_order = {"customer": customer,
+                 "id": "7f1d9f95-5313-462f-880c-5d700f9f77f0"}
     send_fcm(fcm_token, new_order)
     return Response(status=200)
 
 
-@app.route('/apn-token/<string:customer_id>/<string:session_token>', methods=["POST"])
-def apn_token_a(customer_id, session_token):
+@app.route('/apn_token/<string:customer_id>/<string:session_token>', methods=["POST"])
+def apn_token(customer_id, session_token):
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
     else:
-        device_token = request.headers.get("DeviceToken")
+        device_token = request.headers.get("device-token")
         Customer_Service().update_device_token(device_token, customer_id)
         return Response(status=200)
 
 
 @app.route('/fcm_token/<string:session_token>', methods=["POST"])
-def fcm_token_a(session_token):
+def fcm_token(session_token):
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
     else:
         business_id = request.headers.get('business-id')
-        print('business_id',business_id)
         device_token = json.loads(request.data)
-        print('device_token', device_token)
         Business_Service().update_device_token(
             device_token, business_id)
         return Response(status=200)
@@ -180,7 +182,7 @@ def login():
         serialized_customer = customer.dto_serialize()
         jwt_token = jwt.encode(
             {"sub": serialized_customer["id"]}, key=secret, algorithm="HS256")
-        headers["authorization-token"] = jwt_token
+        headers["jwt-token"] = jwt_token
         return Response(status=200, response=json.dumps(serialized_customer), headers=headers)
     else:
         return Response(status=404, response=json.dumps(response))
@@ -219,6 +221,18 @@ def inventory(session_token):
     return Response(status=200, response=json.dumps(response), headers=headers)
 
 
+@app.route('/customer/order/<string:session_token>', methods=['GET'])
+def sync_customer_orders(session_token):
+    if not jwt.decode(session_token, secret, algorithms=["HS256"]):
+        return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
+    response = {}
+    customer_id = request.headers.get('customer-id')
+    orders_status = Order_Service().get_customer_order_status(customer_id=customer_id)
+    response["orders"] = orders_status
+    print('response["orders"]', response["orders"])
+    return Response(status=200, response=json.dumps(response))
+
+
 @app.route('/order/<string:session_token>', methods=['POST', 'GET', 'OPTIONS', 'PUT'])
 def orders(session_token):
     headers = {}
@@ -235,17 +249,19 @@ def orders(session_token):
     headers["Access-Control-Expose-Headers"] = "Access-Control-Allow-Headers"
     if request.method == 'PUT':
         order_to_update = json.loads(request.data)
-        if order_to_update["refunded"] == True:
+        if order_to_update["active"] == False:
+            Order_Service().update_order(order_to_update)
+        elif order_to_update["refunded"] == True:
             # 1. send push notification to device
             device_token = Customer_Service().get_device_token(
                 order_to_update["customer_id"])
-            send_apn(device_token, 'order_refunded')
+            send_apn(device_token, 'order_refunded', 'production')
             Order_Service().refund_stripe_order(order_to_update)
         elif order_to_update["completed"] == True:
             # 1. send push notification to device saying the order is ready
             device_token = Customer_Service().get_device_token(
                 order_to_update["customer_id"])
-            send_apn(device_token, 'order_completed', 'sandbox')
+            send_apn(device_token, 'order_completed', 'production')
             # send_apn(device_token, "order_ready")
 
         Order_Service().update_order(order_to_update)
@@ -264,6 +280,7 @@ def orders(session_token):
     elif request.method == "GET":
         # for tablet get request
         business_id = request.headers.get('business-id')
+        print('business_id', business_id)
         if business_id:
             # orders are being called by android tablet
             orders = [x.dto_serialize()
@@ -285,7 +302,7 @@ def orders(session_token):
                 orders = []
                 if filter_orders_by == 'merchant':
                     orders = [x.dto_serialize()
-                            for x in Order_Service().get_merchant_orders(username=username)]
+                              for x in Order_Service().get_merchant_orders(username=username)]
                     if len(orders) == 0:
                         # dummy data to populate orders table if the merchant has no orders
                         dummy_order = Order_Domain()
@@ -294,6 +311,7 @@ def orders(session_token):
                 # elif filter_orders_by == 'customer':
                 #     orders = Order_Service().get_merchant_orders(username=username)
         response['orders'] = orders
+        print('response[orders]', response['orders'])
 
         return Response(status=200, response=json.dumps(response), headers=headers)
 
@@ -334,7 +352,7 @@ def send_info_email(jwt_token, email_type, user=None):
 def send_confirmation_email(jwt_token, email_type, user=None, business=None, stripe_account_status=None, bouncer_id=None):
     host = request.headers.get('Host')
     if email_type == "customer_confirmation":
-        button_url = f"https://{host}/verify-email/{jwt_token}"
+        button_url = f"https://{host}/customer/email/verify/{jwt_token}"
 
         logo = "https://storage.googleapis.com/my-new-quickbev-bucket/landscape-logo-purple.png"
 
@@ -527,6 +545,7 @@ def send_password_reset_email(jwt_token, entity):
     host = request.headers.get('Host')
     # host = "quickbev.us.com"
 
+    # this url goes to PasswordResetEmailForm.js
     button_url = f"https://{host}/reset-password/{jwt_token}"
 
     logo = "https://storage.googleapis.com/my-new-quickbev-bucket/landscape-logo-purple.png"
@@ -565,14 +584,14 @@ def send_password_reset_email(jwt_token, entity):
 #     return Response(status=200)
 
 
-@app.route('/guest-device-token', methods=['POST'])
+@app.route('/guest/device_token', methods=['POST'])
 def guest_device_token():
     headers = {}
-    device_token = request.headers.get("DeviceToken")
+    device_token = request.headers.get("device-token")
     Customer_Service().add_guest_device_token(device_token)
     jwt_token = jwt.encode(
         {"sub": device_token}, key=secret, algorithm="HS256")
-    headers["authorization-token"] = jwt_token
+    headers["jwt-token"] = jwt_token
     return Response(status=200, headers=headers)
 
 
@@ -597,7 +616,7 @@ def customer():
             request.data)
         generated_new_customer = Customer_Service().register_new_customer(
             requested_new_customer)
-        device_token = request.headers.get("DeviceToken")
+        device_token = request.headers.get("device-token")
 
         # generate a secure JSON token using the user's unverified email address. then i embed this token in the url for the verify account link sent in the email. i then parse this string when the user navigates to the page, securely verifying their email by using the
         if generated_new_customer:
@@ -606,7 +625,7 @@ def customer():
             jwt_token = jwt.encode(
                 {"sub": generated_new_customer.id}, key=secret, algorithm="HS256")
             # send the hashed user ID as a crypted key embedded in the activation link for security
-            headers["authorization-token"] = jwt_token
+            headers["jwt-token"] = jwt_token
             send_confirmation_email(
                 jwt_token=jwt_token, email_type="customer_confirmation", user=generated_new_customer)
             if generated_new_customer.has_registered == True:
@@ -647,7 +666,7 @@ def customer():
 
 @app.route("/customer/device_token", methods=["GET"])
 def update_device_token():
-    device_token = request.headers.get("device_token")
+    device_token = request.headers.get("device-token")
     customer_id = request.headers.get("customer_id")
     if device_token and customer_id:
         Customer_Service().update_device_token(device_token, customer_id)
@@ -655,8 +674,8 @@ def update_device_token():
 
 
 # strongly typed url argument ;)
-@app.route("/verify-email/<string:session_token>")
-def verify_email_a(session_token):
+@app.route("/customer/email/verify/<string:session_token>")
+def verify_email(session_token):
     status = jwt.decode(session_token, secret, algorithms=["HS256"])
     if not status:
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
@@ -665,7 +684,7 @@ def verify_email_a(session_token):
     if Customer_Service().update_email_verification(customer_id):
         Customer_Service().get_device_token(customer_id)
         device_token = Customer_Service().get_device_token(customer_id)
-        send_apn(device_token, "email", 'sandbox')
+        send_apn(device_token, "email", 'production')
         response = {"msg": "successfully registered"}
         return Response(response=json.dumps(response), status=200)
     else:
@@ -673,8 +692,8 @@ def verify_email_a(session_token):
         return Response(response=json.dumps(response), status=400)
 
 
-@app.route('/reset-password/<string:entity_id>', methods=['POST', 'GET', 'OPTIONS'])
-def reset_password_a(entity_id):
+@app.route('/password/reset/<string:entity_id>', methods=['POST', 'GET', 'OPTIONS'])
+def reset_password(entity_id):
     if request.method == 'OPTIONS':
         headers = {}
         headers["Access-Control-Allow-Origin"] = request.origin
@@ -777,14 +796,14 @@ def business_a(session_token):
         merchant = Merchant_Service().get_merchant(new_business.merchant_id)
         if new_business:
             ETag_Service().update_etag("business")
-            headers["jwt_token"] = jwt.encode(
+            headers["jwt-token"] = jwt.encode(
                 {"sub": new_business.merchant_id}, key=secret, algorithm="HS256")
             send_confirmation_email(
-                jwt_token=headers["jwt_token"], email_type="business_confirmation", user=merchant, business=new_business)
+                jwt_token=headers["jwt-token"], email_type="business_confirmation", user=merchant, business=new_business)
             stripe_account_status = Merchant_Service(
             ).authenticate_merchant_stripe(merchant.stripe_id)
             send_confirmation_email(
-                jwt_token=headers["jwt_token"], email_type="add_business_notification", user=merchant, business=new_business, stripe_account_status=stripe_account_status)
+                jwt_token=headers["jwt-token"], email_type="add_business_notification", user=merchant, business=new_business, stripe_account_status=stripe_account_status)
             response['confirmed_new_business'] = new_business.dto_serialize()
             if 'file' not in request.files:
                 response["msg"] = "No file part in request"
@@ -818,8 +837,8 @@ def tabs():
             return Response(status=500, response=json.dumps(response))
 
 
-@app.route('/create-ephemeral-keys/<string:session_token>', methods=['POST'])
-def ephemeral_keys_(session_token):
+@app.route('/customer/stripe/ephemeral_key/<string:session_token>', methods=['POST'])
+def ephemeral_keys(session_token):
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
     request_data = json.loads(request.data)
@@ -831,8 +850,8 @@ def ephemeral_keys_(session_token):
         return Response(status=200, response=json.dumps(key))
 
 
-@app.route('/create-payment-intent/<string:session_token>', methods=['POST'])
-def create_payment_intent_a(session_token):
+@app.route('/customer/stripe/payment_intent/<string:session_token>', methods=['POST'])
+def create_payment_intent(session_token):
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
     response = {}
@@ -843,7 +862,7 @@ def create_payment_intent_a(session_token):
     return Response(status=200, response=json.dumps(response))
 
 
-@app.route('/business_phone_number', methods=['GET'])
+@app.route('/business/phone_number', methods=['GET'])
 def business_phone_number():
     business_phone_number = request.args.get('business_phone_number')
     business_phone_number_status = Business_Service(
@@ -855,7 +874,7 @@ def business_phone_number():
         return Response(status=200, response=json.dumps(business_phone_number_status.dto_serialize()))
 
 
-@app.route('/create-account', methods=['POST', 'OPTIONS'])
+@app.route('/merchant/sign_up', methods=['POST', 'OPTIONS'])
 def create_account():
     response = {"msg": ""}
     headers = {}
@@ -879,14 +898,17 @@ def create_account():
         new_business = Business_Service().add_business(requested_business)
         if new_merchant and new_business:
             ETag_Service().update_etag("business")
-            headers["jwt_token"] = jwt.encode(
+
+            # this is a quick fix because for some reason front end cannot read dict key jwt-token
+            headers["token"] = jwt.encode(
                 {"sub": new_merchant.id}, key=secret, algorithm="HS256")
+
             send_confirmation_email(
-                jwt_token=headers["jwt_token"], email_type="merchant_confirmation", user=new_merchant, business=new_business)
+                jwt_token=headers["token"], email_type="merchant_confirmation", user=new_merchant, business=new_business)
             stripe_account_status = Merchant_Service(
             ).authenticate_merchant_stripe(new_merchant.stripe_id)
             send_confirmation_email(
-                jwt_token=headers["jwt_token"], email_type="merchant_sign_up_notification", user=new_merchant, business=new_business, stripe_account_status=stripe_account_status)
+                jwt_token=headers["token"], email_type="merchant_sign_up_notification", user=new_merchant, business=new_business, stripe_account_status=stripe_account_status)
             response['confirmed_new_business'] = new_business.dto_serialize()
             response['confirmed_new_merchant'] = new_merchant.dto_serialize()
             if 'file' not in request.files:
@@ -908,7 +930,7 @@ def create_account():
         return Response(status=500, response=json.dumps(response), headers=headers)
 
 
-@app.route('/merchant_employee_stripe_account', methods=['GET', 'OPTIONS'])
+@app.route('/merchant_employee/stripe', methods=['GET', 'OPTIONS'])
 def merchant_employee_stripe_account():
     headers = {}
     if request.method == 'OPTIONS':
@@ -920,11 +942,12 @@ def merchant_employee_stripe_account():
         return Response(status=200, headers=headers)
     merchant_employee_id = request.args.get('merchant_employee_id')
     stripe_id = Merchant_Employee_Service().get_stripe_account(merchant_employee_id)
+    print('stripe_id', stripe_id)
     account_links = stripe.AccountLink.create(
         account=stripe_id,
-        # refresh_url= f'http://${ip_address}:3000/merchant-employee-payout-setup-callback',
-        # return_url= f'http://{ip_address}:3000/merchant-employee-payout-setup-complete',
-        refresh_url='https://quickbev.us/merchant-employee-payout-setup-callback',
+        # refresh_url=f'http://{ip_address}:3000/merchant-employee-payout-setup-callback/{merchant_employee_id}',
+        # return_url=f'http://{ip_address}:3000/merchant-employee-payout-setup-complete',
+        refresh_url='https://quickbev.us/merchant-employee-payout-setup-callback/{merchant_employee_id}',
         return_url='https://quickbev.us/merchant-employee-payout-setup-complete',
         type='account_onboarding',
     )
@@ -937,19 +960,21 @@ def merchant_employee_stripe_account():
     return response
 
 
-@app.route('/merchant_employee/stripe_id', methods=['GET'])
-def merchant_employee_stripe_id_authenticate():
+@app.route('/merchant_employee/stripe/validate', methods=['GET'])
+def validate_merchant_employee_stripe():
     merchant_employee_stripe_id = request.headers.get("stripe-id")
-    status = Merchant_Employee_Service().authenticate_merchant_employee_stripe(
-        merchant_employee_stripe_id)
-    if status:
-        return Response(status=200)
+    print('merchant_employee_stripe_id', merchant_employee_stripe_id)
+    if merchant_employee_stripe_id != '' and merchant_employee_stripe_id != "null":
+        status = Merchant_Employee_Service().authenticate_merchant_employee_stripe(
+            merchant_employee_stripe_id)
+        if status:
+            return Response(status=200)
     else:
         return Response(status=400)
 
 
 @app.route('/merchant_employee/<string:session_token>', methods=['POST', 'OPTIONS', 'GET'])
-def merchant_employee_a(session_token):
+def merchant_employee(session_token):
     headers = {}
     response = {}
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
@@ -1006,12 +1031,12 @@ def validate_merchant_employee():
         elif merchant_employee_username_status == 2:
             jwt_token = jwt.encode(
                 {"sub": merchant_employee_username}, key=secret, algorithm="HS256")
-            headers["jwt_token"] = jwt_token
+            headers["jwt-token"] = jwt_token
             return Response(status=204, headers=headers)
 
 
 @app.route('/bouncer/<string:session_token>', methods=['POST', 'OPTIONS', 'GET'])
-def bouncer_a(session_token):
+def bouncer(session_token):
     headers = {}
     response = {}
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
@@ -1049,7 +1074,7 @@ def bouncer_a(session_token):
         return Response(status=200, response=json.dumps(response))
 
 
-@app.route('/bouncer', methods=['POST', 'GET', 'OPTIONS'])
+@app.route('/bouncer/validate', methods=['POST', 'GET', 'OPTIONS'])
 def validate_bouncer():
     headers = {}
     if request.method == 'OPTIONS':
@@ -1075,12 +1100,12 @@ def validate_bouncer():
         elif bouncer_username_status == 2:
             jwt_token = jwt.encode(
                 {"sub": bouncer_username}, key=secret, algorithm="HS256")
-            headers["jwt_token"] = jwt_token
+            headers["jwt-token"] = jwt_token
             return Response(status=204, headers=headers)
 
 
 @app.route('/bouncer/staging/<string:session_token>', methods=['POST', 'PUT', 'GET', 'OPTIONS'])
-def add_staged_bouncer_a(session_token):
+def add_staged_bouncer(session_token):
     headers = {}
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
@@ -1112,7 +1137,7 @@ def add_staged_bouncer_a(session_token):
 
 
 @app.route('/merchant_employee/staging/<string:session_token>', methods=['POST', 'PUT', 'GET', 'OPTIONS'])
-def add_staged_merchant_employee_a(session_token):
+def add_staged_merchant_employee(session_token):
     headers = {}
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
@@ -1143,105 +1168,88 @@ def add_staged_merchant_employee_a(session_token):
         return Response(status=200)
 
 
-@app.route('/merchant_employee/validate_pin_number', methods=['POST'])
-def validate_pin_number():
+@app.route('/merchant_employee/pin/validate/<string:session_token>', methods=['POST'])
+def validate_pin(session_token):
+    if not jwt.decode(session_token, secret, algorithms=["HS256"]):
+        return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
     headers = {}
     if request.method == 'POST':
-        merchant_employee_pin_number = request.args.get('pin_number')
+        merchant_employee_pin = request.args.get('pin')
         business_id = request.args.get('business_id')
-        merchant_employee_pin_number_status = Merchant_Employee_Service(
-        ).validate_pin_number(business_id, merchant_employee_pin_number)
-        if merchant_employee_pin_number_status == True:
+        merchant_employee_pin_status = Merchant_Employee_Service(
+        ).validate_pin(business_id, merchant_employee_pin)
+        if merchant_employee_pin_status == True:
             headers["jwt-token"] = jwt.encode(
                 {"sub": business_id}, key=secret, algorithm="HS256")
-            print('headers["jwt-token"]', headers["jwt-token"])
-            print("headers", headers)
             return Response(status=200, headers=headers)
         else:
             return Response(status=400)
 
 
-@app.route('/authenticate_business/<string:session_token>', methods=['POST'])
-def authenticate_business_a(session_token):
+@app.route('/business/authenticate/<string:session_token>', methods=['POST'])
+def authenticate_business(session_token):
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
+    headers = {}
     business_id = json.loads(request.data)['business_id']
     business_status = Business_Service().authenticate_business(business_id)
     if business_status == True:
-        return Response(status=200)
-    else:
-        return Response(status=400)
-
-
-@app.route('/merchant_employee_login', methods=['POST', 'OPTIONS'])
-def merchant_employee_login():
-    headers = {}
-    if request.method == 'OPTIONS':
-        headers["Access-Control-Allow-Origin"] = request.origin
-        headers["Access-Control-Allow-Headers"] = request.headers.get(
-            'Access-Control-Request-Headers')
-
-        headers["Access-Control-Expose-Headers"] = "*"
-        return Response(status=200, headers=headers)
-    elif request.method == 'POST':
-        headers["Access-Control-Allow-Headers"] = request.headers.get(
-            'Access-Control-Request-Headers')
-        headers["Access-Control-Allow-Origin"] = request.origin
-        headers["Access-Control-Expose-Headers"] = "*"
-        # check if the post request has the file part
-    request_data = json.loads(request.data)
-
-    merchant_employee_service = Merchant_Employee_Service()
-    new_merchant_employee = merchant_employee_service.authenticate_merchant_employee(
-        email=request_data['email'], password=request_data['password'])
-    if new_merchant_employee != False:
         headers["jwt-token"] = jwt.encode(
-            {"sub": new_merchant_employee.id}, key=secret, algorithm="HS256")
-
-        return Response(status=200, response=json.dumps(new_merchant_employee.dto_serialize()), headers=headers)
+            {"sub": business_id}, key=secret, algorithm="HS256")
+        return Response(status=200, headers=headers)
     else:
         return Response(status=400)
 
 
-@app.route('/pin_number', methods=['POST'])
-def authenticate_merchant_pin_number():
+@app.route('/pin', methods=['POST'])
+def authenticate_pin():
     headers = {}
     data = json.loads(request.data)
-    pin_number = data['pin_number']
-    entity_id = data['email']
+    pin = data['pin']
+    headers["Access-Control-Allow-Origin"] = request.origin
+    headers["Access-Control-Allow-Headers"] = request.headers.get(
+        'Access-Control-Request-Headers')
+
+    headers["Access-Control-Expose-Headers"] = "*"
+    # entity_id = data['email']
     business_id = data['business_id']
     login_status = data['logged_in']
-    new_merchant_employee = Merchant_Employee_Service().authenticate_pin_number(
-        entity_id, pin_number, login_status)
+    new_merchant_employee = Merchant_Employee_Service().authenticate_pin(business_id,
+                                                                         pin, login_status)
     if new_merchant_employee != False:
         # have to reset the pin number otherwise it will be the hashed version
-        new_merchant_employee.pin_number = pin_number
+        new_merchant_employee.pin = pin
         headers["jwt-token"] = jwt.encode(
             {"sub": new_merchant_employee.id}, key=secret, algorithm="HS256")
+        print('headers["jwt-token"]', headers["jwt-token"])
+        print('new_merchant_employee.dto_serialize()',
+              new_merchant_employee.dto_serialize())
+
         return Response(status=200, response=json.dumps(new_merchant_employee.dto_serialize()), headers=headers)
     else:
         # the pin number might be for the merchant
-        merchant_pin_status = Business_Service(
-        ).authenticate_merchant_pin_number(business_id, pin_number)
-        if merchant_pin_status:
+        merchant = Business_Service(
+        ).authenticate_merchant_pin(business_id, pin)
+        if merchant:
             headers["jwt-token"] = jwt.encode(
-            {"sub": entity_id}, key=secret, algorithm="HS256")
-            return Response(status=204, headers=headers)
+                {"sub": business_id}, key=secret, algorithm="HS256")
+            print('headers["jwt-token"]', headers["jwt-token"])
+            return Response(status=201, response=json.dumps(merchant.dto_serialize()), headers=headers)
         else:
             return Response(status=400)
 
 
-@app.route('/merchant_employee/reset_pin_number', methods=['POST'])
-def reset_pin_number():
+@app.route('/merchant_employee/reset_pin', methods=['POST'])
+def reset_pin():
     headers = {}
     data = json.loads(request.data)
-    pin_number = data['pin_number']
+    pin = data['pin']
     merchant_employee_id = data['email']
 
     new_merchant_employee = Merchant_Employee_Service(
-    ).reset_pin_number(merchant_employee_id, pin_number)
+    ).reset_pin(merchant_employee_id, pin)
     if new_merchant_employee != False:
-        new_merchant_employee.pin_number = pin_number
+        new_merchant_employee.pin = pin
         return Response(status=200, response=json.dumps(new_merchant_employee.dto_serialize()))
     else:
         return Response(status=400)
@@ -1253,32 +1261,31 @@ def authenticate_merchant():
     response = {}
     headers["Access-Control-Allow-Origin"] = request.origin
     headers["Access-Control-Allow-Headers"] = request.headers.get(
-            'Access-Control-Request-Headers')
+        'Access-Control-Request-Headers')
     headers["Access-Control-Expose-Headers"] = "*"
     if request.method == 'OPTIONS':
         return Response(status=200, headers=headers)
     if request.method == "GET":
         username = request.headers.get('email')
-        print('username',username)
         password = request.headers.get('password')
-        print('password',password)
         merchant = ''
         # if the merchant exists it will return False, if it doesn't it will return True
         merchant = Merchant_Service().authenticate_merchant(username, password)
         if merchant:
             jwt_token = jwt.encode(
                 {"sub": merchant.id}, key=secret, algorithm="HS256")
-            headers["jwt_token"] = jwt_token
+            headers["jwt-token"] = jwt_token
             return Response(status=200, response=json.dumps(merchant.dto_serialize()), headers=headers)
         else:
             return Response(status=204, response=json.dumps(response), headers=headers)
+
 
 @app.route('/merchant/validate', methods=['GET', 'OPTIONS'])
 def validate_merchant():
     headers = {}
     headers["Access-Control-Allow-Origin"] = request.origin
     headers["Access-Control-Allow-Headers"] = request.headers.get(
-            'Access-Control-Request-Headers')
+        'Access-Control-Request-Headers')
     headers["Access-Control-Expose-Headers"] = "*"
     if request.method == 'OPTIONS':
         return Response(status=200, headers=headers)
@@ -1289,22 +1296,23 @@ def validate_merchant():
         if merchant:
             jwt_token = jwt.encode(
                 {"sub": merchant.id}, key=secret, algorithm="HS256")
-            headers["jwt_token"] = jwt_token
+            headers["jwt-token"] = jwt_token
             return Response(status=204, headers=headers)
         # the username is available
         else:
             return Response(status=200, headers=headers)
 
-@app.route('/merchant/pin_number/<string:session_token>', methods=['POST'])
-def authenticate_pin_number_a(session_token):
+
+@app.route('/merchant/pin/<string:session_token>', methods=['POST'])
+def authenticate_pin_a(session_token):
     headers = {}
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
     data = json.loads(request.data)
-    pin_number = data['pin_number']
+    pin = data['pin']
     business_id = data['business_id']
-    Business_Service().set_merchant_pin_number(
-        business_id, pin_number)
+    Business_Service().set_merchant_pin(
+        business_id, pin)
     return Response(status=200)
 
 
@@ -1320,7 +1328,7 @@ def business_capacity_a(session_token):
     return Response(status=200)
 
 
-@app.route('/create-stripe-account', methods=['GET', 'OPTIONS'])
+@app.route('/merchant/stripe', methods=['GET', 'OPTIONS'])
 def create_stripe_account():
     headers = {}
     response = {}
@@ -1337,23 +1345,23 @@ def create_stripe_account():
         account_links = stripe.AccountLink.create(
             account=callback_stripe_id,
             refresh_url='https://quickbev.us/payout-setup-callback',
-            return_url='https://quickbev.us/home',
-            # refresh_url= f'http://{ip_address}:3000/payout-setup-callback',
-            # return_url= f'http://{ip_address}:3000/home',
+            return_url='https://quickbev.us/signin',
+            # refresh_url=f'http://{ip_address}:3000/payout-setup-callback',
+            # return_url=f'http://{ip_address}:3000/signin',
             type='account_onboarding',
         )
-        headers["stripe_id"] = callback_stripe_id
+        headers["stripe"] = callback_stripe_id
     else:
         new_account = Merchant_Service().create_stripe_account()
         account_links = stripe.AccountLink.create(
             account=new_account.id,
             refresh_url='https://quickbev.us/payout-setup-callback',
-            return_url='https://quickbev.us/home',
-            # refresh_url= f'http://{ip_address}:3000/payout-setup-callback',
-            # return_url= f'http://{ip_address}:3000/home',
+            return_url='https://quickbev.us/signin',
+            # refresh_url=f'http://{ip_address}:3000/payout-setup-callback',
+            # return_url=f'http://{ip_address}:3000/signin',
             type='account_onboarding',
         )
-        headers["stripe_id"] = new_account.id
+        headers["stripe"] = new_account.id
 
     headers["Access-Control-Allow-Origin"] = request.origin
     headers["Access-Control-Expose-Headers"] = "*"
@@ -1362,7 +1370,7 @@ def create_stripe_account():
     return response
 
 
-@app.route('/validate-merchant-stripe-account', methods=['GET', 'OPTIONS'])
+@app.route('/merchant/stripe/validate', methods=['GET', 'OPTIONS'])
 def validate_merchant_stripe_account():
     headers = {}
     response = {}

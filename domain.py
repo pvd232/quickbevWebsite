@@ -3,6 +3,28 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import uuid
 
 
+class Customer_Order_Status(object):
+    def __init__(self, order_object):
+        self.id = order_object.id
+        if order_object.completed == True:
+            self.completed = "yes"
+        elif order_object.refunded == True:
+            self.refunded = "yes"
+        if order_object.active == True:
+            self.active = "yes"
+
+    def dto_serialize(self):
+        attribute_names = list(self.__dict__.keys())
+        attributes = list(self.__dict__.values())
+        serialized_attributes = {}
+        for i in range(len(attributes)):
+            if attribute_names[i] == 'id':
+                serialized_attributes[attribute_names[i]] = str(attributes[i])
+            else:
+                serialized_attributes[attribute_names[i]] = attributes[i]
+        return serialized_attributes
+
+
 class Drink_Domain(object):
     def __init__(self, drink_object=None, drink_json=None, init=False):
         self.quantity = 1
@@ -86,6 +108,7 @@ class Order_Domain(object):
         self.business_id = ''
         self.business_address = ''
         self.order_drink = []
+        self.active = True
         self.completed = False
         self.refunded = False
         self.payment_intent_id = ''
@@ -121,8 +144,12 @@ class Order_Domain(object):
                 order_id=order_object.Order.id, order_drink_object=order_object.Order.order_drink, drinks=drinks)
             self.completed = order_object.Order.completed
             self.refunded = order_object.Order.refunded
+            self.active = order_object.Order.active
             self.payment_intent_id = order_object.Order.payment_intent_id
         elif order_json:
+            print('',)
+            print('order_json', order_json)
+            print('',)
             # an order received as order_json will be an order sent from an iOS device, thus service fee is not included as a value because it is calculated in the backend
             self.id = order_json["id"]
             if "customer" in order_json.keys():
@@ -138,6 +165,7 @@ class Order_Domain(object):
                 order_id=self.id, order_drink_json=order_json['order_drink'])
             self.completed = order_json["completed"]
             self.refunded = order_json["refunded"]
+            self.active = order_json["active"]
             self.payment_intent_id = order_json["payment_intent_id"]
 
     def dto_serialize(self):
@@ -297,7 +325,7 @@ class Bouncer_Domain(object):
         self.logged_in = False
         self.status = ''
         if bouncer_object:
-            print('bouncer_object',bouncer_object.serialize)
+            print('bouncer_object', bouncer_object.serialize)
             self.id = bouncer_object.id
             self.merchant_id = bouncer_object.merchant_id
             self.business_id = bouncer_object.business_id
@@ -307,9 +335,9 @@ class Bouncer_Domain(object):
                 self.status = bouncer_object.status
             if isStagedBouncer == False:
                 self.logged_in = bouncer_object.logged_in
-                
+
         elif bouncer_json:
-            print('bouncer_json',bouncer_json)
+            print('bouncer_json', bouncer_json)
             self.id = bouncer_json["id"]
             self.first_name = bouncer_json["first_name"]
             self.last_name = bouncer_json["last_name"]
@@ -335,11 +363,11 @@ class Bouncer_Domain(object):
 class Merchant_Employee_Domain(object):
     def __init__(self, merchant_employee_object=None, merchant_employee_json=None):
         self.id = ''
-        self.pin_number = ''
+        self.pin = ''
         self.first_name = ''
         self.last_name = ''
         self.phone_number = ''
-        self.pin_number = ''
+        self.pin = ''
         self.business_id = ''
         self.merchant_id = ''
         self.stripe_id = ''
@@ -348,7 +376,7 @@ class Merchant_Employee_Domain(object):
             self.id = merchant_employee_object.id
             self.merchant_id = merchant_employee_object.merchant_id
             self.business_id = merchant_employee_object.business_id
-            self.pin_number = merchant_employee_object.pin_number
+            self.pin = merchant_employee_object.pin
             self.first_name = merchant_employee_object.first_name
             self.last_name = merchant_employee_object.last_name
             self.phone_number = merchant_employee_object.phone_number
@@ -359,7 +387,7 @@ class Merchant_Employee_Domain(object):
 
         elif merchant_employee_json:
             self.id = merchant_employee_json["id"]
-            self.pin_number = merchant_employee_json["pin_number"]
+            self.pin = merchant_employee_json["pin"]
             self.first_name = merchant_employee_json["first_name"]
             self.last_name = merchant_employee_json["last_name"]
             self.business_id = merchant_employee_json['business_id']
@@ -385,6 +413,7 @@ class Merchant_Employee_Domain(object):
                 serialized_attributes[attribute_names[i]] = attributes[i]
         return serialized_attributes
 
+
 class Business_Schedule_Day_Domain(object):
     def __init__(self, business_schedule_day_object=None, business_schedule_day_json=None):
         self.day = ''
@@ -406,9 +435,9 @@ class Business_Schedule_Day_Domain(object):
             self.is_closed = business_schedule_day_json["isClosed"]
             if self.is_closed == False:
                 self.opening_time = datetime.strptime(
-                business_schedule_day_json["openingTime"], '%H:%M').time()
+                    business_schedule_day_json["openingTime"], '%H:%M').time()
                 self.closing_time = datetime.strptime(
-                business_schedule_day_json["closingTime"], '%H:%M').time()
+                    business_schedule_day_json["closingTime"], '%H:%M').time()
             else:
                 self.opening_time = ""
                 self.closing_time = ""
@@ -420,13 +449,15 @@ class Business_Schedule_Day_Domain(object):
         for i in range(len(attributes)):
             if attribute_names[i] == 'opening_time' or attribute_names[i] == 'closing_time' or attribute_names[i] == 'business_id':
                 if self.is_closed == False or attribute_names[i] == 'business_id':
-                    serialized_attributes[attribute_names[i]] = str(attributes[i])
+                    serialized_attributes[attribute_names[i]] = str(
+                        attributes[i])
                 else:
                     serialized_attributes[attribute_names[i]] = ""
             else:
                 serialized_attributes[attribute_names[i]] = attributes[i]
         return serialized_attributes
-    
+
+
 class Business_Domain(object):
     def __init__(self, business_object=None, business_json=None):
         self.sales_tax_rate = 0.0625
@@ -468,11 +499,12 @@ class Business_Domain(object):
                          for x in business_object.drink]
             self.at_capacity = business_object.at_capacity
             for day_object in business_object.schedule:
-                new_day_domain = Business_Schedule_Day_Domain(business_schedule_day_object=day_object)
+                new_day_domain = Business_Schedule_Day_Domain(
+                    business_schedule_day_object=day_object)
                 self.schedule.append(new_day_domain)
-            
+
         if business_json:
-            print('business_json',business_json)
+            print('business_json', business_json)
             self.id = uuid.uuid4()
             self.phone_number = business_json["phone_number"]
             self.merchant_id = business_json["merchant_id"]
@@ -481,11 +513,12 @@ class Business_Domain(object):
             self.classification = business_json["classification"]
             self.address = business_json["address"]
             self.at_capacity = business_json['at_capacity']
-            print('business_json["schedule"]',business_json["schedule"])
+            print('business_json["schedule"]', business_json["schedule"])
             for day_json in business_json["schedule"]:
-                print('day_json',day_json)
+                print('day_json', day_json)
                 day_json['business_id'] = self.id
-                new_day_domain = Business_Schedule_Day_Domain(business_schedule_day_json=day_json)
+                new_day_domain = Business_Schedule_Day_Domain(
+                    business_schedule_day_json=day_json)
                 self.schedule.append(new_day_domain)
             try:
                 address_list = [x.strip()
@@ -520,7 +553,8 @@ class Business_Domain(object):
                 serialized_attributes['menu'] = [
                     x.dto_serialize() for x in attributes[i]]
             elif attribute_names[i] == 'schedule':
-                serialized_attributes['schedule'] = [x.dto_serialize() for x in self.schedule]
+                serialized_attributes['schedule'] = [
+                    x.dto_serialize() for x in self.schedule]
             else:
                 serialized_attributes[attribute_names[i]] = attributes[i]
         return serialized_attributes
@@ -625,7 +659,7 @@ class Quick_Pass_Domain(object):
             self.activation_time = quick_pass_object.activation_time
             self.expiration_time = quick_pass_object.expiration_time
         elif quick_pass_json:
-            print('quick_pass_json',quick_pass_json)
+            print('quick_pass_json', quick_pass_json)
             self.id = quick_pass_json["id"]
             self.customer_id = quick_pass_json["customer_id"]
             self.activation_time = datetime.fromtimestamp(
@@ -643,21 +677,23 @@ class Quick_Pass_Domain(object):
             self.stripe_total = quick_pass_json["stripe_total"]
             self.sales_tax_percentage = quick_pass_json["sales_tax_percentage"]
             self.sales_tax = quick_pass_json["sales_tax"]
-            self.expiration_time = datetime.fromtimestamp(quick_pass_json["expiration_time"])
-        
+            self.expiration_time = datetime.fromtimestamp(
+                quick_pass_json["expiration_time"])
+
             # optional values
             if quick_pass_json.__contains__('time_checked_in'):
-                self.time_checked_in = datetime.fromtimestamp(quick_pass_json["time_checked_in"])
+                self.time_checked_in = datetime.fromtimestamp(
+                    quick_pass_json["time_checked_in"])
         elif js_object:
-            print('js_object',js_object)
+            print('js_object', js_object)
             self.id = js_object["id"]
             self.customer_id = js_object["customer_id"]
             self.activation_time = datetime.fromtimestamp(
                 js_object['activation_time'])
             self.business_id = js_object["business_id"]
-            self.time_checked_in = datetime.fromtimestamp(js_object["time_checked_in"])
+            self.time_checked_in = datetime.fromtimestamp(
+                js_object["time_checked_in"])
 
-            
         # this is dummy data if there at no quick passes created yet
         elif quick_pass_json == None and quick_pass_object == None and js_object == None:
             self.expiration_time = datetime.now()
@@ -673,7 +709,7 @@ class Quick_Pass_Domain(object):
             if attribute_names[i] == "id" or attribute_names[i] == "business_id":
                 serialized_attributes[attribute_names[i]] = str(attributes[i])
             elif attribute_names[i] == 'date_time' or attribute_names[i] == 'activation_time' or attribute_names[i] == 'time_checked_in' or attribute_names[i] == 'expiration_time':
-                print('attributes[i]',attributes[i])
+                print('attributes[i]', attributes[i])
                 if attributes[i] != '':
                     my_date = attributes[i].timestamp()
                     serialized_attributes[attribute_names[i]] = my_date

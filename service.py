@@ -77,6 +77,13 @@ class Drink_Service(object):
 
 
 class Order_Service(object):
+    def get_customer_order_status(self, customer_id):
+        with session_scope() as session:
+            customer_order_status = [Customer_Order_Status(order_object=x).dto_serialize(
+            ) for x in Order_Repository().get_customer_order_status(session, customer_id)]
+            print('customer_order_status', customer_order_status)
+            return customer_order_status
+
     def get_order(self, order_id):
         with session_scope() as session:
             orders, drinks = Order_Repository().get_order(session, order_id)
@@ -371,27 +378,27 @@ class Merchant_Employee_Service(object):
         with session_scope() as session:
             return Merchant_Employee_Repository().get_stripe_account(session, merchant_employee_id)
 
-    def authenticate_merchant_employee(self, email, password):
-        with session_scope() as session:
-            merchant_employee_object = Merchant_Employee_Repository().authenticate_merchant_employee(
-                session, email, password)
-            if merchant_employee_object:
-                merchant_employee_domain = Merchant_Employee_Domain(
-                    merchant_employee_object=merchant_employee_object)
-                return merchant_employee_domain
-            else:
-                return False
+    # def authenticate_merchant_employee(self, email, password):
+    #     with session_scope() as session:
+    #         merchant_employee_object = Merchant_Employee_Repository().authenticate_merchant_employee(
+    #             session, email, password)
+    #         if merchant_employee_object:
+    #             merchant_employee_domain = Merchant_Employee_Domain(
+    #                 merchant_employee_object=merchant_employee_object)
+    #             return merchant_employee_domain
+    #         else:
+    #             return False
 
-    def validate_pin_number(self, business_id, pin_number):
+    def validate_pin(self, business_id, pin):
         with session_scope() as session:
-            pin_status = Merchant_Employee_Repository().validate_pin_number(session,
-                                                                            business_id, pin_number)
+            pin_status = Merchant_Employee_Repository().validate_pin(session,
+                                                                     business_id, pin)
             return pin_status
 
-    def authenticate_pin_number(self, merchant_employee_id, pin_number, login_status):
+    def authenticate_pin(self, business_id, pin, login_status):
         with session_scope() as session:
-            merchant_employee_object = Merchant_Employee_Repository().authenticate_pin_number(
-                session, merchant_employee_id, pin_number, login_status)
+            merchant_employee_object = Merchant_Employee_Repository().authenticate_pin(
+                session, business_id, pin, login_status)
             if merchant_employee_object:
                 merchant_employee_domain = Merchant_Employee_Domain(
                     merchant_employee_object=merchant_employee_object)
@@ -399,10 +406,10 @@ class Merchant_Employee_Service(object):
             else:
                 return False
 
-    def reset_pin_number(self, merchant_employee_id, pin_number):
+    def reset_pin(self, merchant_employee_id, pin):
         with session_scope() as session:
-            merchant_employee_object = Merchant_Employee_Repository().reset_pin_number(
-                session, merchant_employee_id, pin_number)
+            merchant_employee_object = Merchant_Employee_Repository().reset_pin(
+                session, merchant_employee_id, pin)
             if merchant_employee_object:
                 merchant_employee_domain = Merchant_Employee_Domain(
                     merchant_employee_object=merchant_employee_object)
@@ -509,13 +516,19 @@ class Business_Service(object):
                 business_object=business_with_associated_phone_number)
             return business_domain
 
-    def set_merchant_pin_number(self, business_id, pin_number):
+    def set_merchant_pin(self, business_id, pin):
         with session_scope() as session:
-            return Business_Repository().set_merchant_pin_number(session, business_id, pin_number)
+            return Business_Repository().set_merchant_pin(session, business_id, pin)
 
-    def authenticate_merchant_pin_number(self, business_id, pin_number):
+    def authenticate_merchant_pin(self, business_id, pin):
         with session_scope() as session:
-            return Business_Repository().authenticate_merchant_pin_number(session, business_id, pin_number)
+            merchant = Business_Repository().authenticate_merchant_pin(session, business_id, pin)
+            print('merchant', merchant)
+            if merchant:
+                merchant_domain = Merchant_Domain(merchant_object=merchant)
+                print('merchant_domain', merchant_domain)
+                return merchant_domain
+            return merchant
 
     def update_business_capacity(self, business_id, capacity_status):
         with session_scope() as session:

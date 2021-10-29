@@ -16,17 +16,17 @@ const PayoutSetup = (props) => {
   const getRedirectInfo = async () => {
     if (!props.callback) {
       console.log("not callback");
-      return API.makeRequest("GET", `/create-stripe-account`);
+      return API.makeRequest("GET", `/merchant/stripe`);
     } else {
       return API.makeRequest(
         "GET",
-        `/create-stripe-account?stripe=${LocalStorageManager.shared.currentMerchant.stripeId}`
+        `/merchant/stripe?stripe=${LocalStorageManager.shared.currentMerchant.stripeId}`
       );
     }
   };
   const handleConnect = async () => {
     let responseContent = await getRedirectInfo();
-    const merchantStripeId = responseContent.headers.stripe_id;
+    const merchantStripeId = responseContent.headers.stripe;
     console.log("merchantStripeId", merchantStripeId);
 
     let url = responseContent.url;

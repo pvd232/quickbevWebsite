@@ -611,7 +611,7 @@ const BusinessFieldset = (props) => {
   ];
   console.log("schedule", schedule);
   return (
-    <Form autoComplete="off">
+    <Form autocomplete="off">
       <fieldset>
         <h2 className="fs-title">Your Business</h2>
         <Form.Label>Name</Form.Label>
@@ -797,7 +797,7 @@ const Signup = () => {
     // set in local storage if user has multiple businesses so we can display a tab to add more businesses late
     let responseBody = await API.makeRequest(
       "POST",
-      "/create-account",
+      "/merchant/sign_up",
       newForm,
       false,
       true
@@ -814,7 +814,7 @@ const Signup = () => {
       responseBody.confirmed_new_merchant
     );
     console.log("confirmed_new_business", confirmed_new_business);
-    console.log("responseBody.jwt_token", responseBody.jwt_token);
+    console.log("responseBody.token", responseBody.headers.token);
 
     LocalStorageManager.shared.setLocalStorage(
       "business",
@@ -826,7 +826,7 @@ const Signup = () => {
     );
     LocalStorageManager.shared.setLocalStorage(
       "session_token",
-      responseBody.headers.jwt_token
+      responseBody.headers.token
     );
     return true;
   };

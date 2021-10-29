@@ -49,7 +49,7 @@ const ResetPassword = () => {
       } else {
         API.makeRequest(
           "POST",
-          "/reset-password/" + sessionToken,
+          "/password/reset/" + sessionToken,
           formValue.password
         ).then((response) => {
           if (response) {

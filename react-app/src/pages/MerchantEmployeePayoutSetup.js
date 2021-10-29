@@ -8,15 +8,17 @@ import Container from "react-bootstrap/Container";
 
 import Col from "react-bootstrap/Col";
 const MerchantEmployeePayoutSetup = (props) => {
-  console.log("merchantEMployee");
-
   let { merchantEmployeeId } = useParams();
+  if (!merchantEmployeeId) {
+    merchantEmployeeId = props.merchantEmployeeId;
+  }
+  console.log("merchantEmployeeId", merchantEmployeeId);
   const [redirect, setRedirect] = useState(null);
   var redirectUrl = null;
   const getRedirectInfo = async () => {
     return API.makeRequest(
       "GET",
-      `/merchant_employee_stripe_account?merchant_employee_id=${merchantEmployeeId}`
+      `/merchant_employee/stripe?merchant_employee_id=${merchantEmployeeId}`
     );
   };
   const handleConnect = async () => {
@@ -41,13 +43,13 @@ const MerchantEmployeePayoutSetup = (props) => {
       <Row
         style={{
           justifyContent: "center",
-          height: "100vh",
+          height: "60vh",
           marginTop: "0",
           marginBottom: "0",
         }}
       >
         <Col
-          sm={4}
+          sm={12}
           id="payoutSetup"
           style={{
             borderRadius: "7px",
@@ -55,7 +57,7 @@ const MerchantEmployeePayoutSetup = (props) => {
             justifyContent: "center",
             display: "flex",
             backgroundColor: "white",
-            height: "100vh",
+            height: "60vh",
           }}
         >
           <div className="text-center box">

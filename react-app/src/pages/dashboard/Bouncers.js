@@ -60,7 +60,7 @@ const Bouncers = (props) => {
       lastName: "",
       businessId: "",
       merchantId: LocalStorageManager.shared.currentMerchant.id,
-      status: "pending"
+      status: "pending",
     }
   );
   const [mappedBouncers, setMappedBouncers] = useState(
@@ -146,53 +146,54 @@ const Bouncers = (props) => {
 
     newErrorMsgState["emailDisplay"] = "none";
     if (validate(form)) {
-      API.makeRequest("GET", `/bouncer?bouncer_id=${formValue.id}`).then(
-        (response) => {
-          console.log("response", response);
-          // the merchant bouncer username is not taken by either a real or staged merchant bouncer
-          if (response.status === 200) {
-            // create the merchant bouncer with a null parameter assigns pending to the status property of the staged merchant bouncer
-            const newBouncer = new Bouncer(formValue, true);
-            API.makeRequest(
-              "POST",
-              `/bouncer/staging/${LocalStorageManager.shared.sessionToken}`,
-              newBouncer
-            );
-            setMappedBouncers((prevMapppedBouncers) => {
-              // if the merchant had 0 bouncers then the mappedBouncers array will have 1 single dummy merchant bouncer. so we want to remove this once a real merchant emplyee is added
-              if (prevMapppedBouncers[0].id === "") {
-                const newMappedBouncers = [];
-                newMappedBouncers.unshift(newBouncer);
-                return newMappedBouncers;
-              } else {
-                prevMapppedBouncers.unshift(newBouncer);
-                return prevMapppedBouncers;
-              }
-            });
-            setCsvData(makeCSVData());
-            setModalOpen((prevModalOpen) => !prevModalOpen);
-            setErrorMsg(newErrorMsgState);
-            return true;
-            // the requested username is already assigned to a staged merchant bouncer
-          } else if (response.status === 204) {
-            // otherwise it will be false
-            newErrorMsgState["emailErrorMsg"] =
-              "* Email already associated with a pending account";
-            newErrorMsgState["emailDisplay"] = "inline-block";
-            setErrorMsg(newErrorMsgState);
-            return false;
-          }
-          // the requested username is already assigned to a real merchant bouncer
-          else if (response.status === 400) {
-            // otherwise it will be false
-            newErrorMsgState["emailErrorMsg"] =
-              "* Email already associated with a confirmed account";
-            newErrorMsgState["emailDisplay"] = "inline-block";
-            setErrorMsg(newErrorMsgState);
-            return false;
-          }
+      API.makeRequest(
+        "GET",
+        `/bouncer/validate?bouncer_id=${formValue.id}`
+      ).then((response) => {
+        console.log("response", response);
+        // the merchant bouncer username is not taken by either a real or staged merchant bouncer
+        if (response.status === 200) {
+          // create the merchant bouncer with a null parameter assigns pending to the status property of the staged merchant bouncer
+          const newBouncer = new Bouncer(formValue, true);
+          API.makeRequest(
+            "POST",
+            `/bouncer/staging/${LocalStorageManager.shared.sessionToken}`,
+            newBouncer
+          );
+          setMappedBouncers((prevMapppedBouncers) => {
+            // if the merchant had 0 bouncers then the mappedBouncers array will have 1 single dummy merchant bouncer. so we want to remove this once a real merchant emplyee is added
+            if (prevMapppedBouncers[0].id === "") {
+              const newMappedBouncers = [];
+              newMappedBouncers.unshift(newBouncer);
+              return newMappedBouncers;
+            } else {
+              prevMapppedBouncers.unshift(newBouncer);
+              return prevMapppedBouncers;
+            }
+          });
+          setCsvData(makeCSVData());
+          setModalOpen((prevModalOpen) => !prevModalOpen);
+          setErrorMsg(newErrorMsgState);
+          return true;
+          // the requested username is already assigned to a staged merchant bouncer
+        } else if (response.status === 204) {
+          // otherwise it will be false
+          newErrorMsgState["emailErrorMsg"] =
+            "* Email already associated with a pending account";
+          newErrorMsgState["emailDisplay"] = "inline-block";
+          setErrorMsg(newErrorMsgState);
+          return false;
         }
-      );
+        // the requested username is already assigned to a real merchant bouncer
+        else if (response.status === 400) {
+          // otherwise it will be false
+          newErrorMsgState["emailErrorMsg"] =
+            "* Email already associated with a confirmed account";
+          newErrorMsgState["emailDisplay"] = "inline-block";
+          setErrorMsg(newErrorMsgState);
+          return false;
+        }
+      });
     } else {
       setErrorMsg(newErrorMsgState);
     }

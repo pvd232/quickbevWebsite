@@ -133,6 +133,7 @@ const MerchantEmployees = (props) => {
           const dummyMerchantEmployee = new MerchantEmployee();
           newMappedMerchantEmployees.push(dummyMerchantEmployee);
         }
+        setIsSpinning(false);
         return newMappedMerchantEmployees;
       })
     );
@@ -176,6 +177,7 @@ const MerchantEmployees = (props) => {
           setModalOpen((prevModalOpen) => !prevModalOpen);
           setErrorMsg(newErrorMsgState);
           setFormValue({ email: "" });
+          setIsSpinning(false);
           return true;
           // the requested username is already assigned to a staged merchant employee
         } else if (response.status === 204) {
