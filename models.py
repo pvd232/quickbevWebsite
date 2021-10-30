@@ -657,9 +657,9 @@ def create_etag():
 def create_everything():
     db.drop_all()
     db.create_all()
-    create_business()
-    create_drink()
-    create_orders_and_customers()
+    # create_business()
+    # create_drink()
+    # create_orders_and_customers()
     create_etag()
 
 
