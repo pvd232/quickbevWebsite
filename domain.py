@@ -6,12 +6,8 @@ import uuid
 class Customer_Order_Status(object):
     def __init__(self, order_object):
         self.id = order_object.id
-        if order_object.completed == True:
-            self.completed = "yes"
-        elif order_object.refunded == True:
-            self.refunded = "yes"
-        if order_object.active == True:
-            self.active = "yes"
+        self.completed = order_object.completed
+        self.refunded = order_object.refunded
 
     def dto_serialize(self):
         attribute_names = list(self.__dict__.keys())
@@ -108,7 +104,6 @@ class Order_Domain(object):
         self.business_id = ''
         self.business_address = ''
         self.order_drink = []
-        self.active = True
         self.completed = False
         self.refunded = False
         self.payment_intent_id = ''
@@ -144,8 +139,13 @@ class Order_Domain(object):
                 order_id=order_object.Order.id, order_drink_object=order_object.Order.order_drink, drinks=drinks)
             self.completed = order_object.Order.completed
             self.refunded = order_object.Order.refunded
-            self.active = order_object.Order.active
             self.payment_intent_id = order_object.Order.payment_intent_id
+
+            # computed property
+            if self.completed == False and self.refunded == False:
+                self.active = True
+            else:
+                self.active = False
         elif order_json:
             print('',)
             print('order_json', order_json)
@@ -165,7 +165,6 @@ class Order_Domain(object):
                 order_id=self.id, order_drink_json=order_json['order_drink'])
             self.completed = order_json["completed"]
             self.refunded = order_json["refunded"]
-            self.active = order_json["active"]
             self.payment_intent_id = order_json["payment_intent_id"]
 
     def dto_serialize(self):

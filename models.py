@@ -303,7 +303,6 @@ class Order(db.Model):
     payment_intent_id = db.Column(db.String(80), unique=True, nullable=False)
     completed = db.Column(db.Boolean(), default=False, nullable=True)
     refunded = db.Column(db.Boolean(), default=False, nullable=True)
-    active = db.Column(db.Boolean(), default=True, nullable=True)
     order_drink = relationship(
         "Order_Drink", lazy=True, backref="order", uselist=True)
 
@@ -460,20 +459,6 @@ class ETag (db.Model):
     __tablename__ = 'etag'
     id = db.Column(db.Integer(), primary_key=True, nullable=False)
     category = db.Column(db.String(80),  primary_key=True, nullable=False)
-
-    @property
-    def serialize(self):
-        attribute_names = list(self.__dict__.keys())
-        attributes = list(self.__dict__.values())
-        serialized_attributes = {}
-        for i in range(len(attributes)):
-            serialized_attributes[attribute_names[i]] = attributes[i]
-        return serialized_attributes
-
-
-class Guest_Device_Token(db.Model):
-    __tablename__ = 'guest_device_token'
-    id = db.Column(db.String(200), primary_key=True, nullable=False)
 
     @property
     def serialize(self):

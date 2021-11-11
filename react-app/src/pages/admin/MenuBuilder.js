@@ -26,6 +26,8 @@ const MenuBuilder = () => {
 
   const classes = useStyles();
   const [numRows, setNumRows] = useState(1);
+  const [isDisabled, setIsDisabled] = useState(false);
+
   var businessId = "";
   const updateBusinessId = (newBusinessId) => {
     businessId = newBusinessId;
@@ -62,7 +64,7 @@ const MenuBuilder = () => {
       alert(
         "Menu upload failed. Make sure you filled out the form correctly and your internet is working"
       );
-      return false;
+      window.location.reload();
     }
   };
   const BusinessIdInput = (props) => {
@@ -245,7 +247,6 @@ const MenuBuilder = () => {
       formValues.selectedFile.push("");
       formValues.selectedFileName.push("");
     }
-
     const formChangeHandler = (newValue) => {
       formValues[newValue.name][newValue.index] = newValue.value;
     };
@@ -256,6 +257,7 @@ const MenuBuilder = () => {
       );
     }
     const handleSubmit = (event) => {
+      setIsDisabled(true);
       const newForm = new FormData();
       Object.keys(formValues).forEach((key) => {
         if (key !== "selectedFile") {
@@ -291,6 +293,7 @@ const MenuBuilder = () => {
       >
         <Button
           onClick={(e) => props.onClick(e)}
+          disabled={props.isDisabled}
           style={{
             backgroundColor: "#8682E6",
             width: "15vw",

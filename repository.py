@@ -58,7 +58,6 @@ class Order_Repository(object):
             Order.id == order.id).first()
         if database_order:
             print('database_order in update_order', database_order.serialize)
-            database_order.active = order.active
             database_order.completed = order.completed
             database_order.refunded = order.refunded
             return
@@ -66,7 +65,7 @@ class Order_Repository(object):
     def create_order(self, session, order):
         print('order in create_order', order.dto_serialize())
         new_order = Order(id=order.id, customer_id=order.customer.id, merchant_stripe_id=order.merchant_stripe_id,
-                          business_id=order.business_id, total=order.total, stripe_charge_total=order.stripe_charge_total, pre_sales_tax_total=order.pre_sales_tax_total, pre_service_fee_total=order.pre_service_fee_total, subtotal=order.subtotal, tip_percentage=order.tip_percentage, tip_total=order.tip_total, sales_tax_total=order.sales_tax_total, sales_tax_percentage=order.sales_tax_percentage, service_fee=order.service_fee, payment_intent_id=order.payment_intent_id, refunded=order.refunded, completed=order.completed, active=order.active)
+                          business_id=order.business_id, total=order.total, stripe_charge_total=order.stripe_charge_total, pre_sales_tax_total=order.pre_sales_tax_total, pre_service_fee_total=order.pre_service_fee_total, subtotal=order.subtotal, tip_percentage=order.tip_percentage, tip_total=order.tip_total, sales_tax_total=order.sales_tax_total, sales_tax_percentage=order.sales_tax_percentage, service_fee=order.service_fee, payment_intent_id=order.payment_intent_id, refunded=order.refunded, completed=order.completed)
 
         session.add(new_order)
         print('order after', new_order.serialize)
@@ -110,7 +109,7 @@ class Order_Repository(object):
     def get_business_orders(self, session, business_id):
         # only get active orders
         orders = session.query(Order, Business.id.label("business_id"),  # select from allows me to pull the entire Order from the database so I can get the Order_Drink relationship values
-                               Business.address.label("business_address"), Business.name.label("business_name"), Customer.first_name.label('customer_first_name'), Customer.last_name.label('customer_last_name')).select_from(Order).join(Business, Order.business_id == Business.id).join(Customer, Order.customer_id == Customer.id).filter(Business.id == business_id, Order.active == True).all()
+                               Business.address.label("business_address"), Business.name.label("business_name"), Customer.first_name.label('customer_first_name'), Customer.last_name.label('customer_last_name')).select_from(Order).join(Business, Order.business_id == Business.id).join(Customer, Order.customer_id == Customer.id).filter(Business.id == business_id, Order.completed == False, Order.refunded == False).all()
         print('orders', orders)
         drinks = session.query(Drink)
         return orders, drinks
@@ -196,6 +195,8 @@ class Customer_Repository(object):
             new_customer = stripe.Customer.create()
             new_stripe = Stripe_Customer(id=new_customer.id)
             session.add(new_stripe)
+            print('customer.id',customer.id)
+
             new_customer = Customer(id=customer.id, password=customer.password,
                                     first_name=customer.first_name, last_name=customer.last_name, stripe_id=new_stripe.id, email_verified=customer.email_verified, has_registered=False)
             session.add(new_customer)
@@ -256,15 +257,6 @@ class Customer_Repository(object):
         else:
             return False
 
-    def add_guest_device_token(self, session, device_token):
-        new_guest_device_token = Guest_Device_Token(id=device_token)
-        exists = session.query(Guest_Device_Token).filter(
-            Guest_Device_Token.id == device_token).first()
-        if exists:
-            return True
-        else:
-            session.add(new_guest_device_token)
-            return True
 
     def update_email_verification(self, session, customer_id):
         requested_customer = session.query(Customer).filter(

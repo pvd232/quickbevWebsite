@@ -277,10 +277,6 @@ class Customer_Service(object):
         with session_scope() as session:
             return Customer_Repository().update_email_verification(session, customer_id)
 
-    def add_guest_device_token(self, device_token):
-        with session_scope() as session:
-            return Customer_Repository().add_guest_device_token(session, device_token)
-
     def update_password(self, customer_id, new_password):
         with session_scope() as session:
             return Customer_Repository().update_password(session, customer_id, new_password)
