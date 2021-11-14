@@ -46,7 +46,7 @@ def send_apn(device_token, action):
         client = APNSHTTP2Client(
             token=token,
             bundle_id='com.theQuickCompany.QuickBev')
-    elif env == "sandbox":
+    elif env == "local":
         client = APNSHTTP2SandboxClient(
             token=token,
             bundle_id='com.theQuickCompany.QuickBev')
@@ -118,7 +118,7 @@ def c():
     # order_id = request.args.get("order_id")
     # Order_Service().get_order(order_id)
     device_token = Customer_Service().get_device_token('peter.driscoll@pwc.com')
-    send_apn(device_token, 'order_completed', 'sandbox')
+    send_apn(device_token, 'order_completed')
     return Response(status=200)
 
 
@@ -127,7 +127,7 @@ def d():
     order_id = request.args.get("order_id")
     Order_Service().get_order(order_id)
     device_token = Customer_Service().get_device_token('c')
-    send_apn(device_token, 'order_completed', 'sandbox')
+    send_apn(device_token, 'order_completed')
     return Response(status=200)
 
 
@@ -260,8 +260,7 @@ def orders(session_token):
             # 1. send push notification to device saying the order is ready
             device_token = Customer_Service().get_device_token(
                 order_to_update["customer_id"])
-            send_apn(device_token, 'order_completed', 'sandbox')
-            # send_apn(device_token, "order_ready")
+            send_apn(device_token, 'order_completed')
 
         Order_Service().update_order(order_to_update)
         return Response(status=200)
@@ -698,7 +697,7 @@ def verify_email(session_token):
     if Customer_Service().update_email_verification(customer_id):
         Customer_Service().get_device_token(customer_id)
         device_token = Customer_Service().get_device_token(customer_id)
-        send_apn(device_token, "email", 'sandbox')
+        send_apn(device_token, "email")
         response = {"msg": "successfully registered"}
         return Response(response=json.dumps(response), status=200)
     else:
@@ -1038,7 +1037,7 @@ def validate_merchant_employee():
     if request.method == 'GET':
         merchant_employee_username = request.args.get('merchant_employee_id')
         merchant_employee_username_status = Merchant_Employee_Service(
-        ).authenticate_username(merchant_employee_username)
+        ).validate_username(merchant_employee_username)
         print('merchant_employee_username_status',
               merchant_employee_username_status)
         # the requested username is already assigned to a merchant employee
@@ -1107,7 +1106,7 @@ def validate_bouncer():
     if request.method == 'GET':
         bouncer_username = request.args.get('bouncer_id')
         bouncer_username_status = Bouncer_Service(
-        ).authenticate_username(bouncer_username)
+        ).validate_username(bouncer_username)
         print('bouncer_username_status',
               bouncer_username_status)
         # the requested username is already assigned to a merchant employee
@@ -1252,26 +1251,28 @@ def authenticate_pin():
         if merchant:
             headers["jwt-token"] = jwt.encode(
                 {"sub": business_id}, key=secret, algorithm="HS256")
-            print('headers["jwt-token"]',headers["jwt-token"])
             return Response(status=201, response=json.dumps(merchant.dto_serialize()), headers=headers)
         else:
             return Response(status=400)
 
-
-@app.route('/merchant_employee/reset_pin', methods=['POST'])
+@app.route('/reset_pin/<string:session_token>', methods=['POST'])
 def reset_pin():
     headers = {}
     data = json.loads(request.data)
     pin = data['pin']
-    merchant_employee_id = data['email']
-
-    new_merchant_employee = Merchant_Employee_Service(
-    ).reset_pin(merchant_employee_id, pin)
-    if new_merchant_employee != False:
-        new_merchant_employee.pin = pin
-        return Response(status=200, response=json.dumps(new_merchant_employee.dto_serialize()))
+    entity_id = data['email']
+    merchant_employee = Merchant_Employee_Service().validate_username(entity_id)
+    if merchant_employee != False:
+        merchant_employee.pin = pin
+        return Response(status=200, response=json.dumps(merchant_employee.dto_serialize()))
     else:
-        return Response(status=400)
+        merchant_existence = Merchant_Service().validate_merchant(entity_id)
+        if merchant_existence:
+            Business_Service().set_merchant_pin(entity_id, pin)
+            return Response(status=200)
+        else:
+            return Response(status=400)
+    
 
 
 @app.route('/merchant', methods=['GET', 'OPTIONS'])

@@ -169,7 +169,7 @@ class Customer_Repository(object):
         else:
             return False
 
-    def authenticate_username(self, session, username, hashed_username):
+    def validate_username(self, session, username, hashed_username):
         # if a username is passed then we query the db to verify it, if the hashed version is passed then we use the check_password_hash to verify it
         if username and not hashed_username:
             customer = session.query(Customer).filter(
@@ -355,7 +355,6 @@ class Business_Repository(object):
             return False
 
     def update_device_token(self, session, device_token, business_id):
-        print('business_id', business_id)
         business_to_update = session.query(Business).filter(
             Business.id == business_id).first()
         if business_to_update:
@@ -376,7 +375,6 @@ class Business_Repository(object):
     def set_merchant_pin(self, session, business_id, pin):
         requested_business = session.query(Business).filter(
             Business.id == business_id).first()
-        print('requested_business', requested_business)
         requested_business.merchant_pin = generate_password_hash(
             pin)
         return
@@ -389,6 +387,8 @@ class Business_Repository(object):
                 merchant = session.query(Merchant).filter(
                     Merchant.id == requested_business.merchant_id).first()
                 return merchant
+            else:
+                return False
 
     def update_capacity_status(self, session, business_id, capacity):
         business_to_update = session.query(Business).filter(
@@ -451,7 +451,7 @@ class Merchant_Repository(object):
 
 
 class Bouncer_Repository(object):
-    def authenticate_username(self, session, username):
+    def validate_username(self, session, username):
         # if a username is passed then we query the db to verify it, if the hashed version is passed then we use the check_password_hash to verify it
         bouncer = session.query(Bouncer).filter(
             Bouncer.id == username).first()
@@ -541,7 +541,7 @@ class Merchant_Employee_Repository(object):
         else:
             return False
 
-    def authenticate_username(self, session, username):
+    def validate_username(self, session, username):
         # if a username is passed then we query the db to verify it, if the hashed version is passed then we use the check_password_hash to verify it
         merchant_employee = session.query(Merchant_Employee).filter(
             Merchant_Employee.id == username).first()

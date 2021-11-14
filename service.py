@@ -231,9 +231,9 @@ class Customer_Service(object):
             else:
                 return False
 
-    def authenticate_username(self, username=None, hashed_username=None):
+    def validate_username(self, username=None, hashed_username=None):
         with session_scope() as session:
-            customer_object = Customer_Repository().authenticate_username(
+            customer_object = Customer_Repository().validate_username(
                 session, username, hashed_username)
             if customer_object:
                 return True
@@ -335,9 +335,9 @@ class Bouncer_Service(object):
             return Bouncer_Domain(bouncer_object=Bouncer_Repository().add_bouncer(
                 session, bouncer_id))
 
-    def authenticate_username(self, username):
+    def validate_username(self, username):
         with session_scope() as session:
-            return Bouncer_Repository().authenticate_username(
+            return Bouncer_Repository().validate_username(
                 session, username)
 
     def get_bouncers(self, merchant_id):
@@ -368,22 +368,11 @@ class Bouncer_Service(object):
                 bouncer_object=Bouncer_Repository().get_bouncer(session, bouncer_id))
             return bouncer_domain
 
-
 class Merchant_Employee_Service(object):
     def get_stripe_account(self, merchant_employee_id):
         with session_scope() as session:
             return Merchant_Employee_Repository().get_stripe_account(session, merchant_employee_id)
 
-    # def authenticate_merchant_employee(self, email, password):
-    #     with session_scope() as session:
-    #         merchant_employee_object = Merchant_Employee_Repository().authenticate_merchant_employee(
-    #             session, email, password)
-    #         if merchant_employee_object:
-    #             merchant_employee_domain = Merchant_Employee_Domain(
-    #                 merchant_employee_object=merchant_employee_object)
-    #             return merchant_employee_domain
-    #         else:
-    #             return False
 
     def validate_pin(self, business_id, pin):
         with session_scope() as session:
@@ -420,9 +409,9 @@ class Merchant_Employee_Service(object):
             return Merchant_Employee_Repository().add_merchant_employee(
                 session, requested_new_merchant_employee)
 
-    def authenticate_username(self, username):
+    def validate_username(self, username):
         with session_scope() as session:
-            return Merchant_Employee_Repository().authenticate_username(
+            return Merchant_Employee_Repository().validate_username(
                 session, username)
 
     def authenticate_merchant_employee_stripe(self, stripe_id):
@@ -529,7 +518,6 @@ class Business_Service(object):
     def update_business_capacity(self, business_id, capacity_status):
         with session_scope() as session:
             return Business_Repository().update_capactiy_status(session, business_id, capacity_status)
-
 
 class Tab_Service(object):
     def post_tab(self, tab):

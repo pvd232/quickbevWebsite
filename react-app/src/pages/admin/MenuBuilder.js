@@ -26,7 +26,6 @@ const MenuBuilder = () => {
 
   const classes = useStyles();
   const [numRows, setNumRows] = useState(1);
-  const [isDisabled, setIsDisabled] = useState(false);
 
   var businessId = "";
   const updateBusinessId = (newBusinessId) => {
@@ -62,7 +61,7 @@ const MenuBuilder = () => {
       }
     } else {
       alert(
-        "Menu upload failed. Make sure you filled out the form correctly and your internet is working"
+        "Menu upload failed. Make sure you filled out the form correctly and your internet is working."
       );
       window.location.reload();
     }
@@ -257,7 +256,6 @@ const MenuBuilder = () => {
       );
     }
     const handleSubmit = (event) => {
-      setIsDisabled(true);
       const newForm = new FormData();
       Object.keys(formValues).forEach((key) => {
         if (key !== "selectedFile") {
@@ -282,30 +280,37 @@ const MenuBuilder = () => {
       });
       props.onSubmit(event, newForm);
     };
-    const SubmitButton = (props) => (
-      <Grid
-        container
-        item
-        xs={12}
-        spacing={0}
-        justify="center"
-        style={{ marginTop: "3vh" }}
-      >
-        <Button
-          onClick={(e) => props.onClick(e)}
-          disabled={props.isDisabled}
-          style={{
-            backgroundColor: "#8682E6",
-            width: "15vw",
-            fontWeight: "bold",
-            fontSize: "1rem",
-            marginBottom: "5vh",
-          }}
+    const SubmitButton = (props) => {
+      const [isDisabled, setIsDisabled] = useState(false);
+      const handleSubmit = (event) => {
+        setIsDisabled(!isDisabled);
+        props.onClick(event);
+      };
+      return (
+        <Grid
+          container
+          item
+          xs={12}
+          spacing={0}
+          justify="center"
+          style={{ marginTop: "3vh" }}
         >
-          Submit
-        </Button>
-      </Grid>
-    );
+          <Button
+            onClick={(e) => handleSubmit(e)}
+            disabled={props.isDisabled}
+            style={{
+              backgroundColor: "#8682E6",
+              width: "15vw",
+              fontWeight: "bold",
+              fontSize: "1rem",
+              marginBottom: "5vh",
+            }}
+          >
+            Submit
+          </Button>
+        </Grid>
+      );
+    };
     formRowArray.push(
       <SubmitButton onClick={(e) => handleSubmit(e)}></SubmitButton>
     );
