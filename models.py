@@ -353,10 +353,20 @@ class Quick_Pass(db.Model):
             serialized_attributes[attribute_names[i]] = attributes[i]
         return serialized_attributes
 
+class Order_Tip(db.Model):
+    __tablename__ = 'order_tip'
+    id = db.Column(UUID(as_uuid=True), default=uuid.uuid4, primary_key=True,  
+                   unique=True, nullable=False)
+    order_id = db.Column(UUID(as_uuid=True), db.ForeignKey(
+        'order.id'), nullable=False)
+    merchant_employee_id = db.Column(db.String(200), db.ForeignKey(
+        'merchant_employee.id'), nullable=False)
+    tip_total = db.Column(db.Float(), nullable=False)
+
 
 class Order_Drink(db.Model):
     __tablename__ = 'order_drink'
-    id = db.Column(UUID(as_uuid=True), default=uuid.uuid4, primary_key=True,  # https://stackoverflow.com/questions/55917056/how-to-prevent-uuid-primary-key-for-new-sqlalchemy-objects-being-created-with-th
+    id = db.Column(UUID(as_uuid=True), default=uuid.uuid4, primary_key=True,
                    unique=True, nullable=False)
     order_id = db.Column(UUID(as_uuid=True), db.ForeignKey(
         'order.id'), nullable=False)
@@ -601,9 +611,9 @@ def create_orders_and_customers():
         tip_percentage = .1
         sales_tax_percentage = .0625
 
-        tip_amount = tip_percentage * subtotal
+        tip_total = tip_percentage * subtotal
 
-        pre_service_fee_total = subtotal + tip_amount
+        pre_service_fee_total = subtotal + tip_total
 
         service_fee = .1 * pre_service_fee_total
 
@@ -620,7 +630,7 @@ def create_orders_and_customers():
             x for x in businesses if x.id == drink.business_id][0]
 
         test_order = Order(id=order_id, customer_id=test_customer_id, business_id=drink.business_id, merchant_stripe_id=business_where_order_occured.merchant_stripe_id, total=total, pre_sales_tax_total=pre_sales_tax_total, pre_service_fee_total=pre_service_fee_total,
-                           stripe_charge_total=stripe_charge_total, subtotal=subtotal, sales_tax_total=sales_tax, sales_tax_percentage=sales_tax_percentage, tip_percentage=tip_percentage, tip_total=tip_amount, service_fee=service_fee, payment_intent_id=uuid.uuid4().hex)
+                           stripe_charge_total=stripe_charge_total, subtotal=subtotal, sales_tax_total=sales_tax, sales_tax_percentage=sales_tax_percentage, tip_percentage=tip_percentage, tip_total=tip_total, service_fee=service_fee, payment_intent_id=uuid.uuid4().hex)
         db.session.add(test_order)
         for i in range(num_drinks):
             order_drink = Order_Drink(drink_id=drink.id, order_id=order_id)

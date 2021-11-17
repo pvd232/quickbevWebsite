@@ -7,6 +7,9 @@ import { makeStyles } from "@material-ui/core/styles";
 import Title from "../dashboard/Title";
 import Paper from "@material-ui/core/Paper";
 import Grid from "@material-ui/core/Grid";
+import { faSpinner } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+
 const MenuBuilder = () => {
   const useStyles = makeStyles((theme) => ({
     root: {
@@ -25,7 +28,11 @@ const MenuBuilder = () => {
   }));
 
   const classes = useStyles();
-  const [numRows, setNumRows] = useState(1);
+
+  const [isSpinning, setIsSpinning] = useState(null);
+  const Spinner = () => (
+    <FontAwesomeIcon icon={faSpinner} className="fa-spin" />
+  );
 
   var businessId = "";
   const updateBusinessId = (newBusinessId) => {
@@ -240,17 +247,46 @@ const MenuBuilder = () => {
       selectedFile: [],
       selectedFileName: [],
     };
-    for (let i = 0; i < props.numRows; i++) {
-      formValues.drinkName.push("");
-      formValues.drinkDescription.push("");
-      formValues.selectedFile.push("");
-      formValues.selectedFileName.push("");
+    const [numRows, setNumRows] = useState(1);
+    const handleChangeNumRows = (newNumRows) => {
+      if (newNumRows < 0) {
+        return;
+      }
+      if (newNumRows < numRows) {
+        const difference = numRows - newNumRows;
+        for (var i = 0; i < difference; i++) {
+          formValues.drinkName.pop();
+          formValues.drinkDescription.pop();
+          formValues.selectedFile.pop();
+          formValues.selectedFileName.pop();
+        }
+      } else if (newNumRows > numRows) {
+        const difference = newNumRows - numRows;
+        for (var j = 0; j < difference; j++) {
+          formValues.drinkName.push("");
+          formValues.drinkDescription.pop("");
+          formValues.selectedFile.pop("");
+          formValues.selectedFileName.pop("");
+        }
+      }
+      setNumRows(newNumRows);
+      return;
+    };
+    // set initial values
+    if (formValues.drinkName.length !== numRows) {
+      for (let i = 0; i < numRows; i++) {
+        formValues.drinkName.push("");
+        formValues.drinkDescription.push("");
+        formValues.selectedFile.push("");
+        formValues.selectedFileName.push("");
+      }
     }
+
     const formChangeHandler = (newValue) => {
       formValues[newValue.name][newValue.index] = newValue.value;
     };
     const formRowArray = [];
-    for (let k = 0; k < props.numRows; k++) {
+    for (let k = 0; k < numRows; k++) {
       formRowArray.push(
         <FormRow k={k} updateValue={(e) => formChangeHandler(e)}></FormRow>
       );
@@ -280,12 +316,37 @@ const MenuBuilder = () => {
       });
       props.onSubmit(event, newForm);
     };
+    const RowNumTextField = () => {
+      return (
+        <Grid
+          container
+          item
+          xs={1}
+          spacing={0}
+          style={{
+            marginTop: "3vh",
+            marginRight: "6vw",
+            paddingRight: "3vw",
+          }}
+        >
+          <TextField
+            name="numRows"
+            label="Rows"
+            type="number"
+            value={numRows}
+            onChange={(event) => handleChangeNumRows(event.target.value)}
+          />
+        </Grid>
+      );
+    };
     const SubmitButton = (props) => {
       const [isDisabled, setIsDisabled] = useState(false);
       const handleSubmit = (event) => {
+        setIsSpinning(true);
         setIsDisabled(!isDisabled);
         props.onClick(event);
       };
+
       return (
         <Grid
           container
@@ -306,7 +367,7 @@ const MenuBuilder = () => {
               marginBottom: "5vh",
             }}
           >
-            Submit
+            {isSpinning ? <Spinner></Spinner> : "Submit"}
           </Button>
         </Grid>
       );
@@ -314,6 +375,7 @@ const MenuBuilder = () => {
     formRowArray.push(
       <SubmitButton onClick={(e) => handleSubmit(e)}></SubmitButton>
     );
+    formRowArray.unshift(<RowNumTextField></RowNumTextField>);
     return formRowArray;
   };
   return (
@@ -335,26 +397,7 @@ const MenuBuilder = () => {
           >
             <Title>Menu Builder</Title>
           </Grid>
-          <Grid
-            container
-            item
-            xs={1}
-            spacing={0}
-            style={{
-              marginTop: "3vh",
-              marginRight: "6vw",
-              paddingRight: "3vw",
-            }}
-          >
-            <TextField
-              name="numRows"
-              label="Rows"
-              value={numRows}
-              onChange={(event) => setNumRows(event.target.value)}
-            />
-          </Grid>
           <BuildPage
-            numRows={numRows}
             onSubmit={(e, formValues) => handleSubmit(e, formValues)}
           ></BuildPage>
         </Grid>

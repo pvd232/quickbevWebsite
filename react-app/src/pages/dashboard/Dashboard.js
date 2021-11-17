@@ -190,6 +190,9 @@ const Dashboard = (props) => {
   const prevSettingsOpen = useRef(settingsOpen);
   const prevHelpOpen = useRef(settingsOpen);
 
+  const handleAddMerchantEmployee = () => {
+    props.handleAddMerchantEmployee();    
+  }
   useEffect(() => {
     if (prevSettingsOpen.current === true && settingsOpen === false) {
       settingsAnchorRef.current.focus();
@@ -216,6 +219,8 @@ const Dashboard = (props) => {
       merchantEmployees={props.merchantEmployees}
       fixedHeightPaper={fixedHeightPaper}
       classes={classes}
+      onUpdate={(newMerchantEmployee) => props.updateMerchantEmployee(newMerchantEmployee)}
+
     />,
     <Bouncers
       bouncers={props.bouncers}

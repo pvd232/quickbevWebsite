@@ -29,8 +29,8 @@ const Orders = (props) => {
   const formattedMappedOrders = mappedOrders.map((order) => {
     order.total = Math.round(order.total);
     order.subtotal = Math.round(order.subtotal);
-    order.tipAmount = Math.round(order.tipAmount);
-    order.salesTax = Math.round(order.salesTax);
+    order.tipTotal = Math.round(order.tipTotal);
+    order.salesTaxTotal = Math.round(order.salesTaxTotal);
     order.serviceFee = Math.round(order.serviceFee);
     const orderBusiness = props.businesses.filter(
       (business) => order.businessId === business.id

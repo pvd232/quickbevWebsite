@@ -61,10 +61,10 @@ const MerchantEmployees = (props) => {
       merchantId: LocalStorageManager.shared.currentMerchant.id,
     }
   );
-  const [mappedMerchantEmployees, setMappedMerchantEmployees] = useState(
-    props.merchantEmployees.map((merchantEmployeeJSON) => {
+  const mappedMerchantEmployees = props.merchantEmployees.map(
+    (merchantEmployeeJSON) => {
       return new MerchantEmployee(merchantEmployeeJSON);
-    })
+    }
   );
   const [csvData, setCsvData] = useState(() => makeCSVData());
   const [errorMsg, setErrorMsg] = useReducer(
@@ -121,35 +121,31 @@ const MerchantEmployees = (props) => {
       "PUT",
       `/merchant_employee/staging/${LocalStorageManager.shared.sessionToken}`,
       data
-    ).then(
-      setMappedMerchantEmployees((prevMapppedMerchantEmployees) => {
-        prevMapppedMerchantEmployees.splice(index, 1);
-        const newMappedMerchantEmployees = [];
-        for (var i in prevMapppedMerchantEmployees) {
-          newMappedMerchantEmployees.push(prevMapppedMerchantEmployees[i]);
-        }
-        if (newMappedMerchantEmployees.length < 1) {
-          // add a dummy merchantemployee to populate the row values if there are 0 merchantemployee objects left in the list
-          const dummyMerchantEmployee = new MerchantEmployee();
-          newMappedMerchantEmployees.push(dummyMerchantEmployee);
-        }
-        setIsSpinning(false);
-        return newMappedMerchantEmployees;
-      })
-    );
+    ).then(() => {
+      console.log("mappedMerchantEmployees", mappedMerchantEmployees);
+      mappedMerchantEmployees.splice(index, 1);
+      if (mappedMerchantEmployees.length === 0) {
+        console.log("<1");
+        // add a dummy merchantemployee to populate the row values if there are 0 merchantemployee objects left in the list
+        const dummyMerchantEmployee = new MerchantEmployee();
+        mappedMerchantEmployees.push(dummyMerchantEmployee);
+      }
+      console.log("mappedMerchantEmployees", mappedMerchantEmployees);
+      props.onUpdate(mappedMerchantEmployees);
+      setIsSpinning(false);
+      return true;
+    });
   };
   const handleAddPerson = (event) => {
     event.preventDefault();
     const form = event.target.closest("form");
     var newErrorMsgState = {};
-
     newErrorMsgState["emailDisplay"] = "none";
     if (validate(form)) {
       API.makeRequest(
         "GET",
         `/merchant_employee?merchant_employee_id=${formValue.email}`
       ).then((response) => {
-        console.log("response", response);
         // the merchant employee username is not taken by either a real or staged merchant employee
         if (response.status === 200) {
           // create the merchant employee with a null parameter assigns pending to the status property of the staged merchant employee
@@ -161,24 +157,17 @@ const MerchantEmployees = (props) => {
             "POST",
             `/merchant_employee/staging/${LocalStorageManager.shared.sessionToken}`,
             formValue
-          );
-          setMappedMerchantEmployees((prevMapppedMerchantEmployees) => {
-            // if the merchant had 0 employees then the mappedEmployees array will have 1 single dummy merchant employee. so we want to remove this once a real merchant emplyee is added
-            if (prevMapppedMerchantEmployees[0].id === "") {
-              const newMappedMerchantEmployees = [];
-              newMappedMerchantEmployees.unshift(newMerchantEmployee);
-              return newMappedMerchantEmployees;
-            } else {
-              prevMapppedMerchantEmployees.unshift(newMerchantEmployee);
-              return prevMapppedMerchantEmployees;
-            }
+          ).then(() => {
+            mappedMerchantEmployees.push(newMerchantEmployee);
+            props.onUpdate(mappedMerchantEmployees);
+            setCsvData(makeCSVData());
+            setModalOpen((prevModalOpen) => !prevModalOpen);
+            setErrorMsg(newErrorMsgState);
+            setFormValue({ email: "" });
+            setIsSpinning(false);
+            return true;
           });
-          setCsvData(makeCSVData());
-          setModalOpen((prevModalOpen) => !prevModalOpen);
-          setErrorMsg(newErrorMsgState);
-          setFormValue({ email: "" });
-          setIsSpinning(false);
-          return true;
+
           // the requested username is already assigned to a staged merchant employee
         } else if (response.status === 204) {
           // otherwise it will be false
@@ -186,6 +175,7 @@ const MerchantEmployees = (props) => {
             "* Email already associated with a pending account";
           newErrorMsgState["emailDisplay"] = "inline-block";
           setErrorMsg(newErrorMsgState);
+          setIsSpinning(false);
           return false;
         }
         // the requested username is already assigned to a real merchant employee
@@ -195,6 +185,7 @@ const MerchantEmployees = (props) => {
             "* Email already associated with a confirmed account";
           newErrorMsgState["emailDisplay"] = "inline-block";
           setErrorMsg(newErrorMsgState);
+          setIsSpinning(false);
           return false;
         }
       });

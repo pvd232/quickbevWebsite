@@ -12,7 +12,7 @@ from sqlalchemy.sql import text
 from sqlalchemy.inspection import inspect
 from werkzeug.security import generate_password_hash, check_password_hash
 
-stripe.api_key = "sk_test_51I0xFxFseFjpsgWvh9b1munh6nIea6f5Z8bYlIDfmKyNq6zzrgg8iqeKEHwmRi5PqIelVkx4XWcYHAYc1omtD7wz00JiwbEKzj"
+# stripe.api_key = "sk_test_51I0xFxFseFjpsgWvh9b1munh6nIea6f5Z8bYlIDfmKyNq6zzrgg8iqeKEHwmRi5PqIelVkx4XWcYHAYc1omtD7wz00JiwbEKzj"
 # stripe.api_key = "pk_live_51I0xFxFseFjpsgWvD9dTResiaTt2yDWUuPNR6aVq4mJ1XIG6TLpKHVT9BxmezxcytTugPEkzs0wCSJ6VV74Pb1VJ00Flau56PH"
 # secret stripe.api_key = "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"
 
@@ -68,6 +68,7 @@ class Order_Repository(object):
                           business_id=order.business_id, total=order.total, stripe_charge_total=order.stripe_charge_total, pre_sales_tax_total=order.pre_sales_tax_total, pre_service_fee_total=order.pre_service_fee_total, subtotal=order.subtotal, tip_percentage=order.tip_percentage, tip_total=order.tip_total, sales_tax_total=order.sales_tax_total, sales_tax_percentage=order.sales_tax_percentage, service_fee=order.service_fee, payment_intent_id=order.payment_intent_id, refunded=order.refunded, completed=order.completed)
 
         session.add(new_order)
+      
         print('order after', new_order.serialize)
 
         for each_order_drink in order.order_drink.order_drink:
@@ -80,17 +81,14 @@ class Order_Repository(object):
         # get the list of merchant_employees that are clocked in when the sale was made and give them each an equal part of the tip
         servers = session.query(Merchant_Employee).filter(
             Merchant_Employee.business_id == order.business_id, Merchant_Employee.logged_in == True).all()
-
-        payment_intent = stripe.PaymentIntent.retrieve(order.payment_intent_id)
-        charge = payment_intent.charges.data[0]
-        for server in servers:
-            tip_per_server = int(round(order.tip_total/len(servers), 2) * 100)
-            # transfer = stripe.Transfer.create(
-            #     amount=tip_per_server,
-            #     currency='usd',
-            #     destination=server.stripe_id,
-            #     source_transaction=charge.id
-            # )
+        if len(servers) > 0:
+            tip_per_server = order.tip_total/len(servers)
+            print('tip_per_server',tip_per_server)
+            for server in servers:
+                new_order_tip = Order_Tip(order_id = order.id, merchant_employee_id = server.id, tip_total = tip_per_server)
+                session.add(new_order_tip)
+            
+            
         return order
 
     def get_customer_orders(self, session, username):
@@ -141,20 +139,25 @@ class Order_Repository(object):
         payment_intent = stripe.PaymentIntent.retrieve(order.payment_intent_id)
         charge = payment_intent.charges.data[0]
 
-        stripe.Refund.create(
+        refund = stripe.Refund.create(
             charge=charge.id,
             refund_application_fee=True,
             reverse_transfer=True,
         )
+        print('refund',refund)
 
         transfer_group = charge["transfer_group"]
+        print('transfer_group',transfer_group)
         transfers_associated_data = stripe.Transfer.list(
             transfer_group=transfer_group)
         transfers_list = transfers_associated_data["data"]
 
         for transfer in transfers_list:
-            stripe.Transfer.createReversal(
-                transfer=transfer["id"], amount=transfer["amount"])
+            print('transfer',transfer)
+            print('transfer["reversed"]',transfer["reversed"])
+            if transfer["reversed"] != True:
+                stripe.Transfer.create_reversal(
+                    transfer["id"], amount=transfer["amount"])
         return True
 
 
@@ -448,7 +451,8 @@ class Merchant_Repository(object):
             return requested_merchant
         else:
             return False
-
+    
+    
 
 class Bouncer_Repository(object):
     def validate_username(self, session, username):
@@ -596,6 +600,11 @@ class Merchant_Employee_Repository(object):
         staged_merchant_employee_to_remove = session.query(Staged_Merchant_Employee).filter(
             Staged_Merchant_Employee.id == merchant_employee_id).delete()
         return
+
+    def get_servers(self,session, business_id):
+        servers = session.query(Merchant_Employee).filter(
+            Merchant_Employee.business_id == business_id, Merchant_Employee.logged_in == True).all()
+        return servers
 
 
 class ETag_Repository(object):

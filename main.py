@@ -31,7 +31,7 @@ env = "production"
 # nice seafoam color #19cca3
 
 
-def send_apn(device_token, action):
+def send_apn(device_token, action, order_id=None):
     apn_key = ''
     team_id = '6YGH9XK378'
     # converted authkey to private key that can be properly encoded as RSA key by jwt.encode method using advice here https://github.com/lcobucci/jwt/issues/244
@@ -63,7 +63,8 @@ def send_apn(device_token, action):
             ids=[device_token],
             title="Order Completed",
             message="Your order is ready for pickup!",
-            category=action
+            category=action,
+            extra = {"order_id": order_id}
         )
     elif action == "order_refunded":
         client.send(
@@ -164,8 +165,9 @@ def fcm_token(session_token):
         return Response(status=200)
 
 
-@app.route("/test")
+@app.route('/test')
 def test():
+    print('stripe.Balance.retrieve()',stripe.Balance.retrieve())
     return Response(status=200)
 
 
@@ -248,21 +250,19 @@ def orders(session_token):
     headers["Access-Control-Expose-Headers"] = "Access-Control-Allow-Headers"
     if request.method == 'PUT':
         order_to_update = json.loads(request.data)
-        if order_to_update["active"] == False:
-            Order_Service().update_order(order_to_update)
-        elif order_to_update["refunded"] == True:
+        print('order_to_update',order_to_update)
+        Order_Service().update_order(order_to_update)
+        if order_to_update["refunded"] == True:
             # 1. send push notification to device
             device_token = Customer_Service().get_device_token(
                 order_to_update["customer_id"])
-            send_apn(device_token, 'order_refunded')
+            send_apn(device_token, 'order_refunded', order_to_update["id"])
             Order_Service().refund_stripe_order(order_to_update)
         elif order_to_update["completed"] == True:
             # 1. send push notification to device saying the order is ready
             device_token = Customer_Service().get_device_token(
                 order_to_update["customer_id"])
-            send_apn(device_token, 'order_completed')
-
-        Order_Service().update_order(order_to_update)
+            send_apn(device_token, 'order_completed', order_to_update["id"])
         return Response(status=200)
     elif request.method == 'POST':
         new_order = request.json
@@ -278,7 +278,6 @@ def orders(session_token):
     elif request.method == "GET":
         # for tablet get request
         business_id = request.headers.get('business-id')
-        print('business_id',business_id)
         if business_id:
             # orders are being called by android tablet
             orders = [x.dto_serialize()
@@ -321,7 +320,7 @@ def send_info_email(jwt_token, email_type, user=None):
         if env == "production":
             button_url = f"https://{host}/bouncer-quick-pass/{jwt_token}/{user.business_id}"
         else:
-            button_url = f"http://{host}/bouncer-quick-pass/{jwt_token}/{user.business_id}"
+            button_url = f"http://localhost:3000/bouncer-quick-pass/{jwt_token}/{user.business_id}"
 
         logo = "https://storage.googleapis.com/my-new-quickbev-bucket/landscape-logo-purple.png"
 
@@ -356,7 +355,7 @@ def send_confirmation_email(jwt_token, email_type, user=None, business=None, str
         if env == "production":
             button_url = f"https://{host}/customer/email/verify/{jwt_token}"
         else:
-            button_url = f"http://{host}/customer/email/verify/{jwt_token}"
+            button_url = f"http://localhost:3000/customer/email/verify/{jwt_token}"
 
         logo = "https://storage.googleapis.com/my-new-quickbev-bucket/landscape-logo-purple.png"
 
@@ -441,7 +440,7 @@ def send_confirmation_email(jwt_token, email_type, user=None, business=None, str
         if env == "production":
             button_url = f"https://{host}/bouncer/get-info/{jwt_token}"
         else:
-            button_url = f"http://{host}/bouncer-email-confirmed/{jwt_token}"
+            button_url = f"http://localhost:3000/bouncer-email-confirmed/{jwt_token}"
 
         verify_button = f'<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="margin-right: auto; margin-top:5vh; margin-left:auto; margin-bottom:2vh;   border-collapse:separate;line-height:100%;"><tr><td><div><!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="http://www.activecampaign.com" style="height:40px;v-text-anchor:middle;width:130px;" arcsize="5%" strokecolor="#8682E6" fillcolor="#8682E6;width: 130;"><w:anchorlock/></v:roundrect><![endif]--><a href={button_url} style="display: inline-block; mso-hide:all; background-color: #8682E6; color: #FFFFFF; border:1px solid #8682E6; border-radius: 6px; line-height: 220%; width: 200px; font-family: Helvetica, sans-serif; font-size:18px; font-weight:600; text-align: center; text-decoration: none; -webkit-text-size-adjust:none;" target="_blank">Verify email</a></a></div></td></tr></table>'
         mail_body_text = f'<p style="margin-top: 3vh;margin-bottom: 15px;">Hello,</p><p style="margin-top: 15px;margin-bottom: 15px;">Welcome to QuickBev!</p><p style="margin-top: 15px;margin-bottom: 15px;">This email has been registered with Quickbev as a bouncer. The Merchant who registered you is listed below.</p><p>Merchant Name: {user.first_name} {user.last_name}</p> <p> Please click the button below to confirm your email. You will then receive another email with a link to the QuickPass Page.<p style="margin-top: 15px;margin-bottom: 15px;">Let the good times begin,</p><p style="margin-top: 15px;margin-bottom: 15px;">—The QuickBev Team</p></div><div style="width:100%; height:3vh;">{verify_button}</div>'
@@ -546,7 +545,7 @@ def send_confirmation_email(jwt_token, email_type, user=None, business=None, str
         s.sendmail(message['From'], message['To'], message.as_string())
         s.quit()
 
-
+    
 def send_password_reset_email(jwt_token, entity):
     host = request.headers.get('Host')
     # host = "quickbev.us.com"
@@ -555,7 +554,7 @@ def send_password_reset_email(jwt_token, entity):
     if env == "production":
         button_url = f"https://{host}/reset-password/{jwt_token}"
     else:
-        button_url = f"http://{host}/reset-password/{jwt_token}"
+        button_url = f"http://localhost:3000/reset-password/{jwt_token}"
 
     logo = "https://storage.googleapis.com/my-new-quickbev-bucket/landscape-logo-purple.png"
 
@@ -727,7 +726,8 @@ def reset_password(entity_id):
                 {"sub": entity_id}, key=secret, algorithm="HS256")
             send_password_reset_email(
                 jwt_token=jwt_token, entity=entity)
-            return Response(status=200)
+        return Response(status=200)
+        
     elif request.method == 'POST':
         jwt_token = entity_id
         if jwt.decode(jwt_token, secret, algorithms=["HS256"]):
@@ -982,7 +982,6 @@ def merchant_employee_stripe_account():
 @app.route('/merchant_employee/stripe/validate', methods=['GET'])
 def validate_merchant_employee_stripe():
     merchant_employee_stripe_id = request.headers.get("stripe-id")
-    print('merchant_employee_stripe_id',merchant_employee_stripe_id)
     if merchant_employee_stripe_id != '' and merchant_employee_stripe_id != "null":
         status = Merchant_Employee_Service().authenticate_merchant_employee_stripe(
         merchant_employee_stripe_id)
@@ -1014,7 +1013,7 @@ def merchant_employee(session_token):
         # Quick_Pass_Service().set_business_quick_pass(quick_pass_initial_values)
         return Response(status=200, response=json.dumps(new_merchant_employee.dto_serialize()))
     elif request.method == 'GET':
-        merchant_id = request.headers.get('merchant_id')
+        merchant_id = request.headers.get('merchant-id')
         merchant_employees = [x.dto_serialize(
         ) for x in Merchant_Employee_Service().get_merchant_employees(merchant_id)]
         if len(merchant_employees) < 1:
@@ -1362,11 +1361,11 @@ def create_stripe_account():
     callback_stripe_id = request.args.get('stripe')
     account_links = ''
     if env == "production":
-        ref_url = f'http://{ip_address}:3000/payout-setup-callback'
-        ret_url = f'http://{ip_address}:3000/signin'
-    else:
         ref_url = 'https://quickbev.us/payout-setup-callback'
         ret_url='https://quickbev.us/signin'
+    else:
+        ref_url = f'http://{ip_address}:3000/payout-setup-callback'
+        ret_url = f'http://{ip_address}:3000/signin'
     if callback_stripe_id:
         account_links = stripe.AccountLink.create(
             account=callback_stripe_id,

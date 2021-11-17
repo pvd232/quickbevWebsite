@@ -14,6 +14,17 @@ const Home = () => {
     console.log("newBusinesses", newBusinesses);
     setBusinesses(newBusinesses);
   };
+  const handleMerchantEmployeeUpdate = (newMerchantEmployeees) => {
+    if (newMerchantEmployeees.length === 1) {
+      setMerchantEmployees(newMerchantEmployeees);
+      return;
+    } else {
+      if (newMerchantEmployeees[0].id === "") {
+        newMerchantEmployeees.shift();
+      }
+      setMerchantEmployees(newMerchantEmployeees);
+    }
+  };
   useEffect(() => {
     let mounted = true;
     API.checkStripeStatus().then((value) => {
@@ -67,10 +78,7 @@ const Home = () => {
     API.getBouncers().then((items) => {
       console.log("items", items);
       console.log("items", items.bouncers);
-      LocalStorageManager.shared.setLocalStorage(
-        "bouncers",
-        items.merchant_employees
-      );
+      LocalStorageManager.shared.setLocalStorage("bouncers", items.bouncers);
       if (mounted && items) {
         setBouncers(items.bouncers);
       }
@@ -101,6 +109,9 @@ const Home = () => {
         bouncers={bouncers}
         updateBusinesses={(newBusinesses) =>
           handleBusinessUpdate(newBusinesses)
+        }
+        updateMerchantEmployee={(newMerchantEmployee) =>
+          handleMerchantEmployeeUpdate(newMerchantEmployee)
         }
       ></Dashboard>
     );

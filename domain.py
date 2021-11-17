@@ -147,9 +147,6 @@ class Order_Domain(object):
             else:
                 self.active = False
         elif order_json:
-            print('',)
-            print('order_json', order_json)
-            print('',)
             # an order received as order_json will be an order sent from an iOS device, thus service fee is not included as a value because it is calculated in the backend
             self.id = order_json["id"]
             if "customer" in order_json.keys():
@@ -371,6 +368,7 @@ class Merchant_Employee_Domain(object):
         self.merchant_id = ''
         self.stripe_id = ''
         self.logged_in = ''
+        self.status = ''
         if merchant_employee_object:
             self.id = merchant_employee_object.id
             self.merchant_id = merchant_employee_object.merchant_id

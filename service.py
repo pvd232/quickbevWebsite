@@ -124,7 +124,7 @@ class Order_Service(object):
         new_order_domain.pre_sales_tax_total = pre_sales_tax_total
         new_order_domain.stripe_charge_total = stripe_charge_total
         new_order_domain.tip_total = tip_total
-        new_order_domain.sales_tax = sales_tax
+        new_order_domain.sales_tax_total = sales_tax
         new_order_domain.service_fee = service_fee
         new_order_domain.subtotal = round(subtotal, 2)
 
@@ -173,7 +173,7 @@ class Order_Service(object):
 
         amount = 0
         subtotal = 0
-        tip_amount = 0
+        tip_total = 0
         sales_tax = 0
 
         for drink in order.order_drink.order_drink:
@@ -181,21 +181,24 @@ class Order_Service(object):
             subtotal += drink_cost
         # formatting for stripe requires everything in cents
         print('subtotal', subtotal)
-        tip_amount = order.tip_percentage * subtotal
-        print('tip_amount', tip_amount)
+        tip_total = order.tip_percentage * subtotal
+        print('tip_total', tip_total)
 
-        pre_service_fee_amount = tip_amount + subtotal
+        pre_service_fee_amount = tip_total + subtotal
 
-        service_fee = int(round(.1 * pre_service_fee_amount, 2))
-
+        service_fee = .1 * pre_service_fee_amount
+        print('service_fee',service_fee)
+        app_fee = int(round((service_fee + tip_total) * 100,2))
+        print('app_fee',app_fee)
         pre_sales_tax_amount = service_fee + pre_service_fee_amount
+        print('pre_sales_tax_amount',pre_sales_tax_amount)
 
         sales_tax = pre_sales_tax_amount * order.sales_tax_percentage
         print('sales_tax', sales_tax)
 
         # will charge for tip later
         amount = int(
-            round((pre_service_fee_amount+tip_amount+sales_tax) * 100, 2))
+            round((subtotal+sales_tax) * 100, 2))
         print('amount', amount)
 
         merchant_stripe_id = order.merchant_stripe_id
@@ -204,14 +207,26 @@ class Order_Service(object):
             customer=order.customer.stripe_id,
             setup_future_usage='on_session',
             currency='usd',
-            application_fee_amount=service_fee,
+            application_fee_amount=app_fee,
+            transfer_group = order.id,
             transfer_data={
                 "destination": merchant_stripe_id
             }
         )
-        response = {"payment_intent_id": payment_intent.id,
-                    "secret": payment_intent["client_secret"]}
-        return response
+        with session_scope() as session:
+            servers = Merchant_Employee_Repository().get_servers(session, business_id=order.business_id)
+            for server in servers:
+                print("server.first_name", server.first_name)
+                tip_per_server = int(round(tip_total/len(servers), 2) * 100)
+                transfer = stripe.Transfer.create(
+                    amount=tip_per_server,
+                    currency='usd',
+                    destination=server.stripe_id,
+                    transfer_group=order.id,
+    )
+            response = {"payment_intent_id": payment_intent.id,
+                        "secret": payment_intent["client_secret"]}
+            return response
 
     def refund_stripe_order(self, order):
         with session_scope() as session:
@@ -424,8 +439,10 @@ class Merchant_Employee_Service(object):
                 session, merchant_id)
             merchant_employee_domains = [Merchant_Employee_Domain(
                 merchant_employee_object=x) for x in merchant_employees]
+            for merchant_employee_domain in merchant_employee_domains:
+                merchant_employee_domain.status = "confirmed"
 
-            # when a merchant employee domain is created without a merchant employee object or merchant employee json the c
+            # when a merchant employee domain is created without a merchant employee object or merchant employee json it is a staged merchant employee
             staged_merchant_employee_domains = [
                 Merchant_Employee_Domain() for x in staged_merchant_employees]
             for i in range(len(staged_merchant_employee_domains)):
