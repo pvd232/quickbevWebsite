@@ -71,7 +71,8 @@ def send_apn(device_token, action, order_id=None):
             ids=[device_token],
             title="Order Refunded",
             message="Items in your order are out of stock. We refunded you.",
-            category=action
+            category=action,
+            extra = {"order_id": order_id}
         )
 
 
