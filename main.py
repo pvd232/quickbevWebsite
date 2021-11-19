@@ -1512,12 +1512,14 @@ def quick_pass_a(session_token):
         response['quick_pass_order'] = updated_quick_pass.dto_serialize()
         return Response(status=200, response=json.dumps(response), headers=headers)
     elif request.method == 'GET':
-        print('request.headers.g', request.headers.get('customer_id'))
-        customer_id = request.headers.get('customer_id')
+        print('request.headers.g', request.headers.get('customer-id'))
+        customer_id = request.headers.get('customer-id')
         print('customer_id', customer_id)
         business_id = request.headers.get('business_id')
+        print('business_id',business_id)
         quick_pass = Quick_Pass_Service().get_current_queue(
             business_id=business_id, customer_id=customer_id)
+
 
         response["quick_pass"] = quick_pass.dto_serialize()
         return Response(status=200, response=json.dumps(response), headers=headers)
