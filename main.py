@@ -1515,7 +1515,7 @@ def quick_pass_a(session_token):
         print('request.headers.g', request.headers.get('customer-id'))
         customer_id = request.headers.get('customer-id')
         print('customer_id', customer_id)
-        business_id = request.headers.get('business_id')
+        business_id = request.headers.get('business-id')
         print('business_id',business_id)
         quick_pass = Quick_Pass_Service().get_current_queue(
             business_id=business_id, customer_id=customer_id)
