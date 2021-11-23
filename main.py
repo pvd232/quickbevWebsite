@@ -442,7 +442,7 @@ def send_confirmation_email(jwt_token, email_type, user=None, business=None, str
         # host = '192.168.1.192:3000'
         logo = "https://storage.googleapis.com/my-new-quickbev-bucket/landscape-logo-purple.png"
         if env == "production":
-            button_url = f"https://{host}/bouncer/get-info/{jwt_token}"
+            button_url = f"https://{host}/bouncer-email-confirmed/{jwt_token}"
         else:
             button_url = f"http://localhost:3000/bouncer-email-confirmed/{jwt_token}"
 
