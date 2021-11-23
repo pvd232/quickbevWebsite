@@ -634,7 +634,7 @@ def customer():
             else:
                 status = 200
             # dont inlcude jwt_token in headers because it has already been sent when the user was validated in /customer/validate
-            return Response(response=json.dumps(generated_new_customer.dto_serialize()), status=status)
+            return Response(response=json.dumps(generated_new_customer.dto_serialize()), status=status, headers=headers)
         else:
             return Response(status=400)
     elif request.method == 'PUT':
