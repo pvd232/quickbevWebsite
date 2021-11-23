@@ -257,6 +257,8 @@ class Customer(db.Model):
                    unique=True, nullable=False)
     stripe_id = db.Column(db.String(80), db.ForeignKey('stripe_customer.id'), unique=True,
                           nullable=False)
+    apple_id = db.Column(db.String(200),
+                   unique=True, nullable=True)
     password = db.Column(db.String(200), nullable=False)
     first_name = db.Column(db.String(80), nullable=False)
     last_name = db.Column(db.String(80), nullable=False)
@@ -265,7 +267,6 @@ class Customer(db.Model):
     is_active = db.Column(db.Boolean(), default=True, nullable=False)
     device_token = db.Column(db.String(200), nullable=True)
     quick_pass = relationship('Quick_Pass', lazy=True, uselist=True)
-
     order = relationship('Order', lazy=True, backref="customer")
     tab = relationship('Tab', lazy=True, backref="customer")
 

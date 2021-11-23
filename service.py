@@ -303,6 +303,14 @@ class Customer_Service(object):
                 return Customer_Domain(customer_object=Customer_Repository().get_customer(session, customer_id))
             else:
                 return customer
+    
+    def get_customer_apple(self, apple_id):
+        with session_scope() as session:
+            customer = Customer_Repository().get_customer_apple(session, apple_id)
+            if customer:
+                return Customer_Domain(customer_object=customer)
+            else:
+                return customer
 
 
 class Merchant_Service(object):

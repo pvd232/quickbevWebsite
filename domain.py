@@ -232,12 +232,12 @@ class Customer_Domain(object):
             self.email_verified = customer_object.email_verified
             if "has_registered" in customer_object.__dict__.keys():
                 self.has_registered = customer_object.has_registered
-            # self.has_registered = False
-
             # might not want to send this sensitive information in every request
             if "password" in customer_object.__dict__.keys():
                 self.password = customer_object.password
             if "stripe_id" in customer_object.__dict__.keys():
+                self.stripe_id = customer_object.stripe_id
+            if "apple_id" in customer_object.__dict__.keys():
                 self.stripe_id = customer_object.stripe_id
         elif customer_json:
             # has registered property will be false when the customer is created initially
@@ -248,6 +248,10 @@ class Customer_Domain(object):
             self.first_name = customer_json["first_name"]
             self.last_name = customer_json["last_name"]
             self.stripe_id = customer_json["stripe_id"]
+            if "apple_id" in customer_json:
+                self.apple_id = customer_json["apple_id"]
+            else:
+                self.apple_id = ""
 
     def dto_serialize(self):
         attribute_names = list(self.__dict__.keys())

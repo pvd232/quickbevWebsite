@@ -1,5 +1,3 @@
-# set up a scoped_session
-
 import uuid
 import os
 # from models import Drink, Order, Order_Drink, Customer, Business, Tab, Stripe_Customer, Stripe_Account
@@ -11,10 +9,6 @@ import base64
 from sqlalchemy.sql import text
 from sqlalchemy.inspection import inspect
 from werkzeug.security import generate_password_hash, check_password_hash
-
-# stripe.api_key = "sk_test_51I0xFxFseFjpsgWvh9b1munh6nIea6f5Z8bYlIDfmKyNq6zzrgg8iqeKEHwmRi5PqIelVkx4XWcYHAYc1omtD7wz00JiwbEKzj"
-# stripe.api_key = "pk_live_51I0xFxFseFjpsgWvD9dTResiaTt2yDWUuPNR6aVq4mJ1XIG6TLpKHVT9BxmezxcytTugPEkzs0wCSJ6VV74Pb1VJ00Flau56PH"
-# secret stripe.api_key = "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"
 
 
 class Drink_Repository(object):
@@ -198,7 +192,6 @@ class Customer_Repository(object):
             new_customer = stripe.Customer.create()
             new_stripe = Stripe_Customer(id=new_customer.id)
             session.add(new_stripe)
-            print('customer.id',customer.id)
 
             new_customer = Customer(id=customer.id, password=customer.password,
                                     first_name=customer.first_name, last_name=customer.last_name, stripe_id=new_stripe.id, email_verified=customer.email_verified, has_registered=False)
@@ -210,6 +203,8 @@ class Customer_Repository(object):
             session.add(new_stripe)
             new_customer = Customer(id=customer.id, password=customer.password,
                                     first_name=customer.first_name, last_name=customer.last_name, stripe_id=new_stripe.id, email_verified=customer.email_verified, has_registered=False)
+            if customer.apple_id != "":
+                new_customer.apple_id = customer.apple_id
             session.add(new_customer)
             return new_customer
         # if the customer that has been requested for registration from the front end is unverified then we overwrite the customer values with the new values and return True to let the front end know that this customer has previously attempted to have been registered but was never verified. that way if a customer never verfies the account can continue to be modified as necessary while still preserving its unverified state
@@ -225,8 +220,6 @@ class Customer_Repository(object):
             return test_customer
 
         elif test_customer and test_customer.email_verified == False and test_stripe_id:
-            print(
-                'test_customer and test_customer.email_verified == False and test_stripe_id')
             test_customer.password = customer.password
             test_customer.first_name = customer.first_name
             test_customer.last_name = customer.last_name
@@ -282,6 +275,14 @@ class Customer_Repository(object):
     def get_customer(self, session, customer_id):
         customer = session.query(Customer).filter(
             Customer.id == customer_id).first()
+        if customer:
+            return customer
+        else:
+            return False
+    
+    def get_customer_apple(self, session, apple_id):
+        customer = session.query(Customer).filter(
+            Customer.apple_id == apple_id).first()
         if customer:
             return customer
         else:
