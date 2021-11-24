@@ -132,8 +132,6 @@ const BouncerQuickPass = () => {
   const handleAdmitPass = (index) => {
     console.log("index", index);
     const quickPass = filteredQuickPasses[index];
-    const a = Date.now();
-    console.log("a", a);
     quickPass.timeCheckedIn = Date.now() / 1000;
     console.log("stagedQuickPassToRemove", quickPass);
     const data = { quick_pass: quickPass };
@@ -180,8 +178,8 @@ const BouncerQuickPass = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              <TableRow>
-                {filteredQuickPasses.map((mappedQuickPass, i) => (
+              {filteredQuickPasses.map((mappedQuickPass, i) => (
+                <TableRow>
                   <TableCell key={i} align="center">
                     <div
                       style={{
@@ -227,8 +225,8 @@ const BouncerQuickPass = () => {
                       </IconButton>
                     </div>
                   </TableCell>
-                ))}
-              </TableRow>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </TableContainer>

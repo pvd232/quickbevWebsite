@@ -499,7 +499,7 @@ class Bouncer_Repository(object):
         bouncers = session.query(Bouncer).filter(
             Bouncer.merchant_id == merchant_id).all()
         staged_bouncers = session.query(Staged_Bouncer).filter(
-            Staged_Bouncer.merchant_id == merchant_id, Staged_Bouncer.status == "pending").all()
+            Staged_Bouncer.merchant_id == merchant_id).all()
         return staged_bouncers, bouncers
 
     def add_staged_bouncer(self, session, bouncer):

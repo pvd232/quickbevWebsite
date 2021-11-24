@@ -26,7 +26,7 @@ app.config['UPLOAD_FOLDER'] = merchant_menu_upload_folder
 stripe.api_key = "sk_test_51I0xFxFseFjpsgWvh9b1munh6nIea6f5Z8bYlIDfmKyNq6zzrgg8iqeKEHwmRi5PqIelVkx4XWcYHAYc1omtD7wz00JiwbEKzj"
 secret = '3327aa0ee1f61998369e815c17b1dc5eaf7e728bca14f6fe557af366ee6e20f9'
 ip_address = "192.168.1.192"
-env = "production"
+env = "local"
 apns = "debug"
 # theme color RGB = rgb(134,130,230), hex = #8682E6
 # nice seafoam color #19cca3
@@ -99,15 +99,15 @@ def send_fcm(device_token, new_order):
     # client.send([registration_id], alert, **options)
 
 
-@app.route("/")
-def my_index():
+# @app.route("/")
+# def my_index():
 
-    return render_template("index.html", flask_token="Hello world")
+#     return render_template("index.html", flask_token="Hello world")
 
 
-@app.errorhandler(404)
-def not_found(e):
-    return render_template('index.html')
+# @app.errorhandler(404)
+# def not_found(e):
+#     return render_template('index.html')
 
 
 @app.route("/b")
@@ -184,11 +184,12 @@ def login():
     customer = customer_service.authenticate_customer(email, password)
 
     if customer:
-        serialized_customer = customer.dto_serialize()
+        response = {}
+        response["customer"] = customer.dto_serialize()
         jwt_token = jwt.encode(
-            {"sub": serialized_customer["id"]}, key=secret, algorithm="HS256")
+            {"sub": customer.id}, key=secret, algorithm="HS256")
         headers["jwt-token"] = jwt_token
-        return Response(status=200, response=json.dumps(serialized_customer), headers=headers)
+        return Response(status=201, response= json.dumps(response), headers=headers)
     else:
         return Response(status=404, response=json.dumps(response))
 
@@ -682,10 +683,12 @@ def validate_customer():
     customer_id = request.headers.get('user-id')
     status = Customer_Service().get_customer(customer_id=customer_id)
     if status:
+        response = {}
+        response["customer"] = status.dto_serialize()
         jwt_token = jwt.encode(
             {"sub": customer_id}, key=secret, algorithm="HS256")
         headers = {"jwt-token": jwt_token}
-        return Response(status=201, headers=headers)
+        return Response(status=201, response = json.dumps(response), headers=headers)
     else:
         return Response(status=200)
 
@@ -699,7 +702,7 @@ def validate_customer_apple():
         # the status will be a customer object
         response = {}
         jwt_token = jwt.encode(
-            {"sub": apple_id}, key=secret, algorithm="HS256")
+            {"sub": status.id}, key=secret, algorithm="HS256")
         headers = {"jwt-token": jwt_token}
         response["customer"] = status.dto_serialize()
         print('response[customer]',response["customer"])
@@ -1113,6 +1116,7 @@ def bouncer(session_token):
             dummy_bouncer = Bouncer_Domain()
             bouncers.append(dummy_bouncer.dto_serialize())
         response["bouncers"] = bouncers
+        print('bouncers',bouncers)
         return Response(status=200, response=json.dumps(response))
 
 
@@ -1515,10 +1519,12 @@ def quick_pass_a(session_token):
         'Access-Control-Request-Headers')
 
     headers["Access-Control-Expose-Headers"] = "*"
-    if request.method == 'OPTIONS':
-        return Response(status=200, headers=headers)
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
+    
+    if request.method == 'OPTIONS':
+        return Response(status=200, headers=headers)
+    
     if request.method == 'PUT':
         if request.headers.get('entity') == 'bouncer':
             quick_pass_to_update = json.loads(request.data)['quick_pass']

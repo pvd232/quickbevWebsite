@@ -290,6 +290,7 @@ const Bouncers = (props) => {
     </div>
   );
   if (mappedBouncers) {
+    console.log("mappedBouncers", mappedBouncers);
     return (
       <TableContainer>
         <Paper className={props.classes.paper}>

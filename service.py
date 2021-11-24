@@ -373,8 +373,15 @@ class Bouncer_Service(object):
             # when a merchant employee domain is created without a merchant employee object or merchant employee json the c
             staged_bouncer_domains = [
                 Bouncer_Domain(bouncer_object=x, isStagedBouncer=True) for x in staged_bouncers]
+            
             for staged_domain in staged_bouncer_domains:
-                bouncer_domains.insert(0, staged_domain)
+                duplicate = False
+                for bouncer_domain in bouncer_domains:
+                    if bouncer_domain.id == staged_domain.id:
+                        bouncer_domain.status = staged_domain.status
+                        duplicate = True
+                if duplicate == False:
+                    bouncer_domains.insert(0, staged_domain)
             return bouncer_domains
 
     def add_staged_bouncer(self, bouncer):
@@ -755,14 +762,23 @@ class Quick_Pass_Service(object):
             activation_time_date_time = datetime(
                 datetime.now().year, datetime.now().month, datetime.now().day, activation_hour.hour)
             new_quick_pass.activation_time = activation_time_date_time
-            print('business.schedule[datetime.today().weekday()]',
                   business.schedule[datetime.today().weekday()].serialize)
+
+            expiration_bool = False
             if business.schedule[datetime.today().weekday()].closing_time.hour <= 6 and new_quick_pass.activation_time.hour >= 10:
                 expiration_day = datetime.now().day + 1
+                expiration_bool = True
             else:
                 expiration_day = datetime.now().day
+            if expiration_bool == True:
+                expiration_week_day = datetime.now().weekday() + 1
+            else:
+                expiration_week_day = datetime.now().weekday()
+            print('expiration_week_day',expiration_week_day)
+            
             expiration_date_time = datetime(
-                datetime.now().year, datetime.now().month, expiration_day, business.schedule[datetime.today().weekday()].closing_time.hour)
+                datetime.now().year, datetime.now().month, expiration_day, business.schedule[expiration_week_day].closing_time.hour)
+            print('expiration_date_time',expiration_date_time)
 
             new_quick_pass.expiration_time = expiration_date_time
             new_quick_pass.current_queue = business.current_queue

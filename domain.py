@@ -238,7 +238,7 @@ class Customer_Domain(object):
             if "stripe_id" in customer_object.__dict__.keys():
                 self.stripe_id = customer_object.stripe_id
             if "apple_id" in customer_object.__dict__.keys():
-                self.stripe_id = customer_object.stripe_id
+                self.apple_id = customer_object.apple_id
         elif customer_json:
             # has registered property will be false when the customer is created initially
             self.id = customer_json["id"]
