@@ -762,7 +762,6 @@ class Quick_Pass_Service(object):
             activation_time_date_time = datetime(
                 datetime.now().year, datetime.now().month, datetime.now().day, activation_hour.hour)
             new_quick_pass.activation_time = activation_time_date_time
-                  business.schedule[datetime.today().weekday()].serialize)
 
             expiration_bool = False
             if business.schedule[datetime.today().weekday()].closing_time.hour <= 6 and new_quick_pass.activation_time.hour >= 10:
