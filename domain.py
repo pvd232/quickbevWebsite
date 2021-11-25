@@ -710,6 +710,7 @@ class Quick_Pass_Domain(object):
             if attribute_names[i] == "id" or attribute_names[i] == "business_id":
                 serialized_attributes[attribute_names[i]] = str(attributes[i])
             elif attribute_names[i] == 'date_time' or attribute_names[i] == 'activation_time' or attribute_names[i] == 'time_checked_in' or attribute_names[i] == 'expiration_time':
+                print('attribute_names[i]', attribute_names[i])
                 print('attributes[i]', attributes[i])
                 if attributes[i] != '':
                     my_date = attributes[i].timestamp()

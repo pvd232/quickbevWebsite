@@ -187,11 +187,11 @@ class Order_Service(object):
         pre_service_fee_amount = tip_total + subtotal
 
         service_fee = .1 * pre_service_fee_amount
-        print('service_fee',service_fee)
-        app_fee = int(round((service_fee + tip_total) * 100,2))
-        print('app_fee',app_fee)
+        print('service_fee', service_fee)
+        app_fee = int(round((service_fee + tip_total) * 100, 2))
+        print('app_fee', app_fee)
         pre_sales_tax_amount = service_fee + pre_service_fee_amount
-        print('pre_sales_tax_amount',pre_sales_tax_amount)
+        print('pre_sales_tax_amount', pre_sales_tax_amount)
 
         sales_tax = pre_sales_tax_amount * order.sales_tax_percentage
         print('sales_tax', sales_tax)
@@ -208,13 +208,14 @@ class Order_Service(object):
             setup_future_usage='on_session',
             currency='usd',
             application_fee_amount=app_fee,
-            transfer_group = order.id,
+            transfer_group=order.id,
             transfer_data={
                 "destination": merchant_stripe_id
             }
         )
         with session_scope() as session:
-            servers = Merchant_Employee_Repository().get_servers(session, business_id=order.business_id)
+            servers = Merchant_Employee_Repository().get_servers(
+                session, business_id=order.business_id)
             for server in servers:
                 print("server.first_name", server.first_name)
                 tip_per_server = int(round(tip_total/len(servers), 2) * 100)
@@ -223,7 +224,7 @@ class Order_Service(object):
                     currency='usd',
                     destination=server.stripe_id,
                     transfer_group=order.id,
-    )
+                )
             response = {"payment_intent_id": payment_intent.id,
                         "secret": payment_intent["client_secret"]}
             return response
@@ -303,7 +304,7 @@ class Customer_Service(object):
                 return Customer_Domain(customer_object=Customer_Repository().get_customer(session, customer_id))
             else:
                 return customer
-    
+
     def get_customer_apple(self, apple_id):
         with session_scope() as session:
             customer = Customer_Repository().get_customer_apple(session, apple_id)
@@ -373,7 +374,7 @@ class Bouncer_Service(object):
             # when a merchant employee domain is created without a merchant employee object or merchant employee json the c
             staged_bouncer_domains = [
                 Bouncer_Domain(bouncer_object=x, isStagedBouncer=True) for x in staged_bouncers]
-            
+
             for staged_domain in staged_bouncer_domains:
                 duplicate = False
                 for bouncer_domain in bouncer_domains:
@@ -398,11 +399,11 @@ class Bouncer_Service(object):
                 bouncer_object=Bouncer_Repository().get_bouncer(session, bouncer_id))
             return bouncer_domain
 
+
 class Merchant_Employee_Service(object):
     def get_stripe_account(self, merchant_employee_id):
         with session_scope() as session:
             return Merchant_Employee_Repository().get_stripe_account(session, merchant_employee_id)
-
 
     def validate_pin(self, business_id, pin):
         with session_scope() as session:
@@ -550,6 +551,7 @@ class Business_Service(object):
     def update_business_capacity(self, business_id, capacity_status):
         with session_scope() as session:
             return Business_Repository().update_capactiy_status(session, business_id, capacity_status)
+
 
 class Tab_Service(object):
     def post_tab(self, tab):
@@ -764,7 +766,15 @@ class Quick_Pass_Service(object):
             new_quick_pass.activation_time = activation_time_date_time
 
             expiration_bool = False
+            print('business.schedule[datetime.today().weekday()]',
+                  business.schedule[datetime.today().weekday()])
+            print('business.schedule[datetime.today().weekday()].closing_time.hour',
+                  business.schedule[datetime.today().weekday()].closing_time.hour)
+            print('business.schedule[datetime.today().weekday()].closing_time',
+                  business.schedule[datetime.today().weekday()].closing_time)
+
             if business.schedule[datetime.today().weekday()].closing_time.hour <= 6 and new_quick_pass.activation_time.hour >= 10:
+
                 expiration_day = datetime.now().day + 1
                 expiration_bool = True
             else:
@@ -773,11 +783,21 @@ class Quick_Pass_Service(object):
                 expiration_week_day = datetime.now().weekday() + 1
             else:
                 expiration_week_day = datetime.now().weekday()
-            print('expiration_week_day',expiration_week_day)
-            
+            print('expiration_week_day', expiration_week_day)
+            print('business.schedule[expiration_week_day].closing_time.hour',
+                  business.schedule[expiration_week_day].closing_time.hour)
+            print('business.schedule[expiration_week_day].closing_time',
+                  business.schedule[expiration_week_day].closing_time)
+
+            expiration_hour = datetime.now().hour + 2
+            print('expiration_hour', expiration_hour)
+
+            if expiration_hour > business.schedule[expiration_week_day].closing_time.hour:
+                expiration_hour = business.schedule[expiration_week_day].closing_time.hour
+
             expiration_date_time = datetime(
-                datetime.now().year, datetime.now().month, expiration_day, business.schedule[expiration_week_day].closing_time.hour)
-            print('expiration_date_time',expiration_date_time)
+                datetime.now().year, datetime.now().month, expiration_day, expiration_hour)
+            print('expiration_date_time', expiration_date_time)
 
             new_quick_pass.expiration_time = expiration_date_time
             new_quick_pass.current_queue = business.current_queue
