@@ -646,6 +646,7 @@ class Quick_Pass_Domain(object):
         self.current_queue = 0
         self.expiration_time = ''
         self.time_checked_in = ''
+        self.should_display_expiration_time = False
         if quick_pass_object:
             self.id = quick_pass_object.id
             self.business_id = quick_pass_object.business_id
@@ -686,7 +687,6 @@ class Quick_Pass_Domain(object):
                 self.time_checked_in = datetime.fromtimestamp(
                     quick_pass_json["time_checked_in"])
         elif js_object:
-            print('js_object', js_object)
             self.id = js_object["id"]
             self.customer_id = js_object["customer_id"]
             self.activation_time = datetime.fromtimestamp(
@@ -710,8 +710,6 @@ class Quick_Pass_Domain(object):
             if attribute_names[i] == "id" or attribute_names[i] == "business_id":
                 serialized_attributes[attribute_names[i]] = str(attributes[i])
             elif attribute_names[i] == 'date_time' or attribute_names[i] == 'activation_time' or attribute_names[i] == 'time_checked_in' or attribute_names[i] == 'expiration_time':
-                print('attribute_names[i]', attribute_names[i])
-                print('attributes[i]', attributes[i])
                 if attributes[i] != '':
                     my_date = attributes[i].timestamp()
                     serialized_attributes[attribute_names[i]] = my_date

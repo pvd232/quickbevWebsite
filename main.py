@@ -672,7 +672,7 @@ def update_device_token(session_token):
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
     device_token = request.headers.get("device-token")
-    customer_id = request.headers.get("customer_id")
+    customer_id = request.headers.get("customer-id")
     if device_token and customer_id:
         Customer_Service().update_device_token(device_token, customer_id)
     return Response(status=200)
