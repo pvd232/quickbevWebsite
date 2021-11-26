@@ -646,7 +646,7 @@ class Quick_Pass_Domain(object):
         self.current_queue = 0
         self.expiration_time = ''
         self.time_checked_in = ''
-        self.should_display_expiration_time = False
+        self.should_display_expiration_time = True
         if quick_pass_object:
             self.id = quick_pass_object.id
             self.business_id = quick_pass_object.business_id

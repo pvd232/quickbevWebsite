@@ -790,13 +790,16 @@ class Quick_Pass_Service(object):
                   business.schedule[expiration_week_day].closing_time)
 
             expiration_hour = datetime.now().hour + 2
-            print('expiration_hour', expiration_hour)
+            print('expiration_hour',expiration_hour)
 
             if expiration_hour > business.schedule[expiration_week_day].closing_time.hour:
                 expiration_hour = business.schedule[expiration_week_day].closing_time.hour
 
+            # expiration_date_time = datetime(
+            #     datetime.now().year, datetime.now().month, expiration_day, expiration_hour)
+            
             expiration_date_time = datetime(
-                datetime.now().year, datetime.now().month, expiration_day, expiration_hour)
+                datetime.now().year, datetime.now().month, expiration_day, business.schedule[expiration_week_day].closing_time.hour)
             print('expiration_date_time', expiration_date_time)
 
             new_quick_pass.expiration_time = expiration_date_time
