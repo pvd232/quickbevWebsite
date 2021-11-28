@@ -305,13 +305,17 @@ class Customer_Service(object):
             else:
                 return customer
 
-    def get_customer_apple(self, apple_id):
+    def get_customer_apple(_idself, apple_id):
         with session_scope() as session:
-            customer = Customer_Repository().get_customer_apple(session, apple_id)
+            customer = Customer_Repository().get_customer_apple_id(session, apple_id)
             if customer:
                 return Customer_Domain(customer_object=customer)
             else:
                 return customer
+    
+    def set_customer_apple_id(self, customer_id, apple_id):
+        with session_scope() as session:
+            return Customer_Repository().set_customer_apple_id(session=session, customer_id=customer_id, apple_id=apple_id)
 
 
 class Merchant_Service(object):

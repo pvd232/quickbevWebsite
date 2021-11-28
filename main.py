@@ -697,7 +697,7 @@ def validate_customer():
 def validate_customer_apple():
     apple_id = request.headers.get('apple-unique-identifier')
     print('apple_id',apple_id)
-    status = Customer_Service().get_customer_apple(apple_id=apple_id)
+    status = Customer_Service().get_customer_apple_id(apple_id=apple_id)
     if status:
         # the status will be a customer object
         response = {}
@@ -710,7 +710,14 @@ def validate_customer_apple():
     else:
         return Response(status=200)
 
-# strongly typed url argument ;)
+# this route will only be called when the customer has been validated, so there is not option to return false / 404
+@app.route('/customer/apple', methods=['POST'])
+def set_customer_apple_id():
+    customer_id = request.headers.get('user-id')
+    apple_id = request.headers.get('apple-id')
+    Customer_Service().set_customer_apple_id(customer_id=customer_id, apple_id = apple_id)
+    return Response(status = 200)
+
 
 
 @app.route("/customer/email/verify/<string:session_token>")

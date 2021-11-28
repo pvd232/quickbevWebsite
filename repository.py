@@ -280,13 +280,20 @@ class Customer_Repository(object):
         else:
             return False
     
-    def get_customer_apple(self, session, apple_id):
+    def get_customer_apple_id(self, session, apple_id):
         customer = session.query(Customer).filter(
             Customer.apple_id == apple_id).first()
         if customer:
             return customer
         else:
             return False
+        
+    def set_customer_apple_id(self, session, customer_id, apple_id):
+        customer = session.query(Customer).filter(
+            Customer.id == customer_id).first()
+        customer.apple_id = apple_id
+        return
+        
 
 
 class Business_Repository(object):
