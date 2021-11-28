@@ -305,14 +305,14 @@ class Customer_Service(object):
             else:
                 return customer
 
-    def get_customer_apple(_idself, apple_id):
+    def get_customer_apple_id(self, apple_id):
         with session_scope() as session:
             customer = Customer_Repository().get_customer_apple_id(session, apple_id)
             if customer:
                 return Customer_Domain(customer_object=customer)
             else:
                 return customer
-    
+
     def set_customer_apple_id(self, customer_id, apple_id):
         with session_scope() as session:
             return Customer_Repository().set_customer_apple_id(session=session, customer_id=customer_id, apple_id=apple_id)
@@ -794,14 +794,14 @@ class Quick_Pass_Service(object):
                   business.schedule[expiration_week_day].closing_time)
 
             expiration_hour = datetime.now().hour + 2
-            print('expiration_hour',expiration_hour)
+            print('expiration_hour', expiration_hour)
 
             if expiration_hour > business.schedule[expiration_week_day].closing_time.hour:
                 expiration_hour = business.schedule[expiration_week_day].closing_time.hour
 
             # expiration_date_time = datetime(
             #     datetime.now().year, datetime.now().month, expiration_day, expiration_hour)
-            
+
             expiration_date_time = datetime(
                 datetime.now().year, datetime.now().month, expiration_day, business.schedule[expiration_week_day].closing_time.hour)
             print('expiration_date_time', expiration_date_time)
