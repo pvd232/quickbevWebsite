@@ -172,20 +172,13 @@ class Customer_Repository(object):
         test_customer = session.query(Customer).filter(
             Customer.id == customer.id).first()
 
-        test_stripe_id = session.query(Stripe_Customer).filter(
-            Stripe_Customer.id == customer.stripe_id).first()
+        test_customer_apple_id = session.query(Customer).filter(
+            Customer.apple_id == customer.apple_id).first()
 
-        if not test_customer and test_stripe_id:
-            new_customer = stripe.Customer.create()
-            new_stripe = Stripe_Customer(id=new_customer.id)
-            session.add(new_stripe)
-
-            new_customer = Customer(id=customer.id, password=customer.password,
-                                    first_name=customer.first_name, last_name=customer.last_name, stripe_id=new_stripe.id, email_verified=customer.email_verified, has_registered=False)
-            session.add(new_customer)
-            return new_customer
-        # this will be the pathway all users take unless they are signing in after having deleted the app
-        elif not test_customer and not test_stripe_id:
+        if (not test_customer and test_customer_apple_id) or (test_customer and not test_customer_apple_id):
+            test_customer.apple_id = test_customer_apple_id.apple_id
+            return test_customer
+        elif not test_customer and not test_customer_apple_id:
             new_customer = stripe.Customer.create()
             new_stripe = Stripe_Customer(id=new_customer.id)
             session.add(new_stripe)
@@ -198,25 +191,6 @@ class Customer_Repository(object):
             print('new_customer', new_customer.serialize)
             print('new_customer.date_time', new_customer.date_time)
             return new_customer
-        # if the customer that has been requested for registration from the front end is unverified then we overwrite the customer values with the new values and return True to let the front end know that this customer has previously attempted to have been registered but was never verified. that way if a customer never verfies the account can continue to be modified as necessary while still preserving its unverified state
-        elif test_customer and test_customer.email_verified == False and not test_stripe_id:
-            new_customer = stripe.Customer.create()
-            new_stripe = Stripe_Customer(id=new_customer.id)
-            session.add(new_stripe)
-            test_customer.password = customer.password
-            test_customer.first_name = customer.first_name
-            test_customer.last_name = customer.last_name
-            test_customer.stripe_id = new_stripe.id
-            test_customer.has_registered = True
-            return test_customer
-
-        elif test_customer and test_customer.email_verified == False and test_stripe_id:
-            test_customer.password = customer.password
-            test_customer.first_name = customer.first_name
-            test_customer.last_name = customer.last_name
-            test_customer.stripe_id = customer.stripe_id
-            test_customer.has_registered = True
-            return test_customer
         else:
             return False
 
