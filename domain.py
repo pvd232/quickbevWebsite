@@ -1,7 +1,7 @@
 from datetime import datetime
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import generate_password_hash
 import uuid
-
+from repository import service_fee_percentage, stripe_fee_percentage
 
 class Customer_Order_Status(object):
     def __init__(self, order_object):
@@ -83,54 +83,64 @@ class Drink_Domain(object):
 class Order_Domain(object):
     def __init__(self, order_object=None, order_json=None, drinks=None):
         self.id = ''
-        self.customer = Customer_Domain()
-        self.customer_first_name = ''
-        self.customer_last_name = ''
-        self.total = 0
-        self.subtotal = 0
-        self.pre_sales_tax_total = 0
-        self.pre_service_fee_total = 0
-        self.stripe_charge_total = 0
-        self.tip_percentage = 0
-        self.tip_total = 0
-        self.sales_tax_percentage = 0
-        self.sales_tax_total = 0
+        self.customer_id = ''
+        # this property does not exist in the database, it is used for stripe_payment_intent and is captured in iOS during the order process
+        self.customer_stripe_id = ''
         self.business_id = ''
-        self.business_address = ''
-        self.order_drink = ''
-        self.date_time = ''
         self.merchant_stripe_id = ''
-        self.service_fee = 0
-        self.business_id = ''
-        self.business_address = ''
-        self.order_drink = []
+        
+        self.sales_tax_percentage = 0.0
+        self.tip_percentage = 0.0
+        self.service_fee_percentage = 0.0
+        self.stripe_fee_percentage = 0.0
+        
+        self.subtotal = 0.0
+        self.tip_total = 0.0
+        self.pre_service_fee_total = 0.0
+        self.service_fee_total = 0.0
+        self.stripe_application_fee_total = 0.0
+        self.pre_sales_tax_total = 0.0
+        self.sales_tax_total = 0.0
+        self.total = 0.0
+        self.stripe_fee_total = 0.0
+        self.net_stripe_application_fee_total = 0.0
+        self.net_service_fee_total = 0.0
+        
+        self.date_time = ''
+        self.payment_intent_id = ''
+        self.card_information = ''
         self.completed = False
         self.refunded = False
-        self.payment_intent_id = ''
+        self.order_drink = []
         self.formatted_date_time = datetime.now().strftime(
             "%m/%d/%Y")
-        if order_object:
+        if order_object and drinks:
             # these attributes were from the join and are not nested in the result object
             self.business_name = order_object.business_name
             self.business_id = order_object.business_id
             self.business_address = order_object.business_address
             self.customer_first_name = order_object.customer_first_name
             self.customer_last_name = order_object.customer_last_name
+            
             # the order db model object is nested inside the result as "Order"
             self.id = order_object.Order.id
-            self.customer = Customer_Domain(
-                customer_object=order_object.Order.customer)
-            self.customer_id = self.customer.id
-            self.total = order_object.Order.total
-            self.subtotal = order_object.Order.subtotal
-            self.pre_sales_tax_total = order_object.Order.pre_sales_tax_total
-            self.pre_service_fee_total = order_object.Order.pre_service_fee_total
-            self.tip_percentage = order_object.Order.tip_percentage
-            self.tip_total = order_object.Order.tip_total
-            self.stripe_charge_total = order_object.Order.stripe_charge_total
-            self.sales_tax_total = order_object.Order.sales_tax_total
+            self.customer_id = order_object.Order.customer_id
             self.sales_tax_percentage = order_object.Order.sales_tax_percentage
-            self.service_fee = order_object.Order.service_fee
+            self.tip_percentage = order_object.Order.tip_percentage
+            self.service_fee_percentage = order_object.Order.service_fee_percentage
+            self.stripe_fee_percentage = order_object.Order.stripe_fee_percentage
+            self.subtotal = order_object.Order.subtotal
+            self.tip_total = order_object.Order.tip_total
+            self.pre_sales_tax_total = order_object.Order.pre_sales_tax_total
+            self.sales_tax_total = order_object.Order.sales_tax_total
+            self.stripe_application_fee_total = order_object.Order.stripe_application_fee_total
+            self.pre_service_fee_total = order_object.Order.pre_service_fee_total
+            self.service_fee_total = order_object.Order.service_fee_total
+            self.total = order_object.Order.total
+            self.stripe_fee_total = order_object.Order.stripe_fee_total
+            self.net_stripe_application_fee_total = order_object.Order.net_stripe_application_fee_total
+            self.net_service_fee_total = order_object.Order.net_service_fee_total
+            self.card_information = order_object.Order.card_information
             # formatted date string
             self.formatted_date_time = order_object.Order.date_time.strftime(
                 "%m/%d/%Y")
@@ -146,12 +156,48 @@ class Order_Domain(object):
                 self.active = True
             else:
                 self.active = False
+        
+        # this isnt working b/c not necessary yet   
+        elif order_object and not drinks:
+            self.business_name = order_object.business_name
+            self.business_id = order_object.business_id
+            self.business_address = order_object.business_address
+            self.customer_first_name = order_object.customer_first_name
+            self.customer_last_name = order_object.customer_last_name
+            # the order db model object is nested inside the result as "Order"
+            self.id = order_object.Order.id
+            self.customer_id = order_object.Order.customer_id
+            self.total = order_object.Order.total
+            self.subtotal = order_object.Order.subtotal
+            self.pre_sales_tax_total = order_object.Order.pre_sales_tax_total
+            self.pre_service_fee_total = order_object.Order.pre_service_fee_total
+            self.tip_percentage = order_object.Order.tip_percentage
+            self.tip_total = order_object.Order.tip_total
+            self.stripe_charge_total = order_object.Order.stripe_charge_total
+            self.sales_tax_total = order_object.Order.sales_tax_total
+            self.sales_tax_percentage = order_object.Order.sales_tax_percentage
+            self.service_fee = order_object.Order.service_fee
+            self.card_information = order_object.Order.card_information
+            # formatted date string
+            self.formatted_date_time = order_object.Order.date_time.strftime(
+                "%m/%d/%Y")
+            self.merchant_stripe_id = order_object.Order.merchant_stripe_id
+            self.order_drink = Order_Drink_Domain(
+                order_id=order_object.Order.id, order_drink_object=order_object.Order.order_drink)
+            self.completed = order_object.Order.completed
+            self.refunded = order_object.Order.refunded
+            self.payment_intent_id = order_object.Order.payment_intent_id
         elif order_json:
             # an order received as order_json will be an order sent from an iOS device, thus service fee is not included as a value because it is calculated in the backend
             self.id = order_json["id"]
+            # these props will only be send from iOS
             if "customer" in order_json.keys():
                 self.customer = Customer_Domain(
                     customer_json=order_json['customer'])
+                self.customer_first_name = self.customer.first_name
+                self.customer_last_name = self.customer.last_name
+                self.customer_stripe_id = self.customer.stripe_id
+            self.customer_id = order_json["customer_id"]
             self.merchant_stripe_id = order_json["merchant_stripe_id"]
             self.total = order_json["total"]
             self.subtotal = order_json["subtotal"]
@@ -163,6 +209,8 @@ class Order_Domain(object):
             self.completed = order_json["completed"]
             self.refunded = order_json["refunded"]
             self.payment_intent_id = order_json["payment_intent_id"]
+            self.card_information = order_json["card_information"]
+            
 
     def dto_serialize(self):
         attribute_names = list(self.__dict__.keys())
@@ -184,10 +232,17 @@ class Order_Domain(object):
 
 
 class Order_Drink_Domain(object):
-    def __init__(self, order_id=None, order_drink_object=None, order_drink_json=None, drinks=None):
+    def __init__(self, order_id=None, order_drink_object=None, order_drink_json=None, drinks = None):
         self.order_id = order_id
         self.order_drink = list()
-        if order_drink_object:
+        # might use this to pull in customer order objects when signing in to app, low priority
+        if order_drink_object and not drinks:
+            for order_drink_instance in order_drink_object:
+                new_drink = Drink_Domain(drink_object=order_drink_instance)
+                # order drink id will only exist when data if being pulled from the backend because the UUID is generated by the database
+                new_drink.order_drink_id = order_drink_instance.id
+                self.order_drink.append(new_drink)
+        elif order_drink_object and drinks:
             for order_drink_instance in order_drink_object:
                 for drink in drinks:
                     if order_drink_instance.drink_id == drink.id:
@@ -230,6 +285,7 @@ class Customer_Domain(object):
             self.first_name = customer_object.first_name
             self.last_name = customer_object.last_name
             self.email_verified = customer_object.email_verified
+            self.date_time = customer_object.date_time
             if "has_registered" in customer_object.__dict__.keys():
                 self.has_registered = customer_object.has_registered
             # might not want to send this sensitive information in every request
@@ -248,6 +304,9 @@ class Customer_Domain(object):
             self.first_name = customer_json["first_name"]
             self.last_name = customer_json["last_name"]
             self.stripe_id = customer_json["stripe_id"]
+            # convert swift timestamp to python datetime
+            self.date_time = datetime.fromtimestamp(customer_json["date_time"])
+            print('self.date_time',self.date_time)
             if "apple_id" in customer_json:
                 self.apple_id = customer_json["apple_id"]
             else:
@@ -260,6 +319,9 @@ class Customer_Domain(object):
         for i in range(len(attributes)):
             if attribute_names[i] == 'id':
                 serialized_attributes['id'] = str(self.id)
+            elif attribute_names[i] == 'date_time':
+                # return timestamp whenever sending python datetime object in JSON
+                serialized_attributes[attribute_names[i]] = self.date_time.timestamp()
             else:
                 serialized_attributes[attribute_names[i]] = attributes[i]
         return serialized_attributes
@@ -475,6 +537,7 @@ class Business_Domain(object):
         self.zipcode = ''
         self.at_capacity = False
         self.schedule = []
+        self.service_fee_percentage = service_fee_percentage
         if business_object:
             self.id = business_object.id
             self.merchant_id = business_object.merchant_id
@@ -625,7 +688,7 @@ class ETag_Domain(object):
 
 
 class Quick_Pass_Domain(object):
-    def __init__(self, quick_pass_object=None, quick_pass_json=None, js_object=None):
+    def __init__(self, quick_pass_object=None, quick_pass_json=None, js_object=None, should_display_expiration_time = False):
         print('quick_pass_json', quick_pass_json)
         self.id = ''
         self.customer_id = ''
@@ -646,7 +709,8 @@ class Quick_Pass_Domain(object):
         self.current_queue = 0
         self.expiration_time = ''
         self.time_checked_in = ''
-        self.should_display_expiration_time = True
+        self.should_display_expiration_time = should_display_expiration_time
+        self.sold_out = False
         if quick_pass_object:
             self.id = quick_pass_object.id
             self.business_id = quick_pass_object.business_id

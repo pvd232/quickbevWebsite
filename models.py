@@ -75,6 +75,8 @@ class Business_Schedule_Day(db.Model):
     is_closed = db.Column(db.Boolean(), default=False, nullable=False)
     opening_time = db.Column(db.Time(), nullable=True)
     closing_time = db.Column(db.Time(), nullable=True)
+    
+    # cannot create backref with same name as variable on model that relationship is with
     business = relationship("Business", back_populates="schedule")
 
     @property
@@ -266,6 +268,7 @@ class Customer(db.Model):
     has_registered = db.Column(db.Boolean(), nullable=False)
     is_active = db.Column(db.Boolean(), default=True, nullable=False)
     device_token = db.Column(db.String(200), nullable=True)
+    date_time = db.Column(db.DateTime(), nullable=False)
     quick_pass = relationship('Quick_Pass', lazy=True, uselist=True)
     order = relationship('Order', lazy=True, backref="customer")
     tab = relationship('Tab', lazy=True, backref="customer")
@@ -290,18 +293,27 @@ class Order(db.Model):
         'business.id'), nullable=False)
     merchant_stripe_id = db.Column(
         db.String(80), db.ForeignKey('merchant_stripe_account.id'))
-    total = db.Column(db.Float(), nullable=False)
-    subtotal = db.Column(db.Float(), nullable=False)
-    pre_sales_tax_total = db.Column(db.Float(), nullable=False)
-    pre_service_fee_total = db.Column(db.Float(), nullable=False)
-    stripe_charge_total = db.Column(db.Float(), nullable=False)
-    sales_tax_total = db.Column(db.Float(), nullable=False)
+    
     sales_tax_percentage = db.Column(db.Float(), nullable=False)
     tip_percentage = db.Column(db.Float(), nullable=False)
+    service_fee_percentage = db.Column(db.Float(), nullable=False)
+    stripe_fee_percentage = db.Column(db.Float(), nullable=False)
+
+    subtotal = db.Column(db.Float(), nullable=False)
     tip_total = db.Column(db.Float(), nullable=False)
-    service_fee = db.Column(db.Float(), nullable=False)
+    pre_service_fee_total = db.Column(db.Float(), nullable=False)
+    service_fee_total = db.Column(db.Float(), nullable=False)
+    stripe_application_fee_total = db.Column(db.Float(), nullable=False)
+    pre_sales_tax_total = db.Column(db.Float(), nullable=False)
+    sales_tax_total = db.Column(db.Float(), nullable=False)
+    total = db.Column(db.Float(), nullable=False)
+    stripe_fee_total = db.Column(db.Float(), nullable=False)
+    net_stripe_application_fee_total = db.Column(db.Float(), nullable=False)
+    net_service_fee_total = db.Column(db.Float(), nullable=False)
+    
     date_time = db.Column(db.DateTime(), default=datetime.now, nullable=False)
     payment_intent_id = db.Column(db.String(80), unique=True, nullable=False)
+    card_information = db.Column(db.String(80), nullable=False)
     completed = db.Column(db.Boolean(), default=False, nullable=True)
     refunded = db.Column(db.Boolean(), default=False, nullable=True)
     order_drink = relationship(

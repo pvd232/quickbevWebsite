@@ -1,39 +1,29 @@
-from flask import Flask, jsonify, Response, request, redirect, url_for, render_template
-import requests
+from flask import Response, request
 from models import app, instantiate_db_connection
 from service import *
 import json
-import time
-import uuid
 import stripe
 import os
-from werkzeug.utils import secure_filename
 import base64
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from flask import Flask
 import jwt
-import calendar
 from pushjack_http2_mod import APNSHTTP2Client, APNSHTTP2SandboxClient, APNSAuthToken
-from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.datastructures import MultiDict
 from pushjack_http2_mod import GCMClient
 
-merchant_menu_upload_folder = os.getcwd() + "/files"
-app.config['UPLOAD_FOLDER'] = merchant_menu_upload_folder
-
 stripe.api_key = "sk_test_51I0xFxFseFjpsgWvh9b1munh6nIea6f5Z8bYlIDfmKyNq6zzrgg8iqeKEHwmRi5PqIelVkx4XWcYHAYc1omtD7wz00JiwbEKzj"
 secret = '3327aa0ee1f61998369e815c17b1dc5eaf7e728bca14f6fe557af366ee6e20f9'
-ip_address = "10.0.0.25"
+ip_address = "192.168.1.192"
 env = "production"
 apns = "debug"
+
 # theme color RGB = rgb(134,130,230), hex = #8682E6
 # nice seafoam color #19cca3
 
 
 def send_apn(device_token, action, order_id=None):
-    apn_key = ''
     team_id = '6YGH9XK378'
     # converted authkey to private key that can be properly encoded as RSA key by jwt.encode method using advice here https://github.com/lcobucci/jwt/issues/244
     with open(os.getcwd()+"/private_key.pem") as f:
@@ -83,9 +73,9 @@ def send_fcm(device_token, new_order):
         api_key='AAAATofs8JE:APA91bFkb9kmo-sZuDwJIs4PNAh-6oxnN4XoR5RhTAB06qWJ9VMi3vFBTtgi6kIXGLwJfTUmzph-UTnKpXmZcyQ59uFSAOY1saTLdiobNmspqIU7uSQsM0nlPCM-VRH8A8QSNJvzuCxt')
 
     notification = {
-        'title': new_order["customer"]['first_name'], 'body': new_order["customer"]['last_name']}
+        'title': new_order.customer_first_name, 'body': new_order.customer_last_name}
     message = {"message": "new_order",
-               "notification": notification, "order": new_order["id"]}
+               "notification": notification, "order": new_order.id}
 
     # Send to single device.
     # NOTE: Keyword arguments are optional.
@@ -118,11 +108,11 @@ def b():
 
 @app.route("/c")
 def c():
-    # order_id = request.args.get("order_id")
-    # Order_Service().get_order(order_id)
-    device_token = Customer_Service().get_device_token('peter.driscoll@pwc.com')
-    send_apn(device_token, 'order_completed')
-    return Response(status=200)
+    order_id = request.args.get("order_id")
+    the_order = Order_Service().get_order(order_id)
+    # device_token = Customer_Service().get_device_token('peter.driscoll@pwc.com')
+    # send_apn(device_token, 'order_completed')
+    return Response(status=200, response=json.dumps({"order": the_order.dto_serialize()}))
 
 
 @app.route("/d")
@@ -137,7 +127,6 @@ def d():
 @app.route('/test_token/<string:business_id>', methods=["GET"])
 def test_token(business_id):
     fcm_token = Business_Service().get_device_token(business_id)
-    print('fcm_token', fcm_token)
     customer = {"first_name": "peter", "last_name": "driscoll"}
     new_order = {"customer": customer,
                  "id": "7f1d9f95-5313-462f-880c-5d700f9f77f0"}
@@ -189,7 +178,7 @@ def login():
         jwt_token = jwt.encode(
             {"sub": customer.id}, key=secret, algorithm="HS256")
         headers["jwt-token"] = jwt_token
-        return Response(status=201, response= json.dumps(response), headers=headers)
+        return Response(status=201, response=json.dumps(response), headers=headers)
     else:
         return Response(status=404, response=json.dumps(response))
 
@@ -235,9 +224,30 @@ def sync_customer_orders(session_token):
     customer_id = request.headers.get('customer-id')
     orders_status = Order_Service().get_customer_order_status(customer_id=customer_id)
     response["orders"] = orders_status
-    print('response["orders"]', response["orders"])
     return Response(status=200, response=json.dumps(response))
 
+# orders are being called by android tablet
+@app.route('/merchant_employee/order/<string:session_token>', methods=['GET'])
+def get_merchant_employee_orders(session_token):
+    if not jwt.decode(session_token, secret, algorithms=["HS256"]):
+        return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
+    headers = {}
+    response = {}
+    business_id = request.headers.get('business-id')
+    
+    # get all orders associated with the given business_id for the android tablet
+    if business_id:
+        orders = [x.dto_serialize()
+                    for x in Order_Service().get_merchant_employee_orders(business_id)]
+        response["orders"] = orders
+        
+    # specific order called by android tablet
+    else:
+        order_id = request.headers.get('order-id')
+        if order_id:
+            order = Order_Service().get_order(order_id)
+            response["order"] = order.dto_serialize()
+    return Response(status=200, response=json.dumps(response), headers=headers)
 
 @app.route('/order/<string:session_token>', methods=['POST', 'GET', 'OPTIONS', 'PUT'])
 def orders(session_token):
@@ -255,7 +265,6 @@ def orders(session_token):
     headers["Access-Control-Expose-Headers"] = "Access-Control-Allow-Headers"
     if request.method == 'PUT':
         order_to_update = json.loads(request.data)
-        print('order_to_update', order_to_update)
         Order_Service().update_order(order_to_update)
         if order_to_update["refunded"] == True:
             # 1. send push notification to device
@@ -267,6 +276,7 @@ def orders(session_token):
             # 1. send push notification to device saying the order is ready
             device_token = Customer_Service().get_device_token(
                 order_to_update["customer_id"])
+            print('device_token', device_token)
             send_apn(device_token, 'order_completed', order_to_update["id"])
         return Response(status=200)
     elif request.method == 'POST':
@@ -275,47 +285,26 @@ def orders(session_token):
         business_device_token = Business_Service(
         ).get_device_token(new_order["business_id"])
 
-        send_fcm(business_device_token, new_order)
+        send_fcm(business_device_token, updated_order)
         response['order'] = updated_order.dto_serialize()
         return Response(status=200, response=json.dumps(response))
     elif request.method == 'OPTIONS':
         return Response(status=200, headers=headers)
-    elif request.method == "GET":
-        # for tablet get request
-        business_id = request.headers.get('business-id')
-        if business_id:
-            # orders are being called by android tablet
-            orders = [x.dto_serialize()
-                      for x in Order_Service().get_business_orders(business_id)]
-        else:
-            order_id = request.headers.get('order-id')
-            # specific order called by android tablet
-            if order_id:
-                order = Order_Service().get_order(order_id)
-                response["order"] = order.dto_serialize()
-                return Response(status=200, response=json.dumps(response), headers=headers)
-            else:
-                # orders are being called by website
-                username = base64.b64decode(
-                    request.headers.get(
-                        "Authorization").split(" ")[1]).decode("utf-8").split(":")[0]
-
-                filter_orders_by = request.headers.get('Filterby')
-                orders = []
-                if filter_orders_by == 'merchant':
-                    orders = [x.dto_serialize()
-                              for x in Order_Service().get_merchant_orders(username=username)]
-                    if len(orders) == 0:
-                        # dummy data to populate orders table if the merchant has no orders
-                        dummy_order = Order_Domain()
-                        orders.append(dummy_order.dto_serialize())
-                # orders called by customer?
-                # elif filter_orders_by == 'customer':
-                #     orders = Order_Service().get_merchant_orders(username=username)
+    
+    # orders are being requested from the merchant through the web application
+    elif request.method == "GET":      
+        username = base64.b64decode(
+            request.headers.get(
+                "Authorization").split(" ")[1]).decode("utf-8").split(":")[0]
+        orders = [x.dto_serialize()
+                        for x in Order_Service().get_merchant_orders(username=username)]
+        
+        # dummy data to populate orders table if the merchant has no orders
+        if len(orders) == 0:
+            dummy_order = Order_Domain()
+            orders.append(dummy_order.dto_serialize())
         response['orders'] = orders
-        print('response[orders]', response['orders'])
-
-        return Response(status=200, response=json.dumps(response), headers=headers)
+    return Response(status=200, response=json.dumps(response), headers=headers)
 
 
 def send_info_email(jwt_token, email_type, user=None):
@@ -453,7 +442,6 @@ def send_confirmation_email(jwt_token, email_type, user=None, business=None, str
 
         sender_address = 'confirmation@quickbev.us'
         email = bouncer_id
-        print('email staged bouncer', email)
 
         # Setup the MIME
         message = MIMEMultipart()
@@ -688,7 +676,7 @@ def validate_customer():
         jwt_token = jwt.encode(
             {"sub": customer_id}, key=secret, algorithm="HS256")
         headers = {"jwt-token": jwt_token}
-        return Response(status=201, response = json.dumps(response), headers=headers)
+        return Response(status=201, response=json.dumps(response), headers=headers)
     else:
         return Response(status=200)
 
@@ -696,7 +684,6 @@ def validate_customer():
 @app.route('/customer/validate/apple', methods=['GET', 'OPTIONS'])
 def validate_customer_apple():
     apple_id = request.headers.get('apple-unique-identifier')
-    print('apple_id',apple_id)
     status = Customer_Service().get_customer_apple_id(apple_id=apple_id)
     if status:
         # the status will be a customer object
@@ -705,19 +692,20 @@ def validate_customer_apple():
             {"sub": status.id}, key=secret, algorithm="HS256")
         headers = {"jwt-token": jwt_token}
         response["customer"] = status.dto_serialize()
-        print('response[customer]',response["customer"])
         return Response(status=201, response=json.dumps(response), headers=headers)
     else:
         return Response(status=200)
 
 # this route will only be called when the customer has been validated, so there is not option to return false / 404
+
+
 @app.route('/customer/apple', methods=['POST'])
 def set_customer_apple_id():
     customer_id = request.headers.get('user-id')
     apple_id = request.headers.get('apple-id')
-    Customer_Service().set_customer_apple_id(customer_id=customer_id, apple_id = apple_id)
-    return Response(status = 200)
-
+    Customer_Service().set_customer_apple_id(
+        customer_id=customer_id, apple_id=apple_id)
+    return Response(status=200)
 
 
 @app.route("/customer/email/verify/<string:session_token>")
@@ -773,7 +761,7 @@ def reset_password(entity_id):
 
 
 @app.route('/business/<string:session_token>', methods=['GET', 'POST', 'OPTIONS'])
-def business_a(session_token):
+def business(session_token):
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
     response = {}
@@ -906,6 +894,7 @@ def create_payment_intent(session_token):
     client_secret = Order_Service().create_stripe_payment_intent(request_data)
     response["secret"] = client_secret["secret"]
     response["payment_intent_id"] = client_secret["payment_intent_id"]
+    
     return Response(status=200, response=json.dumps(response))
 
 
@@ -1039,7 +1028,6 @@ def merchant_employee(session_token):
         return Response(status=200, headers=headers)
     elif request.method == 'POST':
         request_json = json.loads(request.data)
-        print('request_json', request_json)
         requested_new_merchant_employee = request_json
         # quick_pass_initial_values = request_json['quick_pass_initial_values']
         new_merchant_employee = Merchant_Employee_Service(
@@ -1123,7 +1111,7 @@ def bouncer(session_token):
             dummy_bouncer = Bouncer_Domain()
             bouncers.append(dummy_bouncer.dto_serialize())
         response["bouncers"] = bouncers
-        print('bouncers',bouncers)
+        print('bouncers', bouncers)
         return Response(status=200, response=json.dumps(response))
 
 
@@ -1528,10 +1516,10 @@ def quick_pass_a(session_token):
     headers["Access-Control-Expose-Headers"] = "*"
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
-    
+
     if request.method == 'OPTIONS':
         return Response(status=200, headers=headers)
-    
+
     if request.method == 'PUT':
         if request.headers.get('entity') == 'bouncer':
             quick_pass_to_update = json.loads(request.data)['quick_pass']
@@ -1548,16 +1536,16 @@ def quick_pass_a(session_token):
         response['quick_pass_order'] = updated_quick_pass.dto_serialize()
         return Response(status=200, response=json.dumps(response), headers=headers)
     elif request.method == 'GET':
-        print('request.headers.g', request.headers.get('customer-id'))
         customer_id = request.headers.get('customer-id')
-        print('customer_id', customer_id)
         business_id = request.headers.get('business-id')
-        print('business_id', business_id)
         quick_pass = Quick_Pass_Service().get_current_queue(
             business_id=business_id, customer_id=customer_id)
-
-        response["quick_pass"] = quick_pass.dto_serialize()
-        return Response(status=200, response=json.dumps(response), headers=headers)
+        if quick_pass:
+            # quick_pass.sold_out = True
+            response["quick_pass"] = quick_pass.dto_serialize()
+            return Response(status=200, response=json.dumps(response), headers=headers)
+        else:
+            return Response(status=400)
 
 # get quickpasses for the bouncer to validate at the door. goes to front end page with list of active passes
 
@@ -1573,7 +1561,7 @@ def get_bouncer_quick_passes():
     if request.method == 'OPTIONS':
         return Response(status=200, headers=headers)
     if request.method == 'GET':
-        business_id = request.headers.get("business_id")
+        business_id = request.headers.get("business-id")
         quick_passes = Quick_Pass_Service().get_quick_passes(business_id=business_id)
         # if len(quick_passes) <1:
         #     dummy_quick_pass = Quick_Pass_Domain()
@@ -1607,4 +1595,4 @@ def quick_pass_payment_intent_a(session_token):
 
 
 if __name__ == '__main__':
-    app.run(host=ip_address, port=5000, debug= True)
+    app.run(host=ip_address, port=5000, debug=True)

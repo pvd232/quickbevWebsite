@@ -1,15 +1,8 @@
-import uuid
-import os
-# from models import Drink, Order, Order_Drink, Customer, Business, Tab, Stripe_Customer, Stripe_Account
 from models import *
 import stripe
-from datetime import date
-import requests
-import base64
-from sqlalchemy.sql import text
-from sqlalchemy.inspection import inspect
 from werkzeug.security import generate_password_hash, check_password_hash
-
+stripe_fee_percentage = 0.029
+service_fee_percentage = 0.1
 
 class Drink_Repository(object):
     def get_drinks(self, session):
@@ -38,36 +31,27 @@ class Order_Repository(object):
         return customer_orders
 
     def get_order(self, session, order_id):
-        # database_order = session.query(Order).filter(
-        #     Order.id == order_id).first()
         database_order = session.query(Order, Business.id.label("business_id"),  # select from allows me to pull the entire Order from the database so I can get the Order_Drink relationship values
                                        Business.address.label("business_address"), Business.name.label("business_name"), Customer.first_name.label('customer_first_name'), Customer.last_name.label('customer_last_name')).select_from(Order).join(Business, Order.business_id == Business.id).join(Customer, Order.customer_id == Customer.id).filter(Order.id == order_id).all()
         # database_order.completed = True
         drinks = session.query(Drink)
-        print('database_order in get_order', database_order)
         return database_order, drinks
 
     def update_order(self, session, order):
         database_order = session.query(Order).filter(
             Order.id == order.id).first()
         if database_order:
-            print('database_order in update_order', database_order.serialize)
             database_order.completed = order.completed
             database_order.refunded = order.refunded
             return
 
     def create_order(self, session, order):
-        print('order in create_order', order.dto_serialize())
-        new_order = Order(id=order.id, customer_id=order.customer.id, merchant_stripe_id=order.merchant_stripe_id,
-                          business_id=order.business_id, total=order.total, stripe_charge_total=order.stripe_charge_total, pre_sales_tax_total=order.pre_sales_tax_total, pre_service_fee_total=order.pre_service_fee_total, subtotal=order.subtotal, tip_percentage=order.tip_percentage, tip_total=order.tip_total, sales_tax_total=order.sales_tax_total, sales_tax_percentage=order.sales_tax_percentage, service_fee=order.service_fee, payment_intent_id=order.payment_intent_id, refunded=order.refunded, completed=order.completed)
-
+        new_order = Order(id=order.id, customer_id=order.customer_id, merchant_stripe_id=order.merchant_stripe_id,
+                          business_id=order.business_id,tip_percentage=order.tip_percentage, sales_tax_percentage = order.sales_tax_percentage, service_fee_percentage = order.service_fee_percentage, stripe_fee_percentage = order.stripe_fee_percentage,subtotal=order.subtotal, tip_total=order.tip_total,pre_sales_tax_total=order.pre_sales_tax_total, sales_tax_total=order.sales_tax_total, stripe_application_fee_total=order.stripe_application_fee_total,   pre_service_fee_total=order.pre_service_fee_total, service_fee_total = order.service_fee_total,  total=order.total, stripe_fee_total = order.stripe_fee_total, net_stripe_application_fee_total = order.net_stripe_application_fee_total, net_service_fee_total = order.net_service_fee_total, payment_intent_id=order.payment_intent_id, card_information=order.card_information, refunded=order.refunded, completed=order.completed)
         session.add(new_order)
-      
-        print('order after', new_order.serialize)
-
         for each_order_drink in order.order_drink.order_drink:
             # create a unique instance of Order_Drink for the number of each type of drink that were ordered. the UUID for the Order_Drink is generated in the database
-            for i in range(each_order_drink.quantity):
+            for _ in range(each_order_drink.quantity):
                 new_order_drink = Order_Drink(
                     order_id=new_order.id, drink_id=each_order_drink.id)
                 session.add(new_order_drink)
@@ -77,33 +61,33 @@ class Order_Repository(object):
             Merchant_Employee.business_id == order.business_id, Merchant_Employee.logged_in == True).all()
         if len(servers) > 0:
             tip_per_server = order.tip_total/len(servers)
-            print('tip_per_server',tip_per_server)
             for server in servers:
-                new_order_tip = Order_Tip(order_id = order.id, merchant_employee_id = server.id, tip_total = tip_per_server)
+                new_order_tip = Order_Tip(
+                    order_id=order.id, merchant_employee_id=server.id, tip_total=tip_per_server)
                 session.add(new_order_tip)
-            
-            
+        print('order',order.dto_serialize())
         return order
 
     def get_customer_orders(self, session, username):
         orders = session.query(Order, Business.id.label("business_id"),  # select from allows me to pull the entire Order from the database so I can get the Order_Drink relationship values
                                Business.address.label("business_address"), Business.name.label("business_name")).select_from(Order).join(Business, Order.business_id == Business.id).filter(Order.customer_id == username).all()
-        drinks = session.query(Drink)
-        return orders, drinks
+        return orders
 
     def get_merchant_orders(self, session, username):
         orders = session.query(Order, Business.id.label("business_id"),  # select from allows me to pull the entire Order from the database so I can get the Order_Drink relationship values
                                Business.address.label("business_address"), Business.name.label("business_name"), Customer.first_name.label('customer_first_name'), Customer.last_name.label('customer_last_name')).select_from(Order).join(Business, Order.business_id == Business.id).join(Customer, Order.customer_id == Customer.id).filter(Business.merchant_id == username).all()
-
+        # businesses_associated_with_merchant = session.query(Business).filter(Business.merchant_id == username).all()
+        # business_id_list = []
+        # for business in businesses_associated_with_merchant:
+        #     business_id_list.append(business.id)
         drinks = session.query(Drink)
         return orders, drinks
 
-    def get_business_orders(self, session, business_id):
+    def get_merchant_employee_orders(self, session, business_id):
         # only get active orders
         orders = session.query(Order, Business.id.label("business_id"),  # select from allows me to pull the entire Order from the database so I can get the Order_Drink relationship values
                                Business.address.label("business_address"), Business.name.label("business_name"), Customer.first_name.label('customer_first_name'), Customer.last_name.label('customer_last_name')).select_from(Order).join(Business, Order.business_id == Business.id).join(Customer, Order.customer_id == Customer.id).filter(Business.id == business_id, Order.completed == False, Order.refunded == False).all()
-        print('orders', orders)
-        drinks = session.query(Drink)
+        drinks = session.query(Drink).filter(Drink.business_id == business_id).all()
         return orders, drinks
 
     def create_stripe_ephemeral_key(self, session, request):
@@ -138,17 +122,17 @@ class Order_Repository(object):
             refund_application_fee=True,
             reverse_transfer=True,
         )
-        print('refund',refund)
+        print('refund', refund)
 
         transfer_group = charge["transfer_group"]
-        print('transfer_group',transfer_group)
+        print('transfer_group', transfer_group)
         transfers_associated_data = stripe.Transfer.list(
             transfer_group=transfer_group)
         transfers_list = transfers_associated_data["data"]
 
         for transfer in transfers_list:
-            print('transfer',transfer)
-            print('transfer["reversed"]',transfer["reversed"])
+            print('transfer', transfer)
+            print('transfer["reversed"]', transfer["reversed"])
             if transfer["reversed"] != True:
                 stripe.Transfer.create_reversal(
                     transfer["id"], amount=transfer["amount"])
@@ -197,15 +181,19 @@ class Customer_Repository(object):
                                     first_name=customer.first_name, last_name=customer.last_name, stripe_id=new_stripe.id, email_verified=customer.email_verified, has_registered=False)
             session.add(new_customer)
             return new_customer
+        # this will be the pathway all users take unless they are signing in after having deleted the app
         elif not test_customer and not test_stripe_id:
             new_customer = stripe.Customer.create()
             new_stripe = Stripe_Customer(id=new_customer.id)
             session.add(new_stripe)
             new_customer = Customer(id=customer.id, password=customer.password,
-                                    first_name=customer.first_name, last_name=customer.last_name, stripe_id=new_stripe.id, email_verified=customer.email_verified, has_registered=False)
+                                    first_name=customer.first_name, last_name=customer.last_name, stripe_id=new_stripe.id, email_verified=customer.email_verified, has_registered=False, date_time = customer.date_time)
+            # registering with Apple ID
             if customer.apple_id != "":
                 new_customer.apple_id = customer.apple_id
             session.add(new_customer)
+            print('new_customer',new_customer.serialize)
+            print('new_customer.date_time',new_customer.date_time)
             return new_customer
         # if the customer that has been requested for registration from the front end is unverified then we overwrite the customer values with the new values and return True to let the front end know that this customer has previously attempted to have been registered but was never verified. that way if a customer never verfies the account can continue to be modified as necessary while still preserving its unverified state
         elif test_customer and test_customer.email_verified == False and not test_stripe_id:
@@ -253,7 +241,6 @@ class Customer_Repository(object):
         else:
             return False
 
-
     def update_email_verification(self, session, customer_id):
         requested_customer = session.query(Customer).filter(
             Customer.id == customer_id).first()
@@ -279,7 +266,7 @@ class Customer_Repository(object):
             return customer
         else:
             return False
-    
+
     def get_customer_apple_id(self, session, apple_id):
         customer = session.query(Customer).filter(
             Customer.apple_id == apple_id).first()
@@ -287,13 +274,12 @@ class Customer_Repository(object):
             return customer
         else:
             return False
-        
+
     def set_customer_apple_id(self, session, customer_id, apple_id):
         customer = session.query(Customer).filter(
             Customer.id == customer_id).first()
         customer.apple_id = apple_id
         return
-        
 
 
 class Business_Repository(object):
@@ -459,8 +445,7 @@ class Merchant_Repository(object):
             return requested_merchant
         else:
             return False
-    
-    
+
 
 class Bouncer_Repository(object):
     def validate_username(self, session, username):
@@ -609,7 +594,7 @@ class Merchant_Employee_Repository(object):
             Staged_Merchant_Employee.id == merchant_employee_id).delete()
         return
 
-    def get_servers(self,session, business_id):
+    def get_servers(self, session, business_id):
         servers = session.query(Merchant_Employee).filter(
             Merchant_Employee.business_id == business_id, Merchant_Employee.logged_in == True).all()
         return servers
@@ -674,5 +659,5 @@ class Quick_Pass_Repository(object):
 
     def get_active_quick_passes(self, session, business_id):
         active_quick_passes = len(session.query(Quick_Pass).filter(
-            Quick_Pass.business_id == business_id, Quick_Pass.activation_time <= datetime.now()).all())
+            Quick_Pass.business_id == business_id, Quick_Pass.expiration_time <= datetime.now()).all())
         return active_quick_passes
