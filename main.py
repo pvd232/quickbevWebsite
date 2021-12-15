@@ -1,4 +1,4 @@
-from flask import Response, request
+from flask import Response, request, render_template
 from models import app, instantiate_db_connection
 from service import *
 import json
