@@ -64,14 +64,13 @@ const MenuBuilder = () => {
         alert("A server error occured. Tell Peter.");
       } else {
         alert("Menu successfully uploaded!");
-        window.location.reload();
       }
     } else {
       alert(
         "Menu upload failed. Make sure you filled out the form correctly and your internet is working."
       );
-      window.location.reload();
     }
+    window.location.reload();
   };
   const BusinessIdInput = (props) => {
     const [businessId, setbusinessId] = useState("");
@@ -94,8 +93,9 @@ const MenuBuilder = () => {
           value={businessId}
           required
           onChange={(event) => {
-            setbusinessId(event.target.value);
-            props.updateBusinessId(event.target.value);
+            const businessId = event.target.value.trimStart().trimEnd();
+            setbusinessId(businessId);
+            props.updateBusinessId(businessId);
           }}
         />
       </Grid>
@@ -125,6 +125,31 @@ const MenuBuilder = () => {
           index: props.k,
         };
         props.updateValue(propsFileObject);
+      } else if (event.target.name === "drinkName") {
+        let name = event.target.name;
+
+        const drinkNameArray = event.target.value.split(" ");
+        console.log("drinkNameArray", drinkNameArray);
+        if (drinkNameArray.length > 0) {
+          const newDrinkNameArray = [];
+          for (const drinkNameFragment of drinkNameArray) {
+            console.log("drinkNameFragment", drinkNameFragment);
+            const lowerCaseName = drinkNameFragment.toLowerCase();
+            newDrinkNameArray.push(lowerCaseName);
+          }
+          const newDrinkName = newDrinkNameArray.join(" ");
+          setFormValue({ [name]: newDrinkName });
+          props.updateValue({
+            name: name,
+            value: newDrinkName,
+            index: props.k,
+          });
+        } else {
+          let name = event.target.name;
+          let value = event.target.value.toLowerCase();
+          setFormValue({ [name]: value });
+          props.updateValue({ name: name, value: value, index: props.k });
+        }
       } else {
         let name = event.target.name;
         let value = event.target.value;

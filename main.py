@@ -24,6 +24,7 @@ apns = "debug"
 
 
 def send_apn(device_token, action, order_id=None):
+    print('order_id',order_id)
     team_id = '6YGH9XK378'
     # converted authkey to private key that can be properly encoded as RSA key by jwt.encode method using advice here https://github.com/lcobucci/jwt/issues/244
     with open(os.getcwd()+"/private_key.pem") as f:
@@ -110,6 +111,7 @@ def b():
 def c():
     order_id = request.args.get("order_id")
     the_order = Order_Service().get_order(order_id)
+    print('the_order',the_order)
     # device_token = Customer_Service().get_device_token('peter.driscoll@pwc.com')
     # send_apn(device_token, 'order_completed')
     return Response(status=200, response=json.dumps({"order": the_order.dto_serialize()}))
@@ -127,6 +129,7 @@ def d():
 @app.route('/test_token/<string:business_id>', methods=["GET"])
 def test_token(business_id):
     fcm_token = Business_Service().get_device_token(business_id)
+    print('fcm_token', fcm_token)
     customer = {"first_name": "peter", "last_name": "driscoll"}
     new_order = {"customer": customer,
                  "id": "7f1d9f95-5313-462f-880c-5d700f9f77f0"}
@@ -240,6 +243,7 @@ def get_merchant_employee_orders(session_token):
         orders = [x.dto_serialize()
                     for x in Order_Service().get_merchant_employee_orders(business_id)]
         response["orders"] = orders
+        print('response["orders"]',response["orders"])
         
     # specific order called by android tablet
     else:
@@ -287,6 +291,7 @@ def orders(session_token):
 
         send_fcm(business_device_token, updated_order)
         response['order'] = updated_order.dto_serialize()
+        print('response[order]',response['order'])
         return Response(status=200, response=json.dumps(response))
     elif request.method == 'OPTIONS':
         return Response(status=200, headers=headers)
@@ -442,6 +447,7 @@ def send_confirmation_email(jwt_token, email_type, user=None, business=None, str
 
         sender_address = 'confirmation@quickbev.us'
         email = bouncer_id
+        print('email staged bouncer', email)
 
         # Setup the MIME
         message = MIMEMultipart()
@@ -684,6 +690,7 @@ def validate_customer():
 @app.route('/customer/validate/apple', methods=['GET', 'OPTIONS'])
 def validate_customer_apple():
     apple_id = request.headers.get('apple-unique-identifier')
+    print('apple_id', apple_id)
     status = Customer_Service().get_customer_apple_id(apple_id=apple_id)
     if status:
         # the status will be a customer object
@@ -692,6 +699,7 @@ def validate_customer_apple():
             {"sub": status.id}, key=secret, algorithm="HS256")
         headers = {"jwt-token": jwt_token}
         response["customer"] = status.dto_serialize()
+        print('response[customer]', response["customer"])
         return Response(status=201, response=json.dumps(response), headers=headers)
     else:
         return Response(status=200)
@@ -1348,7 +1356,6 @@ def validate_merchant():
 
 @app.route('/merchant/pin/<string:session_token>', methods=['POST'])
 def authenticate_pin_a(session_token):
-    headers = {}
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
     data = json.loads(request.data)
@@ -1534,11 +1541,12 @@ def quick_pass_a(session_token):
         quick_pass = json.loads(request.data)
         updated_quick_pass = Quick_Pass_Service().add_quick_pass(quick_pass)
         response['quick_pass_order'] = updated_quick_pass.dto_serialize()
+        print('response quick_pass_order',response['quick_pass_order'])
         return Response(status=200, response=json.dumps(response), headers=headers)
     elif request.method == 'GET':
         customer_id = request.headers.get('customer-id')
         business_id = request.headers.get('business-id')
-        quick_pass = Quick_Pass_Service().get_current_queue(
+        quick_pass = Quick_Pass_Service().get_business_quick_pass(
             business_id=business_id, customer_id=customer_id)
         if quick_pass:
             # quick_pass.sold_out = True
@@ -1548,8 +1556,6 @@ def quick_pass_a(session_token):
             return Response(status=400)
 
 # get quickpasses for the bouncer to validate at the door. goes to front end page with list of active passes
-
-
 @app.route('/quick_pass/bouncer', methods=['POST', 'PUT', 'GET', 'OPTIONS'])
 def get_bouncer_quick_passes():
     headers = {}
@@ -1562,7 +1568,7 @@ def get_bouncer_quick_passes():
         return Response(status=200, headers=headers)
     if request.method == 'GET':
         business_id = request.headers.get("business-id")
-        quick_passes = Quick_Pass_Service().get_quick_passes(business_id=business_id)
+        quick_passes = Quick_Pass_Service().get_bouncer_quick_passes(business_id=business_id)
         # if len(quick_passes) <1:
         #     dummy_quick_pass = Quick_Pass_Domain()
         #     quick_passes.append(dummy_quick_pass)

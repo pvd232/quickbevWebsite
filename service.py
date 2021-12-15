@@ -7,7 +7,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 from contextlib import contextmanager
 from models import instantiate_db_connection
-from repository import service_fee_percentage, stripe_fee_percentage
+from repository import service_fee_percentage, quick_pass_service_fee_percentage, stripe_fee_percentage
 should_diplay_expiration_time = True
 
 
@@ -83,6 +83,7 @@ class Order_Service(object):
         with session_scope() as session:
             customer_order_status = [Customer_Order_Status(order_object=x).dto_serialize(
             ) for x in Order_Repository().get_customer_order_status(session, customer_id)]
+            print('customer_order_status', customer_order_status)
             return customer_order_status
 
     def get_order(self, order_id):
@@ -100,47 +101,51 @@ class Order_Service(object):
     def create_order(self, order):
         # calculate order values on backend to prevent malicious clients
         new_order_domain = Order_Domain(order_json=order)
-        
-        #1 subtotal is the sum of drink quantity to price 
+
+        # 1 subtotal is the sum of drink quantity to price
         subtotal = 0.0
         for drink in new_order_domain.order_drink.order_drink:
             drink_cost = drink.price * drink.quantity
             subtotal += drink_cost
 
-        #2 tip is calculated on the subtotal
+        # 2 tip is calculated on the subtotal
         tip_total = new_order_domain.tip_percentage * subtotal
 
-        #3 service fee base will include the tip because stripe includes this in their fee 
+        # 3 service fee base will include the tip because stripe includes this in their fee
         pre_service_fee_total = subtotal + tip_total
-        
-        #4 service fee is calculated as % of pre service fee total
+
+        # 4 service fee is calculated as % of pre service fee total
         service_fee_total = pre_service_fee_total * service_fee_percentage
-        
-        #5 stripe application fee includes tip_total because the tip is transfered from the QuickBev account to the server                
+
+        # 5 stripe application fee includes tip_total because the tip is transfered from the QuickBev account to the server
         stripe_application_fee_total = service_fee_total + tip_total
-        
-        #6 sales tax is calcualted as % of subtotal + service fee because only tip is exempt from sales tax
+        print('stripe_application_fee_total', stripe_application_fee_total)
+
+        # 6 sales tax is calcualted as % of subtotal + service fee because only tip is exempt from sales tax
         pre_sales_tax_total = pre_service_fee_total - tip_total + service_fee_total
 
-        #7 sales tax is calcualted as % of subtotal + service fee because only tip is exempt from sales tax
+        # 7 sales tax is calcualted as % of subtotal + service fee because only tip is exempt from sales tax
         sales_tax_total = pre_sales_tax_total * new_order_domain.sales_tax_percentage
-        
-        #8 the customer is charge the top line value of sales tax + subtotal + tip + service fee, then stripe deducts their fee from the service fee, and the net result is paid out to quickbev
+
+        # 8 the customer is charge the top line value of sales tax + subtotal + tip + service fee, then stripe deducts their fee from the service fee, and the net result is paid out to quickbev
         total = subtotal + service_fee_total + sales_tax_total + tip_total
 
-        #9 stripe charge is calculated on pre stripe app fee total
+        # 9 stripe charge is calculated on pre stripe app fee total
         stripe_fee_total = (total * stripe_fee_percentage) + 0.30
+        print('stripe_fee_total', stripe_fee_total)
 
-        #10 stripe charge is deducted from application fee, making the application fee net of the stripe charge and the tip_total which is later transfered to the server
+        # 10 stripe charge is deducted from application fee, making the application fee net of the stripe charge and the tip_total which is later transfered to the server
         net_stripe_application_fee_total = stripe_application_fee_total - stripe_fee_total
-        
-        #11 subtract out the tip_total which will be transfered from platform account to server connected account later
+        print('net_stripe_application_fee_total',
+              net_stripe_application_fee_total)
+
+        # 11 subtract out the tip_total which will be transfered from platform account to server connected account later
         net_service_fee_total = net_stripe_application_fee_total - tip_total
 
         # no need to set tip_percentage nor sales_tax_percentage because these values were sent from iOS device
         new_order_domain.service_fee_percentage = service_fee_percentage
         new_order_domain.stripe_fee_percentage = stripe_fee_percentage
-        
+
         new_order_domain.subtotal = subtotal
         new_order_domain.tip_total = tip_total
         new_order_domain.pre_service_fee_total = pre_service_fee_total
@@ -149,8 +154,8 @@ class Order_Service(object):
         new_order_domain.pre_sales_tax_total = pre_sales_tax_total
         new_order_domain.sales_tax_total = sales_tax_total
         new_order_domain.total = total
-        
-        new_order_domain.stripe_fee_total = stripe_fee_total        
+
+        new_order_domain.stripe_fee_total = stripe_fee_total
         new_order_domain.net_stripe_application_fee_total = net_stripe_application_fee_total
         new_order_domain.net_service_fee_total = net_service_fee_total
 
@@ -173,7 +178,7 @@ class Order_Service(object):
             orders, drinks = Order_Repository().get_merchant_orders(
                 session, username)
             for order in orders:
-                order_domain = Order_Domain(order_object=order, drinks = drinks)
+                order_domain = Order_Domain(order_object=order, drinks=drinks)
                 response.append(order_domain)
             return response
 
@@ -183,7 +188,7 @@ class Order_Service(object):
             orders, drinks = Order_Repository().get_merchant_employee_orders(
                 session, business_id)
             for order in orders:
-                order_domain = Order_Domain(order_object=order, drinks = drinks)
+                order_domain = Order_Domain(order_object=order, drinks=drinks)
                 response.append(order_domain)
             return response
 
@@ -193,42 +198,41 @@ class Order_Service(object):
 
     def create_stripe_payment_intent(self, request):
         new_order_domain = Order_Domain(order_json=request['order'])
-        
-        #1 subtotal is the sum of drink quantity to price 
+
+        # 1 subtotal is the sum of drink quantity to price
         subtotal = 0.0
         for drink in new_order_domain.order_drink.order_drink:
             drink_cost = drink.price * drink.quantity
             subtotal += drink_cost
 
-        #2 tip is calculated on the subtotal
+        # 2 tip is calculated on the subtotal
         tip_total = new_order_domain.tip_percentage * subtotal
 
-        #3 service fee base will include the tip because stripe includes this in their fee 
+        # 3 service fee base will include the tip because stripe includes this in their fee
         pre_service_fee_total = subtotal + tip_total
-        
-        #4 service fee is calculated as % of pre service fee total
+
+        # 4 service fee is calculated as % of pre service fee total
         service_fee_total = pre_service_fee_total * service_fee_percentage
-        
-        #5 stripe application fee includes tip_total because the tip is transfered from the QuickBev account to the server               
+
+        # 5 stripe application fee includes tip_total because the tip is transfered from the QuickBev account to the server
         stripe_application_fee_total = service_fee_total + tip_total
-        
-        #6 convert to stripe units (cents)
-        stripe_units_application_fee_total = int(round(stripe_application_fee_total * 100, 2))
-        
-        #7 sales tax is calcualted as % of subtotal + service fee because only tip is exempt from sales tax
+
+        # 6 convert to stripe units (cents)
+        stripe_units_application_fee_total = int(
+            round(stripe_application_fee_total * 100, 2))
+
+        # 7 sales tax is calcualted as % of subtotal + service fee because only tip is exempt from sales tax
         pre_sales_tax_total = pre_service_fee_total - tip_total + service_fee_total
 
-        #8 sales tax is calcualted as % of subtotal + service fee because only tip is exempt from sales tax
+        # 8 sales tax is calcualted as % of subtotal + service fee because only tip is exempt from sales tax
         sales_tax_total = pre_sales_tax_total * new_order_domain.sales_tax_percentage
 
-        #9 the customer is charge the top line value of sales tax + subtotal + tip + service fee, then stripe deducts their fee from the service fee, and the net result is paid out to quickbev        
+        # 9 the customer is charge the top line value of sales tax + subtotal + tip + service fee, then stripe deducts their fee from the service fee, and the net result is paid out to quickbev
         total = subtotal + service_fee_total + sales_tax_total + tip_total
 
-        
-        #10 stripe units
-        stripe_units_total = int(round( 100 * total, 2))
-        
-        
+        # 10 stripe units
+        stripe_units_total = int(round(100 * total, 2))
+
         merchant_stripe_id = new_order_domain.merchant_stripe_id
         payment_intent = stripe.PaymentIntent.create(
             amount=stripe_units_total,
@@ -245,6 +249,7 @@ class Order_Service(object):
             servers = Merchant_Employee_Repository().get_servers(
                 session, business_id=new_order_domain.business_id)
             for server in servers:
+                print("server.first_name", server.first_name)
                 tip_per_server = int(round(tip_total/len(servers), 2) * 100)
                 stripe.Transfer.create(
                     amount=tip_per_server,
@@ -528,7 +533,7 @@ class Business_Service(object):
             response = []
             for business in Business_Repository().get_businesses(session):
                 business_domain = Business_Domain(business_object=business)
-                
+
                 response.append(business_domain)
             return response
 
@@ -573,8 +578,10 @@ class Business_Service(object):
     def authenticate_merchant_pin(self, business_id, pin):
         with session_scope() as session:
             merchant = Business_Repository().authenticate_merchant_pin(session, business_id, pin)
+            print('merchant', merchant)
             if merchant:
                 merchant_domain = Merchant_Domain(merchant_object=merchant)
+                print('merchant_domain', merchant_domain)
                 return merchant_domain
             return merchant
 
@@ -691,21 +698,30 @@ class Quick_Pass_Service(object):
                 session, quick_pass_domain.business_id)
             customer = Customer_Repository().get_customer(
                 session, quick_pass_domain.customer_id)
-            
-            price = business.quick_pass_price * 100
-            service_fee = int(round(.1 * price, 2))
-            pre_sales_tax_total = service_fee + price
+
+            stripe_price = business.quick_pass_price * 100
+            print('stripe_price', stripe_price)
+            service_fee_total = int(
+                round(quick_pass_service_fee_percentage * stripe_price, 2))
+            print('service_fee', service_fee_total)
+
+            pre_sales_tax_total = service_fee_total + stripe_price
+            print('pre_sales_tax_total', pre_sales_tax_total)
+
             sales_tax = round(pre_sales_tax_total *
                               business.sales_tax_rate, 2)
-            pre_service_fee_total = int(pre_sales_tax_total + sales_tax)
+            print('sales_tax', sales_tax)
+
+            total = int(round(sales_tax + stripe_price,2))
+            print('total', total)
 
             merchant_stripe_id = quick_pass_domain.merchant_stripe_id
             payment_intent = stripe.PaymentIntent.create(
-                amount=pre_service_fee_total,
+                amount=total,
                 customer=customer.stripe_id,
                 setup_future_usage='on_session',
                 currency='usd',
-                application_fee_amount=service_fee,
+                application_fee_amount=service_fee_total,
                 transfer_data={
                     "destination": merchant_stripe_id
                 }
@@ -715,29 +731,34 @@ class Quick_Pass_Service(object):
             return response
 
     def add_quick_pass(self, quick_pass):
+        print('quick_pass', quick_pass)
         # calculate order values on backend to prevent malicious clients
         quick_pass_domain = Quick_Pass_Domain(quick_pass_json=quick_pass)
         with session_scope() as session:
             business = Business_Repository().get_business(
                 session, quick_pass_domain.business_id)
 
-            if business.current_queue >= 1:
-                business.current_queue += 1
+            if business.quick_pass_queue >= 1:
+                new_queue = business.quick_pass_queue + 1
+                Business_Repository().update_quick_pass_queue(session=session, business_id=business.id, queue=new_queue)
             price = business.quick_pass_price
-            service_fee = round(.1 * price, 2)
+            service_fee_total = round(.1 * price, 2)
+            print('service_fee_total', service_fee_total)
 
-            pre_sales_tax_total = service_fee + price
+            pre_sales_tax_total = service_fee_total + price
 
-            sales_tax = round(pre_sales_tax_total *
+            sales_tax_total = round(pre_sales_tax_total *
                               business.sales_tax_rate, 2)
-            stripe_total = pre_sales_tax_total + sales_tax - service_fee
-            total = pre_sales_tax_total + service_fee + sales_tax
-            quick_pass_domain.service_fee = service_fee
+            # the total will not be in addition to the service fee because the business is paying the service fee
+            total = price + sales_tax_total
+            print('total', total)
+            quick_pass_domain.service_fee_total = service_fee_total
             quick_pass_domain.total = total
-            quick_pass_domain.sales_tax = sales_tax
+            quick_pass_domain.subtotal = price
+            
+            quick_pass_domain.sales_tax_total = sales_tax_total
             quick_pass_domain.price = price
             quick_pass_domain.pre_sales_tax_total = pre_sales_tax_total
-            quick_pass_domain.stripe_total = int(round(stripe_total * 100, 2))
             Quick_Pass_Repository().add_quick_pass(session, quick_pass_domain)
             return quick_pass_domain
 
@@ -746,23 +767,31 @@ class Quick_Pass_Service(object):
             quick_pass_domain = Quick_Pass_Domain(
                 js_object=quick_pass_to_update)
             return Quick_Pass_Repository().update_quick_pass(session, quick_pass_domain)
-
-    def get_quick_passes(self, business_id):
+        
+    def get_bouncer_quick_passes(self, merchant_id):
         with session_scope() as session:
-            quick_pass_domains = [Quick_Pass_Domain(quick_pass_object=x) for x in Quick_Pass_Repository().get_quick_passes(
-                session=session, business_id=business_id)]
+            quick_pass_domains = [Quick_Pass_Domain(quick_pass_object=x) for x in Quick_Pass_Repository().get_bouncer_quick_passes(
+                session=session, merchant_id=merchant_id)]
             return quick_pass_domains
-
-    def get_current_queue(self, business_id, customer_id):
+    
+    def get_merchant_quick_passes(self, merchant_id):
+        with session_scope() as session:
+            quick_pass_domains = [Quick_Pass_Domain(quick_pass_object=x) for x in Quick_Pass_Repository().get_merchant_quick_passes(
+                session=session, merchant_id=merchant_id)]
+            return quick_pass_domains
+    def get_business_quick_pass(self, business_id, customer_id):
         with session_scope() as session:
             sold_out = False
             business = Business_Repository().get_business(session, business_id)
             merchant = Merchant_Repository().get_merchant(session, business.merchant_id)
             active_quick_passes = Quick_Pass_Repository(
-            ).get_active_quick_passes(session, business_id)
+            ).get_bouncer_quick_passes(session, business_id)
             current_hour = datetime.now().hour
-            # current_queue = active_quick_passes - business.quick_passes_per_hour
-            if business.current_queue >= 1 or active_quick_passes == business.quick_passes_per_hour:
+            # quick_pass_queue = active_quick_passes - business.quick_passes_per_hour
+            if current_hour != business.quick_pass_queue_hour:
+                Business_Repository().update_quick_pass_queue_hour(session=session, business_id=business.id, queue_hour=current_hour)
+                Business_Repository().update_quick_pass_queue(session=session, business_id=business.id, queue=0)
+            if business.quick_pass_queue >= 1 or active_quick_passes == business.quick_passes_per_hour:
                 activation_hour = current_hour + 1
                 sold_out = True
             else:
@@ -774,13 +803,15 @@ class Quick_Pass_Service(object):
                 activation_hour = datetime(
                     datetime.now().year, datetime.now().month, datetime.now().day, activation_hour)
 
-            new_quick_pass = Quick_Pass_Domain(should_display_expiration_time=should_diplay_expiration_time)
+            new_quick_pass = Quick_Pass_Domain(
+                should_display_expiration_time=should_diplay_expiration_time)
             # new_quick_pass
             activation_time_date_time = datetime(
                 datetime.now().year, datetime.now().month, datetime.now().day, activation_hour.hour)
             new_quick_pass.activation_time = activation_time_date_time
             new_quick_pass.sold_out = sold_out
             expiration_bool = False
+           
 
             if business.schedule[datetime.today().weekday()].closing_time.hour <= 6:
                 expiration_day = datetime.now().day + 1
@@ -791,31 +822,23 @@ class Quick_Pass_Service(object):
                 expiration_week_day = datetime.now().weekday() + 1
             else:
                 expiration_week_day = datetime.now().weekday()
-            print('expiration_week_day', expiration_week_day)
-            print('business.schedule[expiration_week_day].closing_time.hour',
-                  business.schedule[expiration_week_day].closing_time.hour)
-            print('business.schedule[expiration_week_day].closing_time',
-                  business.schedule[expiration_week_day].closing_time)
 
             expiration_hour = datetime.now().hour + 2
-            print('datetime.now()',datetime.now())
-            print('expiration_hour', expiration_hour)
+            print('expiration_hour',expiration_hour)
 
             if expiration_hour > business.schedule[expiration_week_day].closing_time.hour:
                 expiration_hour = business.schedule[expiration_week_day].closing_time.hour
 
-            # expiration_date_time = datetime(
-            #     datetime.now().year, datetime.now().month, expiration_day, expiration_hour)
             if should_diplay_expiration_time == False:
-                
                 expiration_date_time = datetime(
-                datetime.now().year, datetime.now().month, expiration_day, business.schedule[expiration_week_day].closing_time.hour)
+                    datetime.now().year, datetime.now().month, expiration_day, business.schedule[expiration_week_day].closing_time.hour)
             else:
                 expiration_date_time = datetime(
-                datetime.now().year, datetime.now().month, expiration_day, expiration_hour)
+                    datetime.now().year, datetime.now().month, expiration_day, expiration_hour)
+                print('expiration_date_time',expiration_date_time)
+                
 
             new_quick_pass.expiration_time = expiration_date_time
-            new_quick_pass.current_queue = business.current_queue
             new_quick_pass.price = business.quick_pass_price
             new_quick_pass.business_id = business.id
             new_quick_pass.customer_id = customer_id
@@ -825,4 +848,5 @@ class Quick_Pass_Service(object):
 
             # must create a dummy id for swift data type
             new_quick_pass.id = uuid.uuid4()
+            print('new_quick_pass', new_quick_pass.dto_serialize())
             return new_quick_pass

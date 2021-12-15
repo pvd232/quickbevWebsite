@@ -75,7 +75,7 @@ class Business_Schedule_Day(db.Model):
     is_closed = db.Column(db.Boolean(), default=False, nullable=False)
     opening_time = db.Column(db.Time(), nullable=True)
     closing_time = db.Column(db.Time(), nullable=True)
-    
+
     # cannot create backref with same name as variable on model that relationship is with
     business = relationship("Business", back_populates="schedule")
 
@@ -118,7 +118,8 @@ class Business(db.Model):
     at_capacity = db.Column(db.Boolean(), default=True, nullable=False)
     quick_pass_price = db.Column(db.Float(), default=20.0, nullable=False)
     quick_passes_per_hour = db.Column(db.Integer(), default=30, nullable=False)
-    current_queue = db.Column(db.Integer(), default=0, nullable=True)
+    quick_pass_queue = db.Column(db.Integer(), default=0, nullable=True)
+    quick_pass_queue_hour = db.Column(db.Integer(), default=0, nullable=True)
     schedule = relationship(
         "Business_Schedule_Day", lazy=True,  uselist=True)
     merchant_employee = relationship(
@@ -260,7 +261,7 @@ class Customer(db.Model):
     stripe_id = db.Column(db.String(80), db.ForeignKey('stripe_customer.id'), unique=True,
                           nullable=False)
     apple_id = db.Column(db.String(200),
-                   unique=True, nullable=True)
+                         unique=True, nullable=True)
     password = db.Column(db.String(200), nullable=False)
     first_name = db.Column(db.String(80), nullable=False)
     last_name = db.Column(db.String(80), nullable=False)
@@ -293,7 +294,7 @@ class Order(db.Model):
         'business.id'), nullable=False)
     merchant_stripe_id = db.Column(
         db.String(80), db.ForeignKey('merchant_stripe_account.id'))
-    
+
     sales_tax_percentage = db.Column(db.Float(), nullable=False)
     tip_percentage = db.Column(db.Float(), nullable=False)
     service_fee_percentage = db.Column(db.Float(), nullable=False)
@@ -310,7 +311,7 @@ class Order(db.Model):
     stripe_fee_total = db.Column(db.Float(), nullable=False)
     net_stripe_application_fee_total = db.Column(db.Float(), nullable=False)
     net_service_fee_total = db.Column(db.Float(), nullable=False)
-    
+
     date_time = db.Column(db.DateTime(), default=datetime.now, nullable=False)
     payment_intent_id = db.Column(db.String(80), unique=True, nullable=False)
     card_information = db.Column(db.String(80), nullable=False)
@@ -340,21 +341,21 @@ class Quick_Pass(db.Model):
     merchant_stripe_id = db.Column(
         db.String(80), db.ForeignKey('merchant_stripe_account.id'))
     price = db.Column(db.Float(), nullable=False)
-    sales_tax = db.Column(db.Float(), nullable=False)
+    sales_tax_total = db.Column(db.Float(), nullable=False)
+    service_fee_total = db.Column(db.Float(), nullable=False)
     sales_tax_percentage = db.Column(db.Float(), nullable=False)
-    service_fee = db.Column(db.Float(), nullable=False)
-    stripe_total = db.Column(db.Float(), nullable=False)
     pre_sales_tax_total = db.Column(db.Float(), nullable=False)
     total = db.Column(db.Float(), nullable=False)
+    subtotal = db.Column(db.Float(), nullable=False)
     date_time = db.Column(db.DateTime(), default=datetime.now, nullable=False)
     payment_intent_id = db.Column(db.String(80), unique=True, nullable=False)
-    current_queue = db.Column(db.Integer(), nullable=False)
     # the time the pass was actually used to get into the bar
     time_checked_in = db.Column(db.DateTime(), nullable=True)
     is_active = db.Column(db.Boolean(), default=False, nullable=False)
     # the time the pass will become active and the user is able to enter the bar with it
     activation_time = db.Column(db.DateTime(), nullable=True)
-    expiration_time = db.Column(db.DateTime(), nullable=True)
+    expiration_time = db.Column(db.DateTime(), nullable=False)
+    card_information = db.Column(db.String(80), nullable=False)
     customer = relationship("Customer", back_populates="quick_pass")
 
     @property
@@ -366,9 +367,10 @@ class Quick_Pass(db.Model):
             serialized_attributes[attribute_names[i]] = attributes[i]
         return serialized_attributes
 
+
 class Order_Tip(db.Model):
     __tablename__ = 'order_tip'
-    id = db.Column(UUID(as_uuid=True), default=uuid.uuid4, primary_key=True,  
+    id = db.Column(UUID(as_uuid=True), default=uuid.uuid4, primary_key=True,
                    unique=True, nullable=False)
     order_id = db.Column(UUID(as_uuid=True), db.ForeignKey(
         'order.id'), nullable=False)

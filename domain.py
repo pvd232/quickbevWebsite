@@ -1,7 +1,8 @@
 from datetime import datetime
 from werkzeug.security import generate_password_hash
 import uuid
-from repository import service_fee_percentage, stripe_fee_percentage
+from repository import service_fee_percentage
+
 
 class Customer_Order_Status(object):
     def __init__(self, order_object):
@@ -88,12 +89,12 @@ class Order_Domain(object):
         self.customer_stripe_id = ''
         self.business_id = ''
         self.merchant_stripe_id = ''
-        
+
         self.sales_tax_percentage = 0.0
         self.tip_percentage = 0.0
         self.service_fee_percentage = 0.0
         self.stripe_fee_percentage = 0.0
-        
+
         self.subtotal = 0.0
         self.tip_total = 0.0
         self.pre_service_fee_total = 0.0
@@ -105,7 +106,7 @@ class Order_Domain(object):
         self.stripe_fee_total = 0.0
         self.net_stripe_application_fee_total = 0.0
         self.net_service_fee_total = 0.0
-        
+
         self.date_time = ''
         self.payment_intent_id = ''
         self.card_information = ''
@@ -121,7 +122,7 @@ class Order_Domain(object):
             self.business_address = order_object.business_address
             self.customer_first_name = order_object.customer_first_name
             self.customer_last_name = order_object.customer_last_name
-            
+
             # the order db model object is nested inside the result as "Order"
             self.id = order_object.Order.id
             self.customer_id = order_object.Order.customer_id
@@ -156,8 +157,8 @@ class Order_Domain(object):
                 self.active = True
             else:
                 self.active = False
-        
-        # this isnt working b/c not necessary yet   
+
+        # this isnt working b/c not necessary yet
         elif order_object and not drinks:
             self.business_name = order_object.business_name
             self.business_id = order_object.business_id
@@ -210,7 +211,6 @@ class Order_Domain(object):
             self.refunded = order_json["refunded"]
             self.payment_intent_id = order_json["payment_intent_id"]
             self.card_information = order_json["card_information"]
-            
 
     def dto_serialize(self):
         attribute_names = list(self.__dict__.keys())
@@ -232,7 +232,7 @@ class Order_Domain(object):
 
 
 class Order_Drink_Domain(object):
-    def __init__(self, order_id=None, order_drink_object=None, order_drink_json=None, drinks = None):
+    def __init__(self, order_id=None, order_drink_object=None, order_drink_json=None, drinks=None):
         self.order_id = order_id
         self.order_drink = list()
         # might use this to pull in customer order objects when signing in to app, low priority
@@ -306,7 +306,7 @@ class Customer_Domain(object):
             self.stripe_id = customer_json["stripe_id"]
             # convert swift timestamp to python datetime
             self.date_time = datetime.fromtimestamp(customer_json["date_time"])
-            print('self.date_time',self.date_time)
+            print('self.date_time', self.date_time)
             if "apple_id" in customer_json:
                 self.apple_id = customer_json["apple_id"]
             else:
@@ -321,7 +321,8 @@ class Customer_Domain(object):
                 serialized_attributes['id'] = str(self.id)
             elif attribute_names[i] == 'date_time':
                 # return timestamp whenever sending python datetime object in JSON
-                serialized_attributes[attribute_names[i]] = self.date_time.timestamp()
+                serialized_attributes[attribute_names[i]
+                                      ] = self.date_time.timestamp()
             else:
                 serialized_attributes[attribute_names[i]] = attributes[i]
         return serialized_attributes
@@ -688,7 +689,7 @@ class ETag_Domain(object):
 
 
 class Quick_Pass_Domain(object):
-    def __init__(self, quick_pass_object=None, quick_pass_json=None, js_object=None, should_display_expiration_time = False):
+    def __init__(self, quick_pass_object=None, quick_pass_json=None, js_object=None, should_display_expiration_time=False):
         print('quick_pass_json', quick_pass_json)
         self.id = ''
         self.customer_id = ''
@@ -697,20 +698,20 @@ class Quick_Pass_Domain(object):
         self.business_id = ''
         self.merchant_stripe_id = ''
         self.price = 0.0
-        self.sales_tax = 0.0
+        self.service_fee_total = 0.0
+        self.sales_tax_total = 0.0
         self.sales_tax_percentage = 0.0
-        self.service_fee = 0.0
         self.pre_sales_tax_total = 0.0
-        self.stripe_total = 0.0
         self.total = 0.0
+        self.subtotal = 0.0
         self.date_time = ''
         self.payment_intent_id = ''
-        self.activation_time = ''
-        self.current_queue = 0
+        self.activation_time = datetime.now()
         self.expiration_time = ''
         self.time_checked_in = ''
         self.should_display_expiration_time = should_display_expiration_time
         self.sold_out = False
+        self.card_information = ''
         if quick_pass_object:
             self.id = quick_pass_object.id
             self.business_id = quick_pass_object.business_id
@@ -719,20 +720,20 @@ class Quick_Pass_Domain(object):
             self.customer_last_name = quick_pass_object.customer.last_name
             self.price = quick_pass_object.price
             self.total = quick_pass_object.total
-            self.sales_tax = quick_pass_object.sales_tax
-            self.service_fee = quick_pass_object.service_fee
+            self.service_fee_total = quick_pass_object.service_fee_total
+            self.sales_tax_total = quick_pass_object.sales_tax
             self.merchant_stripe_id = quick_pass_object.merchant_stripe_id
             self.activation_time = quick_pass_object.activation_time
             self.expiration_time = quick_pass_object.expiration_time
+            self.card_information = quick_pass_object.card_information
         elif quick_pass_json:
-            print('quick_pass_json', quick_pass_json)
+            # service_fee_total will never be sent from front end, it will always be computed or pulled from database
             self.id = quick_pass_json["id"]
             self.customer_id = quick_pass_json["customer_id"]
             self.activation_time = datetime.fromtimestamp(
                 quick_pass_json['activation_time'])
             self.date_time = datetime.fromtimestamp(
                 quick_pass_json['date_time'])
-            self.current_queue = quick_pass_json["current_queue"]
             # will only need this property when receiving a new business queue order from a customer
             self.business_id = quick_pass_json["business_id"]
             self.merchant_stripe_id = quick_pass_json["merchant_stripe_id"]
@@ -740,12 +741,11 @@ class Quick_Pass_Domain(object):
             self.total = quick_pass_json["total"]
             self.pre_sales_tax_total = quick_pass_json["pre_sales_tax_total"]
             self.price = quick_pass_json["price"]
-            self.stripe_total = quick_pass_json["stripe_total"]
             self.sales_tax_percentage = quick_pass_json["sales_tax_percentage"]
-            self.sales_tax = quick_pass_json["sales_tax"]
+            self.sales_tax_total = quick_pass_json["sales_tax_total"]
             self.expiration_time = datetime.fromtimestamp(
                 quick_pass_json["expiration_time"])
-
+            self.card_information = quick_pass_json["card_information"]
             # optional values
             if quick_pass_json.__contains__('time_checked_in'):
                 self.time_checked_in = datetime.fromtimestamp(
