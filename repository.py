@@ -175,8 +175,9 @@ class Customer_Repository(object):
         test_customer_apple_id = session.query(Customer).filter(
             Customer.apple_id == customer.apple_id).first()
 
-        if (not test_customer and test_customer_apple_id) or (test_customer and not test_customer_apple_id):
-            test_customer.apple_id = test_customer_apple_id.apple_id
+        if not test_customer and test_customer_apple_id:            
+            return test_customer_apple_id
+        elif test_customer and not test_customer_apple_id:
             return test_customer
         elif not test_customer and not test_customer_apple_id:
             new_customer = stripe.Customer.create()
