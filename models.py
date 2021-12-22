@@ -20,7 +20,9 @@ from datetime import datetime
 #   https://stackoverflow.com/questions/38678336/sqlalchemy-how-to-implement-drop-table-cascade
 
 stripe.api_key = "sk_test_51I0xFxFseFjpsgWvh9b1munh6nIea6f5Z8bYlIDfmKyNq6zzrgg8iqeKEHwmRi5PqIelVkx4XWcYHAYc1omtD7wz00JiwbEKzj"
-
+stripe_fee_percentage = 0.029
+service_fee_percentage = 0.1
+quick_pass_service_fee_percentage = 0.1
 
 @compiles(DropTable, "postgresql")
 def _compile_drop_table(element, compiler, **kwargs):
@@ -302,10 +304,8 @@ class Order(db.Model):
 
     subtotal = db.Column(db.Float(), nullable=False)
     tip_total = db.Column(db.Float(), nullable=False)
-    pre_service_fee_total = db.Column(db.Float(), nullable=False)
     service_fee_total = db.Column(db.Float(), nullable=False)
     stripe_application_fee_total = db.Column(db.Float(), nullable=False)
-    pre_sales_tax_total = db.Column(db.Float(), nullable=False)
     sales_tax_total = db.Column(db.Float(), nullable=False)
     total = db.Column(db.Float(), nullable=False)
     stripe_fee_total = db.Column(db.Float(), nullable=False)
@@ -344,7 +344,6 @@ class Quick_Pass(db.Model):
     sales_tax_total = db.Column(db.Float(), nullable=False)
     service_fee_total = db.Column(db.Float(), nullable=False)
     sales_tax_percentage = db.Column(db.Float(), nullable=False)
-    pre_sales_tax_total = db.Column(db.Float(), nullable=False)
     total = db.Column(db.Float(), nullable=False)
     subtotal = db.Column(db.Float(), nullable=False)
     date_time = db.Column(db.DateTime(), default=datetime.now, nullable=False)
@@ -644,8 +643,7 @@ def create_orders_and_customers():
         business_where_order_occured = [
             x for x in businesses if x.id == drink.business_id][0]
 
-        test_order = Order(id=order_id, customer_id=test_customer_id, business_id=drink.business_id, merchant_stripe_id=business_where_order_occured.merchant_stripe_id, total=total, pre_sales_tax_total=pre_sales_tax_total, pre_service_fee_total=pre_service_fee_total,
-                           stripe_charge_total=stripe_charge_total, subtotal=subtotal, sales_tax_total=sales_tax, sales_tax_percentage=sales_tax_percentage, tip_percentage=tip_percentage, tip_total=tip_total, service_fee=service_fee, payment_intent_id=uuid.uuid4().hex)
+        test_order = Order(id=order_id, customer_id=test_customer_id, business_id=drink.business_id, merchant_stripe_id=business_where_order_occured.merchant_stripe_id, total=total, stripe_charge_total=stripe_charge_total, subtotal=subtotal, sales_tax_total=sales_tax, sales_tax_percentage=sales_tax_percentage, tip_percentage=tip_percentage, tip_total=tip_total, service_fee=service_fee, payment_intent_id=uuid.uuid4().hex)
         db.session.add(test_order)
         for i in range(num_drinks):
             order_drink = Order_Drink(drink_id=drink.id, order_id=order_id)

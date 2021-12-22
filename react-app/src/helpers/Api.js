@@ -111,16 +111,7 @@ class Client {
       this.baseUrl + "/order/" + LocalStorageManager.shared.sessionToken;
 
     const headers = new Headers();
-    headers.set(
-      "Authorization",
-      "Basic " +
-        btoa(
-          LocalStorageManager.shared.currentMerchant.id +
-            ":" +
-            LocalStorageManager.shared.currentMerchant.password
-        )
-    );
-    headers.set("filterBy", "merchant");
+    headers.set("email", LocalStorageManager.shared.currentMerchant.id);
     return fetch(this.url, {
       credentials: "include",
       headers: headers,

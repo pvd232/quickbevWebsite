@@ -38,6 +38,7 @@ const CreateYourAccountFieldset = (props) => {
   // this reduction function is applied in the formChangeHandler which dynamically sets the state value based on the name passed in through the event
   // i am telling React how to update the state with the reducer function, and then i am binding those instructions to my setFormValue function which then implements that logic.
   // react is passing the current state into the function, and i am passing in the second parameter, new state, i could implement some logic if i wanted, then i return what i want the new state to be to react and react updates it
+
   const [formValue, setFormValue] = useReducer(
     (state, newState) => ({ ...state, ...newState }),
     {
@@ -540,14 +541,10 @@ const BusinessFieldset = (props) => {
     }
   };
   const handleScheduleChange = (event) => {
-    console.log("event", event);
     const name = event.target.name;
-    console.log("name", name);
     const dayIndex = parseInt(name.split("-")[0]);
-    console.log("dayIndex", dayIndex);
     const time = event.target.value;
     const isOpenOrClosed = name.split("-")[1];
-    console.log("isOpenOrClosed", isOpenOrClosed);
     // must create new date object outside the scope of the setSchedule callback or the state doesnt update
     const newDateObject = {
       day: dayIndex,

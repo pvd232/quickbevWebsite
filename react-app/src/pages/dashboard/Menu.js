@@ -100,7 +100,8 @@ const Menu = (props) => {
                         <CardMedia
                           style={{
                             width: "auto",
-                            maxHeight: "200px",
+                            maxHeight: "15vh",
+                            marginTop: "20px",
                           }}
                           component="img"
                           src={menuDrink.imageUrl}

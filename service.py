@@ -1,13 +1,14 @@
 from domain import *
-from repository import *
+from models import stripe_fee_percentage, service_fee_percentage, quick_pass_service_fee_percentage
 import uuid
-import os
+import os, time
 from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 from contextlib import contextmanager
-from models import instantiate_db_connection
-from repository import service_fee_percentage, quick_pass_service_fee_percentage, stripe_fee_percentage
+from models import instantiate_db_connection, stripe_fee_percentage, service_fee_percentage, quick_pass_service_fee_percentage
+from repository import *
+import inspect
 should_diplay_expiration_time = True
 
 
@@ -30,6 +31,10 @@ session_factory = sessionmaker(bind=drink_engine)
 Session = scoped_session(session_factory)
 
 # TODO add error message to tell user if they tried to upload a word doc or another doc to either convert it to a pdf or email the docuement to quickbev
+# local_time_zone = datetime.utcnow().astimezone().tzinfo
+# print('local_time_zone',local_time_zone)
+# os.environ['TZ'] = str(local_time_zone)
+# time.tzset()
 
 
 @contextmanager
@@ -79,14 +84,13 @@ class Drink_Service(object):
 
 
 class Order_Service(object):
-    def get_customer_order_status(self, customer_id):
+    def get_customer_order_status(self, customer_id: str):
         with session_scope() as session:
             customer_order_status = [Customer_Order_Status(order_object=x).dto_serialize(
             ) for x in Order_Repository().get_customer_order_status(session, customer_id)]
-            print('customer_order_status', customer_order_status)
             return customer_order_status
 
-    def get_order(self, order_id):
+    def get_order(self, order_id: str):
         with session_scope() as session:
             orders, drinks = Order_Repository().get_order(session, order_id)
             order = orders[0]
@@ -100,13 +104,13 @@ class Order_Service(object):
 
     def create_order(self, order):
         # calculate order values on backend to prevent malicious clients
-        new_order_domain = Order_Domain(order_json=order)
+        new_order_domain = Order_Domain(order_json=order, is_customer_order=True)
 
         # 1 subtotal is the sum of drink quantity to price
         subtotal = 0.0
-        for drink in new_order_domain.order_drink.order_drink:
-            drink_cost = drink.price * drink.quantity
-            subtotal += drink_cost
+        for order_drink in new_order_domain.order_drink:
+            order_drink_cost = order_drink.price * order_drink.quantity
+            subtotal += order_drink_cost
 
         # 2 tip is calculated on the subtotal
         tip_total = new_order_domain.tip_percentage * subtotal
@@ -148,10 +152,8 @@ class Order_Service(object):
 
         new_order_domain.subtotal = subtotal
         new_order_domain.tip_total = tip_total
-        new_order_domain.pre_service_fee_total = pre_service_fee_total
         new_order_domain.service_fee_total = service_fee_total
         new_order_domain.stripe_application_fee_total = stripe_application_fee_total
-        new_order_domain.pre_sales_tax_total = pre_sales_tax_total
         new_order_domain.sales_tax_total = sales_tax_total
         new_order_domain.total = total
 
@@ -197,12 +199,12 @@ class Order_Service(object):
             return Order_Repository().create_stripe_ephemeral_key(session, request)
 
     def create_stripe_payment_intent(self, request):
-        new_order_domain = Order_Domain(order_json=request['order'])
+        new_order_domain = Order_Domain(order_json=request['order'], is_customer_order=True)
 
         # 1 subtotal is the sum of drink quantity to price
         subtotal = 0.0
-        for drink in new_order_domain.order_drink.order_drink:
-            drink_cost = drink.price * drink.quantity
+        for order_drink_domain in new_order_domain.order_drink:
+            drink_cost = order_drink_domain.price * order_drink_domain.quantity
             subtotal += drink_cost
 
         # 2 tip is calculated on the subtotal
@@ -264,7 +266,7 @@ class Order_Service(object):
     def refund_stripe_order(self, order):
         with session_scope() as session:
             new_order_domain = Order_Domain(order_json=order)
-            return Order_Repository().refund_stripe_order(session, new_order_domain)
+            return Order_Repository().refund_stripe_order(new_order_domain)
 
 
 class Customer_Service(object):
@@ -290,9 +292,9 @@ class Customer_Service(object):
 
     def register_new_customer(self, customer):
         with session_scope() as session:
-            requested_new_customer = Customer_Domain(customer_json=customer)
+            requested_new_customer_domain = Customer_Domain(customer_json=customer)
             registered_new_customer = Customer_Repository().register_new_customer(
-                session, requested_new_customer)
+                session, requested_new_customer_domain)
             if registered_new_customer:
                 registered_new_customer_domain = Customer_Domain(
                     customer_object=registered_new_customer)
@@ -375,8 +377,7 @@ class Merchant_Service(object):
                 return False
 
     def authenticate_merchant_stripe(self, stripe_id):
-        with session_scope() as session:
-            return Merchant_Repository().authenticate_merchant_stripe(session, stripe_id)
+        return Merchant_Repository().authenticate_merchant_stripe(stripe_id)
 
     def add_merchant(self, merchant):
         with session_scope() as session:
@@ -447,10 +448,10 @@ class Merchant_Employee_Service(object):
                                                                      business_id, pin)
             return pin_status
 
-    def authenticate_pin(self, business_id, pin, login_status):
+    def authenticate_pin(self, pin, login_status):
         with session_scope() as session:
             merchant_employee_object = Merchant_Employee_Repository().authenticate_pin(
-                session, business_id, pin, login_status)
+                session, pin, login_status)
             if merchant_employee_object:
                 merchant_employee_domain = Merchant_Employee_Domain(
                     merchant_employee_object=merchant_employee_object)
@@ -591,22 +592,23 @@ class Business_Service(object):
 
 
 class Tab_Service(object):
-    def post_tab(self, tab):
+    def post_tab(self, tab: dict):
         with session_scope() as session:
             new_tab_domain = Tab_Domain(tab_json=tab)
             return Tab_Repository().post_tab(session, new_tab_domain)
 
 
 class ETag_Service(object):
-    def get_etag(self, category):
+    def get_etag(self, category: str):
         with session_scope() as session:
             return ETag_Domain(etag_object=ETag_Repository().get_etag(session, category))
 
-    def validate_etag(self, etag):
+    def validate_etag(self, etag: dict):
         with session_scope() as session:
-            return ETag_Repository().validate_etag(session, etag)
+            etag_domain = ETag_Domain(etag_json=etag)
+            return ETag_Repository().validate_etag(session, etag_domain)
 
-    def update_etag(self, category):
+    def update_etag(self, category: str):
         with session_scope() as session:
             ETag_Repository().update_etag(session, category)
 
@@ -758,7 +760,6 @@ class Quick_Pass_Service(object):
             
             quick_pass_domain.sales_tax_total = sales_tax_total
             quick_pass_domain.price = price
-            quick_pass_domain.pre_sales_tax_total = pre_sales_tax_total
             Quick_Pass_Repository().add_quick_pass(session, quick_pass_domain)
             return quick_pass_domain
 
@@ -784,59 +785,28 @@ class Quick_Pass_Service(object):
             sold_out = False
             business = Business_Repository().get_business(session, business_id)
             merchant = Merchant_Repository().get_merchant(session, business.merchant_id)
-            active_quick_passes = Quick_Pass_Repository(
-            ).get_bouncer_quick_passes(session, business_id)
-            current_hour = datetime.now().hour
-            # quick_pass_queue = active_quick_passes - business.quick_passes_per_hour
-            if current_hour != business.quick_pass_queue_hour:
-                Business_Repository().update_quick_pass_queue_hour(session=session, business_id=business.id, queue_hour=current_hour)
-                Business_Repository().update_quick_pass_queue(session=session, business_id=business.id, queue=0)
-            if business.quick_pass_queue >= 1 or active_quick_passes == business.quick_passes_per_hour:
-                activation_hour = current_hour + 1
-                sold_out = True
-            else:
-                activation_hour = current_hour
-            if activation_hour > 24:
-                activation_hour = datetime(datetime.now().year, datetime.now(
-                ).month, datetime.now().day + 1, activation_hour - 24)
-            else:
-                activation_hour = datetime(
-                    datetime.now().year, datetime.now().month, datetime.now().day, activation_hour)
-
+            
             new_quick_pass = Quick_Pass_Domain(
                 should_display_expiration_time=should_diplay_expiration_time)
-            # new_quick_pass
-            activation_time_date_time = datetime(
-                datetime.now().year, datetime.now().month, datetime.now().day, activation_hour.hour)
-            new_quick_pass.activation_time = activation_time_date_time
+            new_quick_pass.activation_time = datetime.now()
             new_quick_pass.sold_out = sold_out
             expiration_bool = False
            
-
-            if business.schedule[datetime.today().weekday()].closing_time.hour <= 6:
-                expiration_day = datetime.now().day + 1
-                expiration_bool = True
+            # if the closing time is less than the opening time the day of closing time is 1 greater than the day of opening
+            if business.schedule[datetime.today().weekday()].closing_time.hour < business.schedule[datetime.today().weekday()].opening_time.hour:
+                closing_day = datetime.now().day + 1
             else:
-                expiration_day = datetime.now().day
-            if expiration_bool == True:
-                expiration_week_day = datetime.now().weekday() + 1
-            else:
-                expiration_week_day = datetime.now().weekday()
-
-            expiration_hour = datetime.now().hour + 2
-            print('expiration_hour',expiration_hour)
-
-            if expiration_hour > business.schedule[expiration_week_day].closing_time.hour:
-                expiration_hour = business.schedule[expiration_week_day].closing_time.hour
-
+                closing_day = datetime.now().day
+            closing_date_time = datetime(datetime.now().year, datetime.now().month, closing_day,business.schedule[datetime.today().weekday()].closing_time.hour, business.schedule[datetime.today().weekday()].closing_time.minute) 
+            expiration_date_time = datetime(datetime.now().year, datetime.now().month, datetime.now().day,datetime.now().hour + 2, datetime.now().minute)
+            
+            if expiration_date_time > closing_date_time:
+                expiration_date_time = closing_date_time 
+            print('expiration_date_time',expiration_date_time)
+            print('closing_date_time',closing_date_time)
+            
             if should_diplay_expiration_time == False:
-                expiration_date_time = datetime(
-                    datetime.now().year, datetime.now().month, expiration_day, business.schedule[expiration_week_day].closing_time.hour)
-            else:
-                expiration_date_time = datetime(
-                    datetime.now().year, datetime.now().month, expiration_day, expiration_hour)
-                print('expiration_date_time',expiration_date_time)
-                
+                expiration_date_time = closing_date_time
 
             new_quick_pass.expiration_time = expiration_date_time
             new_quick_pass.price = business.quick_pass_price

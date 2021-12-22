@@ -98,8 +98,9 @@ export class OrderDrink {
   }
 }
 
-export class Order {
+export class OrderItem {
   constructor(order_object) {
+    console.log("order_object", order_object);
     this.id = order_object.id;
     this.customerId = order_object.customer_id;
     this.total = order_object.total;
@@ -107,14 +108,40 @@ export class Order {
     this.tipPercentage = order_object.tip_percentage;
     this.tipTotal = order_object.tip_total;
     this.salesTaxTotal = order_object.sales_tax_total;
-    this.preSalesTaxTotal = order_object.pre_sales_tax_total;
-    this.preServiceFeeTotal = order_object.pre_service_fee_total;
     this.businessId = order_object.business_id;
     // this property will be extracted from the business in the front end and set after the business is initialized
     this.businessName = "";
     this.businessAddress = order_object.business_address;
     this.dateTime = order_object.formatted_date_time;
-    this.serviceFee = order_object.service_fee;
+    this.serviceFee = order_object.service_fee_total;
+    this.orderDrink = [];
+    // if there are no orders then the backend will send an empty order so we dont need to construct an order drink
+    if (
+      Array.isArray(order_object.order_drink.order_drink) &&
+      order_object.order_drink.order_drink.length >= 1 &&
+      order_object.order_drink.order_drink[0].id !== ""
+    ) {
+      this.orderDrink = new OrderDrink(order_object.order_drink);
+      this.orderDrink.orderId = this.id;
+    }
+  }
+}
+export class Order {
+  constructor(order_object) {
+    console.log("order_object", order_object);
+    this.id = order_object.id;
+    this.customerId = order_object.customer_id;
+    this.total = order_object.total;
+    this.subtotal = order_object.subtotal;
+    this.tipPercentage = order_object.tip_percentage;
+    this.tipTotal = order_object.tip_total;
+    this.salesTaxTotal = order_object.sales_tax_total;
+    this.businessId = order_object.business_id;
+    // this property will be extracted from the business in the front end and set after the business is initialized
+    this.businessName = "";
+    this.businessAddress = order_object.business_address;
+    this.dateTime = order_object.formatted_date_time;
+    this.serviceFee = order_object.service_fee_total;
     this.orderDrink = [];
     // if there are no orders then the backend will send an empty order so we dont need to construct an order drink
     if (
@@ -145,7 +172,6 @@ export class Order {
     return data;
   }
 }
-
 export class Merchant {
   constructor(objectType, object) {
     console.log("object", object);
@@ -263,7 +289,7 @@ export class Business {
       this.salesTaxRate = businessJson.sales_tax_rate;
       this.menu = businessJson.menu;
       this.atCapacity = businessJson.at_capacity;
-      this.schedule = businessObject.schedule;
+      this.schedule = businessJson.schedule;
     } else if (businessObject && !isJSON && tableDisplay) {
       this.id = businessObject.id;
       this.name = businessObject.name;
@@ -310,6 +336,7 @@ export class Business {
       sales_tax: this.salesTaxRate,
       at_capacity: this.atCapacity,
       schedule: this.schedule,
+      time_zone: this.timeZone,
     };
     return data;
   }

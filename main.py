@@ -90,15 +90,15 @@ def send_fcm(device_token, new_order):
     # client.send([registration_id], alert, **options)
 
 
-@app.route("/")
-def my_index():
+# @app.route("/")
+# def my_index():
 
-    return render_template("index.html", flask_token="Hello world")
+#     return render_template("index.html", flask_token="Hello world")
 
 
-@app.errorhandler(404)
-def not_found(e):
-    return render_template('index.html')
+# @app.errorhandler(404)
+# def not_found(e):
+#     return render_template('index.html')
 
 
 @app.route("/b")
@@ -215,7 +215,7 @@ def inventory(session_token):
         etag = ETag_Service().get_etag("drink")
         headers["e-tag-id"] = str(etag.id)
         headers["e-tag-category"] = etag.category
-
+    print('response',response)
     return Response(status=200, response=json.dumps(response), headers=headers)
 
 
@@ -298,15 +298,14 @@ def orders(session_token):
     
     # orders are being requested from the merchant through the web application
     elif request.method == "GET":      
-        username = base64.b64decode(
-            request.headers.get(
-                "Authorization").split(" ")[1]).decode("utf-8").split(":")[0]
+        username = request.headers.get("email")
         orders = [x.dto_serialize()
                         for x in Order_Service().get_merchant_orders(username=username)]
         
         # dummy data to populate orders table if the merchant has no orders
+        print('len(orders)',len(orders))
         if len(orders) == 0:
-            dummy_order = Order_Domain()
+            dummy_order = Order_Domain(is_customer_order=False)
             orders.append(dummy_order.dto_serialize())
         response['orders'] = orders
     return Response(status=200, response=json.dumps(response), headers=headers)
@@ -1263,8 +1262,8 @@ def authenticate_pin():
     # entity_id = data['email']
     business_id = data['business_id']
     login_status = data['logged_in']
-    new_merchant_employee = Merchant_Employee_Service().authenticate_pin(business_id,
-                                                                         pin, login_status)
+    new_merchant_employee = Merchant_Employee_Service().authenticate_pin(
+                                                                         pin=pin, login_status= login_status)
     if new_merchant_employee != False:
         # have to reset the pin number otherwise it will be the hashed version
         new_merchant_employee.pin = pin

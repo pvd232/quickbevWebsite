@@ -47,8 +47,10 @@ const Orders = (props) => {
   });
   const csvData = formattedMappedOrders.map((order) => {
     const orderData = [];
+    // eslint-disable-next-line array-callback-return
     Object.values(order).map((key) => {
       if (key instanceof OrderDrink) {
+        // eslint-disable-next-line array-callback-return
         Object.values(key.orderDrink).map((drink) => {
           orderData.push(String(drink.quantity) + "x " + drink.name);
         });
