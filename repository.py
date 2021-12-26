@@ -45,7 +45,6 @@ class Order_Repository(object):
     def get_order(self, session: scoped_session, order_id: UUID):
         order = session.query(Order, Customer.first_name.label('customer_first_name'), Customer.last_name.label(
             'customer_last_name')).join(Customer, Order.customer_id == Customer.id).filter(Order.id == order_id).first()
-        print('order', order)
         return order
 
     def update_order(self, session: scoped_session, order: Order_Domain):
