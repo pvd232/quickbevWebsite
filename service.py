@@ -60,6 +60,11 @@ class Drink_Service(object):
                 drink_domain = Drink_Domain(drink_object=drink)
                 response.append(drink_domain)
             return response
+        
+    def get_merchant_drinks(self, merchant_id: str):
+        with session_scope() as session:
+            return [Drink_Domain(drink_object=x) for x in Drink_Repository().get_merchant_drinks(session=session, merchant_id=merchant_id)]
+
 
     def add_drinks(self, business_id, drinks):
         with session_scope() as session:
@@ -75,13 +80,6 @@ class Drink_Service(object):
         with session_scope() as session:
             return Drink_Repository().update_drinks(session, drinks)
 
-    def get_drinks_etag(self):
-        with session_scope() as session:
-            return ETag_Domain(etag_object=ETag_Repository().get_etag(session, "drink"))
-
-    def validate_etag(self, etag):
-        return ETag_Repository().validate_etag(etag)
-
 
 class Order_Service(object):
     def get_customer_order_status(self, customer_id: str):
@@ -92,14 +90,13 @@ class Order_Service(object):
 
     def get_order(self, order_id: str):
         with session_scope() as session:
-            orders, drinks = Order_Repository().get_order(session, order_id)
-            order = orders[0]
-            new_order_domain = Order_Domain(order_object=order, drinks=drinks)
+            order = Order_Repository().get_order(session, order_id)
+            new_order_domain = Order_Domain(order_object=order, is_merchant_employee_order=True)
             return new_order_domain
 
     def update_order(self, order):
         with session_scope() as session:
-            new_order_domain = Order_Domain(order_json=order)
+            new_order_domain = Order_Domain(order_json=order, is_merchant_employee_order=True)
             Order_Repository().update_order(session, new_order_domain)
 
     def create_order(self, order):
@@ -123,7 +120,6 @@ class Order_Service(object):
 
         # 5 stripe application fee includes tip_total because the tip is transfered from the QuickBev account to the server
         stripe_application_fee_total = service_fee_total + tip_total
-        print('stripe_application_fee_total', stripe_application_fee_total)
 
         # 6 sales tax is calcualted as % of subtotal + service fee because only tip is exempt from sales tax
         pre_sales_tax_total = pre_service_fee_total - tip_total + service_fee_total
@@ -136,12 +132,9 @@ class Order_Service(object):
 
         # 9 stripe charge is calculated on pre stripe app fee total
         stripe_fee_total = (total * stripe_fee_percentage) + 0.30
-        print('stripe_fee_total', stripe_fee_total)
 
         # 10 stripe charge is deducted from application fee, making the application fee net of the stripe charge and the tip_total which is later transfered to the server
         net_stripe_application_fee_total = stripe_application_fee_total - stripe_fee_total
-        print('net_stripe_application_fee_total',
-              net_stripe_application_fee_total)
 
         # 11 subtract out the tip_total which will be transfered from platform account to server connected account later
         net_service_fee_total = net_stripe_application_fee_total - tip_total
@@ -177,20 +170,21 @@ class Order_Service(object):
     def get_merchant_orders(self, username):
         response = []
         with session_scope() as session:
-            orders, drinks = Order_Repository().get_merchant_orders(
+            orders = Order_Repository().get_merchant_orders(
                 session, username)
             for order in orders:
-                order_domain = Order_Domain(order_object=order, drinks=drinks)
+                order_domain = Order_Domain(order_object=order, is_merchant_order=True)
                 response.append(order_domain)
             return response
 
     def get_merchant_employee_orders(self, business_id):
         response = []
         with session_scope() as session:
-            orders, drinks = Order_Repository().get_merchant_employee_orders(
+            orders = Order_Repository().get_merchant_employee_orders(
                 session, business_id)
+            print('orders in merchant employee',orders)
             for order in orders:
-                order_domain = Order_Domain(order_object=order, drinks=drinks)
+                order_domain = Order_Domain(order_object=order, is_merchant_employee_order = True)
                 response.append(order_domain)
             return response
 
@@ -251,7 +245,6 @@ class Order_Service(object):
             servers = Merchant_Employee_Repository().get_servers(
                 session, business_id=new_order_domain.business_id)
             for server in servers:
-                print("server.first_name", server.first_name)
                 tip_per_server = int(round(tip_total/len(servers), 2) * 100)
                 stripe.Transfer.create(
                     amount=tip_per_server,
@@ -484,7 +477,7 @@ class Merchant_Employee_Service(object):
 
     def authenticate_merchant_employee_stripe(self, stripe_id):
         with session_scope() as session:
-            return Merchant_Employee_Repository().authenticate_merchant_employee_stripe(session, stripe_id)
+            return Merchant_Employee_Repository().authenticate_merchant_employee_stripe(stripe_id)
 
     def get_merchant_employees(self, merchant_id):
         with session_scope() as session:
@@ -505,6 +498,10 @@ class Merchant_Employee_Service(object):
                 merchant_employee_domains.insert(0, staged_domain)
             return merchant_employee_domains
 
+    def log_out_merchant_employees(self, business_id):
+        with session_scope() as session:
+            return Merchant_Employee_Repository().log_out_merchant_employees(session = session, business_id = business_id)
+    
     def add_staged_merchant_employee(self, merchant_id, merchant_employee_id):
         with session_scope() as session:
             return Merchant_Employee_Repository().add_staged_merchant_employee(session, merchant_id, merchant_employee_id)
@@ -579,10 +576,8 @@ class Business_Service(object):
     def authenticate_merchant_pin(self, business_id, pin):
         with session_scope() as session:
             merchant = Business_Repository().authenticate_merchant_pin(session, business_id, pin)
-            print('merchant', merchant)
             if merchant:
                 merchant_domain = Merchant_Domain(merchant_object=merchant)
-                print('merchant_domain', merchant_domain)
                 return merchant_domain
             return merchant
 
@@ -602,6 +597,11 @@ class ETag_Service(object):
     def get_etag(self, category: str):
         with session_scope() as session:
             return ETag_Domain(etag_object=ETag_Repository().get_etag(session, category))
+        
+    def get_merchant_etag(self, e_tag: dict, merchant_id: str):
+        with session_scope() as session:
+            e_tag_domain = ETag_Domain(etag_json=e_tag)
+            return ETag_Repository().get_merchant_etag(session=session,e_tag_category=e_tag_domain.category, merchant_id=merchant_id)
 
     def validate_etag(self, etag: dict):
         with session_scope() as session:
@@ -610,7 +610,21 @@ class ETag_Service(object):
 
     def update_etag(self, category: str):
         with session_scope() as session:
-            ETag_Repository().update_etag(session, category)
+            return ETag_Domain(etag_object=ETag_Repository().update_etag(session, category))
+
+    def update_merchant_etag(self, business_id: str, e_tag: dict):
+        with session_scope() as session:
+            ETag_Repository().update_merchant_etag(session=session, business_id=business_id, e_tag=e_tag)
+
+    def validate_merchant_etag(self, merchant_id: int, e_tag: dict):
+        with session_scope() as session:
+            e_tag_domain = ETag_Domain(etag_json=e_tag)
+            return ETag_Repository().validate_merchant_etag(session=session, merchant_id=merchant_id, e_tag=e_tag_domain)
+        
+    def validate_business_etag(self, business_id: int, e_tag: dict):
+        with session_scope() as session:
+            e_tag_domain = ETag_Domain(etag_json=e_tag)
+            return ETag_Repository().validate_business_etag(session=session, business_id=business_id, e_tag=e_tag_domain)
 
 
 class Test_Service(object):
@@ -677,10 +691,6 @@ class Google_Cloud_Storage_API(object):
         # file = "local/path/to/file" this will be the business folder, with a folder named after the business' unique id, which will have the menu file in it
         # destination_blob_name = "storage-object-name" this will be the business uuid
         file = drink.file
-        file_type = file.filename.rsplit('.', 1)[1].lower()
-        # destination_blob_name = "business/" + \
-        #     str(drink.business_id) + "/menu-images/" + \
-        #     str(drink.id) + "." + file_type
         destination_blob_name = drink.blob_name
         blob = self.bucket.blob(destination_blob_name)
         blob.upload_from_file(file)
@@ -696,26 +706,21 @@ class Quick_Pass_Service(object):
     def create_stripe_payment_intent(self, quick_pass):
         quick_pass_domain = Quick_Pass_Domain(quick_pass_json=quick_pass)
         with session_scope() as session:
-            business = Business_Repository().get_business(
-                session, quick_pass_domain.business_id)
-            customer = Customer_Repository().get_customer(
-                session, quick_pass_domain.customer_id)
+            business = Business_Domain(business_object=Business_Repository().get_business(
+                session, quick_pass_domain.business_id))
+            customer = Customer_Domain(customer_object= Customer_Repository().get_customer(
+                session, quick_pass_domain.customer_id))
 
             stripe_price = business.quick_pass_price * 100
-            print('stripe_price', stripe_price)
             service_fee_total = int(
                 round(quick_pass_service_fee_percentage * stripe_price, 2))
-            print('service_fee', service_fee_total)
 
             pre_sales_tax_total = service_fee_total + stripe_price
-            print('pre_sales_tax_total', pre_sales_tax_total)
 
             sales_tax = round(pre_sales_tax_total *
                               business.sales_tax_rate, 2)
-            print('sales_tax', sales_tax)
 
             total = int(round(sales_tax + stripe_price,2))
-            print('total', total)
 
             merchant_stripe_id = quick_pass_domain.merchant_stripe_id
             payment_intent = stripe.PaymentIntent.create(
@@ -733,19 +738,17 @@ class Quick_Pass_Service(object):
             return response
 
     def add_quick_pass(self, quick_pass):
-        print('quick_pass', quick_pass)
         # calculate order values on backend to prevent malicious clients
         quick_pass_domain = Quick_Pass_Domain(quick_pass_json=quick_pass)
         with session_scope() as session:
-            business = Business_Repository().get_business(
-                session, quick_pass_domain.business_id)
+            business = Business_Domain(business_object=Business_Repository().get_business(
+                session, quick_pass_domain.business_id))
 
             if business.quick_pass_queue >= 1:
                 new_queue = business.quick_pass_queue + 1
                 Business_Repository().update_quick_pass_queue(session=session, business_id=business.id, queue=new_queue)
             price = business.quick_pass_price
             service_fee_total = round(.1 * price, 2)
-            print('service_fee_total', service_fee_total)
 
             pre_sales_tax_total = service_fee_total + price
 
@@ -753,7 +756,7 @@ class Quick_Pass_Service(object):
                               business.sales_tax_rate, 2)
             # the total will not be in addition to the service fee because the business is paying the service fee
             total = price + sales_tax_total
-            print('total', total)
+            
             quick_pass_domain.service_fee_total = service_fee_total
             quick_pass_domain.total = total
             quick_pass_domain.subtotal = price
@@ -783,14 +786,13 @@ class Quick_Pass_Service(object):
     def get_business_quick_pass(self, business_id, customer_id):
         with session_scope() as session:
             sold_out = False
-            business = Business_Repository().get_business(session, business_id)
-            merchant = Merchant_Repository().get_merchant(session, business.merchant_id)
+            business = Business_Domain(business_object=Business_Repository().get_business(session, business_id))
+            merchant = Merchant_Domain(merchant_object = Merchant_Repository().get_merchant(session, business.merchant_id))
             
             new_quick_pass = Quick_Pass_Domain(
                 should_display_expiration_time=should_diplay_expiration_time)
             new_quick_pass.activation_time = datetime.now()
             new_quick_pass.sold_out = sold_out
-            expiration_bool = False
            
             # if the closing time is less than the opening time the day of closing time is 1 greater than the day of opening
             if business.schedule[datetime.today().weekday()].closing_time.hour < business.schedule[datetime.today().weekday()].opening_time.hour:
@@ -802,8 +804,6 @@ class Quick_Pass_Service(object):
             
             if expiration_date_time > closing_date_time:
                 expiration_date_time = closing_date_time 
-            print('expiration_date_time',expiration_date_time)
-            print('closing_date_time',closing_date_time)
             
             if should_diplay_expiration_time == False:
                 expiration_date_time = closing_date_time
@@ -818,5 +818,4 @@ class Quick_Pass_Service(object):
 
             # must create a dummy id for swift data type
             new_quick_pass.id = uuid.uuid4()
-            print('new_quick_pass', new_quick_pass.dto_serialize())
             return new_quick_pass
