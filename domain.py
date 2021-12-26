@@ -1,843 +1,821 @@
-from datetime import datetime
-from werkzeug.security import generate_password_hash
+from domain import *
+from models import stripe_fee_percentage, service_fee_percentage, quick_pass_service_fee_percentage
 import uuid
-from models import Business, service_fee_percentage
+import os, time
+from sqlalchemy.orm import scoped_session
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine
+from contextlib import contextmanager
+from models import instantiate_db_connection, stripe_fee_percentage, service_fee_percentage, quick_pass_service_fee_percentage
+from repository import *
+import inspect
+should_diplay_expiration_time = True
 
 
-class Customer_Order_Status(object):
-    def __init__(self, order_object):
-        self.id = order_object.id
-        self.completed = order_object.completed
-        self.refunded = order_object.refunded
+username = "postgres"
+password = "Iqopaogh23!"
+connection_string_beginning = "postgres://"
+connection_string_end = "@localhost:5432/quickbevdb"
+connection_string = connection_string_beginning + \
+    username + ":" + password + connection_string_end
 
-    def dto_serialize(self):
-        attribute_names = list(self.__dict__.keys())
-        attributes = list(self.__dict__.values())
-        serialized_attributes = {}
-        for i in range(len(attributes)):
-            if attribute_names[i] == 'id':
-                serialized_attributes[attribute_names[i]] = str(attributes[i])
+# an Engine, which the Session will use for connection
+# resources
+drink_engine = create_engine(
+    os.environ.get("DB_STRING", connection_string), pool_size=100, max_overflow=10)
+
+# create a configured "Session" class
+session_factory = sessionmaker(bind=drink_engine)
+
+# create a Session
+Session = scoped_session(session_factory)
+
+# TODO add error message to tell user if they tried to upload a word doc or another doc to either convert it to a pdf or email the docuement to quickbev
+# local_time_zone = datetime.utcnow().astimezone().tzinfo
+# print('local_time_zone',local_time_zone)
+# os.environ['TZ'] = str(local_time_zone)
+# time.tzset()
+
+
+@contextmanager
+def session_scope():
+    session = Session()
+    try:
+        yield session
+        session.commit()
+    except Exception as e:
+        session.rollback()
+        raise e
+    finally:
+        session.close()
+
+    # now all calls to Session() will create a thread-local session
+
+
+class Drink_Service(object):
+    def get_drinks(self):
+        response = []
+        with session_scope() as session:
+            for drink in Drink_Repository().get_drinks(session):
+                drink_domain = Drink_Domain(drink_object=drink)
+                response.append(drink_domain)
+            return response
+        
+    def get_merchant_drinks(self, merchant_id: str):
+        with session_scope() as session:
+            return [Drink_Domain(drink_object=x) for x in Drink_Repository().get_merchant_drinks(session=session, merchant_id=merchant_id)]
+
+
+    def add_drinks(self, business_id, drinks):
+        with session_scope() as session:
+            new_drink_list = [Drink_Domain(
+                drink_json=x, init=True) for x in drinks]
+            for drink in new_drink_list:
+                drink.business_id = business_id
+                id = uuid.uuid4()
+                drink.id = id
+            return Drink_Repository().add_drinks(session, new_drink_list)
+
+    def update_drinks(self, drinks):
+        with session_scope() as session:
+            return Drink_Repository().update_drinks(session, drinks)
+
+
+class Order_Service(object):
+    def get_customer_order_status(self, customer_id: str):
+        with session_scope() as session:
+            customer_order_status = [Customer_Order_Status(order_object=x).dto_serialize(
+            ) for x in Order_Repository().get_customer_order_status(session, customer_id)]
+            return customer_order_status
+
+    def get_order(self, order_id: str):
+        with session_scope() as session:
+            order = Order_Repository().get_order(session, order_id)
+            new_order_domain = Order_Domain(order_object=order, is_merchant_employee_order=True)
+            return new_order_domain
+
+    def update_order(self, order):
+        with session_scope() as session:
+            new_order_domain = Order_Domain(order_json=order, is_merchant_employee_order=True)
+            Order_Repository().update_order(session, new_order_domain)
+
+    def create_order(self, order):
+        # calculate order values on backend to prevent malicious clients
+        new_order_domain = Order_Domain(order_json=order, is_customer_order=True)
+
+        # 1 subtotal is the sum of drink quantity to price
+        subtotal = 0.0
+        for order_drink in new_order_domain.order_drink:
+            order_drink_cost = order_drink.price * order_drink.quantity
+            subtotal += order_drink_cost
+
+        # 2 tip is calculated on the subtotal
+        tip_total = new_order_domain.tip_percentage * subtotal
+
+        # 3 service fee base will include the tip because stripe includes this in their fee
+        pre_service_fee_total = subtotal + tip_total
+
+        # 4 service fee is calculated as % of pre service fee total
+        service_fee_total = pre_service_fee_total * service_fee_percentage
+
+        # 5 stripe application fee includes tip_total because the tip is transfered from the QuickBev account to the server
+        stripe_application_fee_total = service_fee_total + tip_total
+
+        # 6 sales tax is calcualted as % of subtotal + service fee because only tip is exempt from sales tax
+        pre_sales_tax_total = pre_service_fee_total - tip_total + service_fee_total
+
+        # 7 sales tax is calcualted as % of subtotal + service fee because only tip is exempt from sales tax
+        sales_tax_total = pre_sales_tax_total * new_order_domain.sales_tax_percentage
+
+        # 8 the customer is charge the top line value of sales tax + subtotal + tip + service fee, then stripe deducts their fee from the service fee, and the net result is paid out to quickbev
+        total = subtotal + service_fee_total + sales_tax_total + tip_total
+
+        # 9 stripe charge is calculated on pre stripe app fee total
+        stripe_fee_total = (total * stripe_fee_percentage) + 0.30
+
+        # 10 stripe charge is deducted from application fee, making the application fee net of the stripe charge and the tip_total which is later transfered to the server
+        net_stripe_application_fee_total = stripe_application_fee_total - stripe_fee_total
+
+        # 11 subtract out the tip_total which will be transfered from platform account to server connected account later
+        net_service_fee_total = net_stripe_application_fee_total - tip_total
+
+        # no need to set tip_percentage nor sales_tax_percentage because these values were sent from iOS device
+        new_order_domain.service_fee_percentage = service_fee_percentage
+        new_order_domain.stripe_fee_percentage = stripe_fee_percentage
+
+        new_order_domain.subtotal = subtotal
+        new_order_domain.tip_total = tip_total
+        new_order_domain.service_fee_total = service_fee_total
+        new_order_domain.stripe_application_fee_total = stripe_application_fee_total
+        new_order_domain.sales_tax_total = sales_tax_total
+        new_order_domain.total = total
+
+        new_order_domain.stripe_fee_total = stripe_fee_total
+        new_order_domain.net_stripe_application_fee_total = net_stripe_application_fee_total
+        new_order_domain.net_service_fee_total = net_service_fee_total
+
+        with session_scope() as session:
+            return Order_Repository().create_order(session, new_order_domain)
+
+    def get_customer_orders(self, username):
+        response = []
+        with session_scope() as session:
+            orders = Order_Repository().get_customer_orders(session, username)
+            for order in orders:
+                order_domain = Order_Domain(order_object=order)
+                order_dto = order_domain.dto_serialize()
+                response.append(order_dto)
+            return response
+
+    def get_merchant_orders(self, username):
+        response = []
+        with session_scope() as session:
+            orders = Order_Repository().get_merchant_orders(
+                session, username)
+            for order in orders:
+                order_domain = Order_Domain(order_object=order, is_merchant_order=True)
+                response.append(order_domain)
+            return response
+
+    def get_merchant_employee_orders(self, business_id):
+        response = []
+        with session_scope() as session:
+            orders = Order_Repository().get_merchant_employee_orders(
+                session, business_id)
+            print('orders in merchant employee',orders)
+            for order in orders:
+                order_domain = Order_Domain(order_object=order, is_merchant_employee_order = True)
+                response.append(order_domain)
+            return response
+
+    def create_stripe_ephemeral_key(self, request):
+        with session_scope() as session:
+            return Order_Repository().create_stripe_ephemeral_key(session, request)
+
+    def create_stripe_payment_intent(self, request):
+        new_order_domain = Order_Domain(order_json=request['order'], is_customer_order=True)
+
+        # 1 subtotal is the sum of drink quantity to price
+        subtotal = 0.0
+        for order_drink_domain in new_order_domain.order_drink:
+            drink_cost = order_drink_domain.price * order_drink_domain.quantity
+            subtotal += drink_cost
+
+        # 2 tip is calculated on the subtotal
+        tip_total = new_order_domain.tip_percentage * subtotal
+
+        # 3 service fee base will include the tip because stripe includes this in their fee
+        pre_service_fee_total = subtotal + tip_total
+
+        # 4 service fee is calculated as % of pre service fee total
+        service_fee_total = pre_service_fee_total * service_fee_percentage
+
+        # 5 stripe application fee includes tip_total because the tip is transfered from the QuickBev account to the server
+        stripe_application_fee_total = service_fee_total + tip_total
+
+        # 6 convert to stripe units (cents)
+        stripe_units_application_fee_total = int(
+            round(stripe_application_fee_total * 100, 2))
+
+        # 7 sales tax is calcualted as % of subtotal + service fee because only tip is exempt from sales tax
+        pre_sales_tax_total = pre_service_fee_total - tip_total + service_fee_total
+
+        # 8 sales tax is calcualted as % of subtotal + service fee because only tip is exempt from sales tax
+        sales_tax_total = pre_sales_tax_total * new_order_domain.sales_tax_percentage
+
+        # 9 the customer is charge the top line value of sales tax + subtotal + tip + service fee, then stripe deducts their fee from the service fee, and the net result is paid out to quickbev
+        total = subtotal + service_fee_total + sales_tax_total + tip_total
+
+        # 10 stripe units
+        stripe_units_total = int(round(100 * total, 2))
+
+        merchant_stripe_id = new_order_domain.merchant_stripe_id
+        payment_intent = stripe.PaymentIntent.create(
+            amount=stripe_units_total,
+            customer=new_order_domain.customer_stripe_id,
+            setup_future_usage='on_session',
+            currency='usd',
+            application_fee_amount=stripe_units_application_fee_total,
+            transfer_group=new_order_domain.id,
+            transfer_data={
+                "destination": merchant_stripe_id
+            }
+        )
+        with session_scope() as session:
+            servers = Merchant_Employee_Repository().get_servers(
+                session, business_id=new_order_domain.business_id)
+            for server in servers:
+                tip_per_server = int(round(tip_total/len(servers), 2) * 100)
+                stripe.Transfer.create(
+                    amount=tip_per_server,
+                    currency='usd',
+                    destination=server.stripe_id,
+                    transfer_group=new_order_domain.id,
+                )
+            response = {"payment_intent_id": payment_intent.id,
+                        "secret": payment_intent["client_secret"]}
+            return response
+
+    def refund_stripe_order(self, order):
+        with session_scope() as session:
+            new_order_domain = Order_Domain(order_json=order)
+            return Order_Repository().refund_stripe_order(new_order_domain)
+
+
+class Customer_Service(object):
+    def authenticate_customer(self, email, password):
+        with session_scope() as session:
+            customer_object = Customer_Repository().authenticate_customer(
+                session, email, password)
+            if customer_object:
+                customer_domain = Customer_Domain(
+                    customer_object=customer_object)
+                return customer_domain
             else:
-                serialized_attributes[attribute_names[i]] = attributes[i]
-        return serialized_attributes
+                return False
 
-
-class Drink_Domain(object):
-    def __init__(self, drink_object=None, drink_json=None, init=False):
-        self.quantity = 1
-        self.id = ''
-        self.name = ''
-        self.description = ''
-        self.price = ''
-        self.order_drink_id = ''
-        self.business_id = ''
-        self.has_image = False
-        self.image_url = ''
-        self.blob_name = ''
-        if drink_object:
-            self.id = drink_object.id
-            self.name = drink_object.name
-            self.description = drink_object.description
-            self.price = drink_object.price
-            self.business_id = drink_object.business_id
-            self.has_image = drink_object.has_image
-            self.is_active = drink_object.is_active
-            if drink_object.has_image == True and drink_object.image_url != None:
-                # the drink image url will always follow this pattern
-                self.image_url = drink_object.image_url
+    def validate_username(self, username=None, hashed_username=None):
+        with session_scope() as session:
+            customer_object = Customer_Repository().validate_username(
+                session, username, hashed_username)
+            if customer_object:
+                return True
             else:
-                self.image_url = "https://storage.googleapis.com/my-new-quickbev-bucket/original.png"
-        elif init == True and drink_json:
-            # this is the initialization for creating the menu and adding the menu drinks to the database
-            self.name = drink_json["name"]
-            self.description = drink_json["description"]
-            self.price = drink_json["price"]
-            self.has_image = drink_json["has_image"]
-            # only use this for attaching the file to the drink when uploading it to google cloud
-            self.file = ''
-        elif drink_json:
-            # no need to receive image_url from the front end
-            self.id = drink_json["id"]
-            self.name = drink_json["name"]
-            self.description = drink_json["description"]
-            self.price = drink_json["price"]
-            self.business_id = drink_json["business_id"]
+                return False
 
-    def set_image_url(self, file_name):
-        self.image_url = f'https://storage.googleapis.com/my-new-quickbev-bucket/business/{str(self.business_id)}/menu-images/' + \
-            file_name
-        self.blob_name = f'business/{str(self.business_id)}/menu-images/' + \
-            file_name
-
-    def dto_serialize(self):
-        attribute_names = list(self.__dict__.keys())
-        attributes = list(self.__dict__.values())
-        serialized_attributes = {}
-        for i in range(len(attributes)):
-            if attribute_names[i] == 'id' or attribute_names[i] == 'order_drink_id' or attribute_names[i] == 'business_id':
-                serialized_attributes[attribute_names[i]] = str(attributes[i])
+    def register_new_customer(self, customer):
+        with session_scope() as session:
+            requested_new_customer_domain = Customer_Domain(customer_json=customer)
+            registered_new_customer = Customer_Repository().register_new_customer(
+                session, requested_new_customer_domain)
+            if registered_new_customer:
+                registered_new_customer_domain = Customer_Domain(
+                    customer_object=registered_new_customer)
+                return registered_new_customer_domain
             else:
-                serialized_attributes[attribute_names[i]] = attributes[i]
-        return serialized_attributes
+                return False
 
+    def get_customers(self, merchant_id):
+        with session_scope() as session:
+            # pheew this is sexy. list comprehension while creating a customer dto
+            customers = [Customer_Domain(customer_object=x) for x in Customer_Repository().get_customers(
+                session, merchant_id)]
+            customers_without_passswords = []
+            for customer in customers:
+                new_customer_without_password = customer
+                new_customer_without_password.password = None
+                customers_without_passswords.append(
+                    new_customer_without_password)
+            return customers_without_passswords
 
-class Order_Domain(object):
-    def __init__(self, order_object=None, order_json=None, drinks=None, is_customer_order = False):
-        self.id = ''
-        self.customer_id = ''
-        # this property does not exist in the database, it is used for stripe_payment_intent and is captured in iOS during the order process
-        self.customer_stripe_id = ''
-        self.business_id = ''
-        self.merchant_stripe_id = ''
+    def update_device_token(self, device_token, customer_id):
+        with session_scope() as session:
+            return Customer_Repository().update_device_token(session, device_token, customer_id)
 
-        self.sales_tax_percentage = 0.0
-        self.tip_percentage = 0.0
-        self.service_fee_percentage = 0.0
-        self.stripe_fee_percentage = 0.0
+    def get_device_token(self, customer_id):
+        with session_scope() as session:
+            return Customer_Repository().get_device_token(session, customer_id)
 
-        self.subtotal = 0.0
-        self.tip_total = 0.0
-        self.service_fee_total = 0.0
-        self.stripe_application_fee_total = 0.0
-        self.sales_tax_total = 0.0
-        self.total = 0.0
-        self.stripe_fee_total = 0.0
-        self.net_stripe_application_fee_total = 0.0
-        self.net_service_fee_total = 0.0
+    def update_email_verification(self, customer_id):
+        with session_scope() as session:
+            return Customer_Repository().update_email_verification(session, customer_id)
 
-        self.date_time = ''
-        self.payment_intent_id = ''
-        self.card_information = ''
-        self.completed = False
-        self.refunded = False
-        self.order_drink = []
-        self.formatted_date_time = datetime.now().strftime(
-            "%m/%d/%Y")
-        self.is_customer_order = is_customer_order
-        if order_object and drinks:
-            # these attributes were from the join and are not nested in the result object
-            self.business_name = order_object.business_name
-            self.business_id = order_object.business_id
-            self.business_address = order_object.business_address
-            self.customer_first_name = order_object.customer_first_name
-            self.customer_last_name = order_object.customer_last_name
+    def update_password(self, customer_id, new_password):
+        with session_scope() as session:
+            return Customer_Repository().update_password(session, customer_id, new_password)
 
-            # the order db model object is nested inside the result as "Order"
-            self.id = order_object.Order.id
-            self.customer_id = order_object.Order.customer_id
-            self.sales_tax_percentage = order_object.Order.sales_tax_percentage
-            self.tip_percentage = order_object.Order.tip_percentage
-            self.service_fee_percentage = order_object.Order.service_fee_percentage
-            self.stripe_fee_percentage = order_object.Order.stripe_fee_percentage
-            self.subtotal = order_object.Order.subtotal
-            self.tip_total = order_object.Order.tip_total
-            self.sales_tax_total = order_object.Order.sales_tax_total
-            self.stripe_application_fee_total = order_object.Order.stripe_application_fee_total
-            self.service_fee_total = order_object.Order.service_fee_total
-            self.total = order_object.Order.total
-            self.stripe_fee_total = order_object.Order.stripe_fee_total
-            self.net_stripe_application_fee_total = order_object.Order.net_stripe_application_fee_total
-            self.net_service_fee_total = order_object.Order.net_service_fee_total
-            self.card_information = order_object.Order.card_information
-            # formatted date string
-            self.formatted_date_time = order_object.Order.date_time.strftime(
-                "%m/%d/%Y")
-            self.merchant_stripe_id = order_object.Order.merchant_stripe_id
-            self.order_drink = Order_Drink_Domain(
-                order_id = order_object.Order.id, order_drink_object=order_object.Order.order_drink, drinks=drinks)
-            self.completed = order_object.Order.completed
-            self.refunded = order_object.Order.refunded
-            self.payment_intent_id = order_object.Order.payment_intent_id
-
-            # computed property
-            if self.completed == False and self.refunded == False:
-                self.active = True
+    def get_customer(self, customer_id):
+        with session_scope() as session:
+            customer = Customer_Repository().get_customer(session, customer_id)
+            if customer:
+                return Customer_Domain(customer_object=Customer_Repository().get_customer(session, customer_id))
             else:
-                self.active = False
+                return customer
 
-        # this isnt working b/c not necessary yet
-        elif order_object and not drinks:
-            self.business_name = order_object.business_name
-            self.business_id = order_object.business_id
-            self.business_address = order_object.business_address
-            self.customer_first_name = order_object.customer_first_name
-            self.customer_last_name = order_object.customer_last_name
-            # the order db model object is nested inside the result as "Order"
-            self.id = order_object.Order.id
-            self.customer_id = order_object.Order.customer_id
-            self.total = order_object.Order.total
-            self.subtotal = order_object.Order.subtotal
-            self.tip_percentage = order_object.Order.tip_percentage
-            self.tip_total = order_object.Order.tip_total
-            self.stripe_charge_total = order_object.Order.stripe_charge_total
-            self.sales_tax_total = order_object.Order.sales_tax_total
-            self.sales_tax_percentage = order_object.Order.sales_tax_percentage
-            self.service_fee = order_object.Order.service_fee
-            self.card_information = order_object.Order.card_information
-            # formatted date string
-            self.formatted_date_time = order_object.Order.date_time.strftime(
-                "%m/%d/%Y")
-            self.merchant_stripe_id = order_object.Order.merchant_stripe_id
-            self.order_drink = Order_Drink_Domain(
-                order_id=order_object.Order.id, order_drink_object=order_object.Order.order_drink)
-            self.completed = order_object.Order.completed
-            self.refunded = order_object.Order.refunded
-            self.payment_intent_id = order_object.Order.payment_intent_id
-        elif order_json and is_customer_order:
-            print('order_json', order_json)
-            # an order received as order_json will be an order sent from an iOS device, thus service fee is not included as a value because it is calculated in the backend
-            self.id = order_json["id"]
-            # these props will only be send from iOS
-            if "customer" in order_json.keys():
-                self.customer = Customer_Domain(
-                    customer_json=order_json['customer'])
-                self.customer_first_name = self.customer.first_name
-                self.customer_last_name = self.customer.last_name
-                self.customer_stripe_id = self.customer.stripe_id
-            self.customer_id = order_json["customer_id"]
-            self.merchant_stripe_id = order_json["merchant_stripe_id"]
-            self.total = order_json["total"]
-            self.subtotal = order_json["subtotal"]
-            self.tip_percentage = order_json["tip_percentage"]
-            self.sales_tax_percentage = order_json["sales_tax_percentage"]
-            self.business_id = order_json["business_id"]
-            for order_drink in order_json['order_drink']:
-                new_order_drink = Order_Drink_Domain(order_drink_json=order_drink, is_customer_order=True)
-                self.order_drink.append(new_order_drink)
-            self.completed = order_json["completed"]
-            self.refunded = order_json["refunded"]
-            self.payment_intent_id = order_json["payment_intent_id"]
-            self.card_information = order_json["card_information"]
+    def get_customer_apple_id(self, apple_id):
+        with session_scope() as session:
+            customer = Customer_Repository().get_customer_apple_id(session, apple_id)
+            if customer:
+                return Customer_Domain(customer_object=customer)
+            else:
+                return customer
+
+    def set_customer_apple_id(self, customer_id, apple_id):
+        with session_scope() as session:
+            return Customer_Repository().set_customer_apple_id(session=session, customer_id=customer_id, apple_id=apple_id)
+
+
+class Merchant_Service(object):
+    def create_stripe_account(self):
+        with session_scope() as session:
+            return Merchant_Repository().create_stripe_account(session)
+
+    def authenticate_merchant(self, email, password):
+        with session_scope() as session:
+            merchant_object = Merchant_Repository().authenticate_merchant(
+                session, email, password)
+            if merchant_object:
+                merchant_domain = Merchant_Domain(
+                    merchant_object=merchant_object)
+                return merchant_domain
+            else:
+                return False
+
+    def validate_merchant(self, email):
+        with session_scope() as session:
+            status = Merchant_Repository().validate_merchant(session, email)
+            if status:
+                return Merchant_Domain(merchant_object=status)
+            else:
+                return False
+
+    def authenticate_merchant_stripe(self, stripe_id):
+        return Merchant_Repository().authenticate_merchant_stripe(stripe_id)
+
+    def add_merchant(self, merchant):
+        with session_scope() as session:
+            requested_new_merchant = Merchant_Domain(merchant_json=merchant)
+            return Merchant_Repository().add_merchant(
+                session, requested_new_merchant)
+
+    def get_merchant(self, merchant_id):
+        with session_scope() as session:
+            return Merchant_Domain(merchant_object=Merchant_Repository().get_merchant(session, merchant_id))
+
+
+class Bouncer_Service(object):
+    def add_bouncer(self, bouncer_id):
+        with session_scope() as session:
+            return Bouncer_Domain(bouncer_object=Bouncer_Repository().add_bouncer(
+                session, bouncer_id))
+
+    def validate_username(self, username):
+        with session_scope() as session:
+            return Bouncer_Repository().validate_username(
+                session, username)
+
+    def get_bouncers(self, merchant_id):
+        with session_scope() as session:
+            staged_bouncers, bouncers = Bouncer_Repository().get_bouncers(
+                session, merchant_id)
+            bouncer_domains = [Bouncer_Domain(
+                bouncer_object=x) for x in bouncers]
+
+            # when a merchant employee domain is created without a merchant employee object or merchant employee json the c
+            staged_bouncer_domains = [
+                Bouncer_Domain(bouncer_object=x, isStagedBouncer=True) for x in staged_bouncers]
+
+            for staged_domain in staged_bouncer_domains:
+                duplicate = False
+                for bouncer_domain in bouncer_domains:
+                    if bouncer_domain.id == staged_domain.id:
+                        bouncer_domain.status = staged_domain.status
+                        duplicate = True
+                if duplicate == False:
+                    bouncer_domains.insert(0, staged_domain)
+            return bouncer_domains
+
+    def add_staged_bouncer(self, bouncer):
+        with session_scope() as session:
+            return Bouncer_Domain(bouncer_object=Bouncer_Repository().add_staged_bouncer(session, Bouncer_Domain(bouncer_json=bouncer)), isStagedBouncer=True)
+
+    def remove_staged_bouncer(self, bouncer_id):
+        with session_scope() as session:
+            return Bouncer_Repository().remove_staged_bouncer(session, bouncer_id)
+
+    def get_bouncer(self, bouncer_id):
+        with session_scope() as session:
+            bouncer_domain = Bouncer_Domain(
+                bouncer_object=Bouncer_Repository().get_bouncer(session, bouncer_id))
+            return bouncer_domain
+
+
+class Merchant_Employee_Service(object):
+    def get_stripe_account(self, merchant_employee_id):
+        with session_scope() as session:
+            return Merchant_Employee_Repository().get_stripe_account(session, merchant_employee_id)
+
+    def validate_pin(self, business_id, pin):
+        with session_scope() as session:
+            pin_status = Merchant_Employee_Repository().validate_pin(session,
+                                                                     business_id, pin)
+            return pin_status
+
+    def authenticate_pin(self, pin, login_status):
+        with session_scope() as session:
+            merchant_employee_object = Merchant_Employee_Repository().authenticate_pin(
+                session, pin, login_status)
+            if merchant_employee_object:
+                merchant_employee_domain = Merchant_Employee_Domain(
+                    merchant_employee_object=merchant_employee_object)
+                return merchant_employee_domain
+            else:
+                return False
+
+    def reset_pin(self, merchant_employee_id, pin):
+        with session_scope() as session:
+            merchant_employee_object = Merchant_Employee_Repository().reset_pin(
+                session, merchant_employee_id, pin)
+            if merchant_employee_object:
+                merchant_employee_domain = Merchant_Employee_Domain(
+                    merchant_employee_object=merchant_employee_object)
+                return merchant_employee_domain
+            else:
+                return False
+
+    def add_merchant_employee(self, merchant_employee):
+        with session_scope() as session:
+            requested_new_merchant_employee = Merchant_Employee_Domain(
+                merchant_employee_json=merchant_employee)
+            return Merchant_Employee_Repository().add_merchant_employee(
+                session, requested_new_merchant_employee)
+
+    def validate_username(self, username):
+        with session_scope() as session:
+            return Merchant_Employee_Repository().validate_username(
+                session, username)
+
+    def authenticate_merchant_employee_stripe(self, stripe_id):
+        with session_scope() as session:
+            return Merchant_Employee_Repository().authenticate_merchant_employee_stripe(stripe_id)
+
+    def get_merchant_employees(self, merchant_id):
+        with session_scope() as session:
+            staged_merchant_employees, merchant_employees = Merchant_Employee_Repository().get_merchant_employees(
+                session, merchant_id)
+            merchant_employee_domains = [Merchant_Employee_Domain(
+                merchant_employee_object=x) for x in merchant_employees]
+            for merchant_employee_domain in merchant_employee_domains:
+                merchant_employee_domain.status = "confirmed"
+
+            # when a merchant employee domain is created without a merchant employee object or merchant employee json it is a staged merchant employee
+            staged_merchant_employee_domains = [
+                Merchant_Employee_Domain() for x in staged_merchant_employees]
+            for i in range(len(staged_merchant_employee_domains)):
+                staged_merchant_employee_domains[i].id = staged_merchant_employees[i].id
+                staged_merchant_employee_domains[i].status = staged_merchant_employees[i].status
+            for staged_domain in staged_merchant_employee_domains:
+                merchant_employee_domains.insert(0, staged_domain)
+            return merchant_employee_domains
+
+    def log_out_merchant_employees(self, business_id):
+        with session_scope() as session:
+            return Merchant_Employee_Repository().log_out_merchant_employees(session = session, business_id = business_id)
+    
+    def add_staged_merchant_employee(self, merchant_id, merchant_employee_id):
+        with session_scope() as session:
+            return Merchant_Employee_Repository().add_staged_merchant_employee(session, merchant_id, merchant_employee_id)
+
+    def remove_staged_merchant_employee(self, merchant_employee_id):
+        with session_scope() as session:
+            return Merchant_Employee_Repository().remove_staged_merchant_employee(session, merchant_employee_id)
+
+
+class Business_Service(object):
+    def authenticate_business(self, business_id):
+        with session_scope() as session:
+            business_status = Business_Repository().authenticate_business(
+                session, business_id)
+            return business_status
+
+    def update_device_token(self, device_token, business_id):
+        with session_scope() as session:
+            return Business_Repository().update_device_token(session, device_token, business_id)
+
+    def get_device_token(self, business_id):
+        with session_scope() as session:
+            return Business_Repository().get_device_token(session, business_id)
+
+    def get_businesses(self):
+        with session_scope() as session:
+            response = []
+            for business in Business_Repository().get_businesses(session):
+                business_domain = Business_Domain(business_object=business)
+
+                response.append(business_domain)
+            return response
+
+    def add_business(self, business):
+        with session_scope() as session:
+            business_domain = Business_Domain(business_json=business)
+            business_database_object = Business_Repository().add_business(
+                session, business_domain)
+            if business_database_object:
+                # the new business domain has a UUID that was created during initialization
+                return business_domain
+            else:
+                return False
+
+    def get_merchant_business(self, merchant_id):
+        with session_scope() as session:
+            response = []
+            for business in Business_Repository().get_merchant_businesses(session, merchant_id):
+                business_domain = Business_Domain(business_object=business)
+                response.append(business_domain)
+            return response
+
+    def get_menu(self, business_id):
+        with session_scope() as session:
+            menu = Business_Repository().get_menu(session, business_id)
+            if menu:
+                menu = [Drink_Domain(drink_object=x) for x in menu]
+            return menu
+
+    def get_business_phone_number(self, business_phone_number):
+        with session_scope() as session:
+            business_with_associated_phone_number = Business_Repository(
+            ).get_business_phone_number(session, business_phone_number)
+            business_domain = Business_Domain(
+                business_object=business_with_associated_phone_number)
+            return business_domain
+
+    def set_merchant_pin(self, business_id, pin):
+        with session_scope() as session:
+            return Business_Repository().set_merchant_pin(session, business_id, pin)
+
+    def authenticate_merchant_pin(self, business_id, pin):
+        with session_scope() as session:
+            merchant = Business_Repository().authenticate_merchant_pin(session, business_id, pin)
+            if merchant:
+                merchant_domain = Merchant_Domain(merchant_object=merchant)
+                return merchant_domain
+            return merchant
+
+    def update_business_capacity(self, business_id, capacity_status):
+        with session_scope() as session:
+            return Business_Repository().update_capactiy_status(session, business_id, capacity_status)
+
+
+class Tab_Service(object):
+    def post_tab(self, tab: dict):
+        with session_scope() as session:
+            new_tab_domain = Tab_Domain(tab_json=tab)
+            return Tab_Repository().post_tab(session, new_tab_domain)
+
+
+class ETag_Service(object):
+    def get_etag(self, category: str):
+        with session_scope() as session:
+            return ETag_Domain(etag_object=ETag_Repository().get_etag(session, category))
+        
+    def get_merchant_etag(self, e_tag: dict, merchant_id: str):
+        with session_scope() as session:
+            e_tag_domain = ETag_Domain(etag_json=e_tag)
+            return ETag_Repository().get_merchant_etag(session=session,e_tag_category=e_tag_domain.category, merchant_id=merchant_id)
+
+    def validate_etag(self, etag: dict):
+        with session_scope() as session:
+            etag_domain = ETag_Domain(etag_json=etag)
+            return ETag_Repository().validate_etag(session, etag_domain)
+
+    def update_etag(self, category: str):
+        with session_scope() as session:
+            return ETag_Domain(etag_object=ETag_Repository().update_etag(session, category))
+
+    def update_merchant_etag(self, business_id: str, e_tag: dict):
+        with session_scope() as session:
+            ETag_Repository().update_merchant_etag(session=session, business_id=business_id, e_tag=e_tag)
+
+    def validate_merchant_etag(self, merchant_id: int, e_tag: dict):
+        with session_scope() as session:
+            e_tag_domain = ETag_Domain(etag_json=e_tag)
+            return ETag_Repository().validate_merchant_etag(session=session, merchant_id=merchant_id, e_tag=e_tag_domain)
+        
+    def validate_business_etag(self, business_id: int, e_tag: dict):
+        with session_scope() as session:
+            e_tag_domain = ETag_Domain(etag_json=e_tag)
+            return ETag_Repository().validate_business_etag(session=session, business_id=business_id, e_tag=e_tag_domain)
+
+
+class Test_Service(object):
+    def __init__(self):
+        self.username = "postgres"
+        self.password = "Iqopaogh23!"
+        self.connection_string_beginning = "postgres://"
+        self.connection_string_end = "@localhost: 5432/quickbevdb"
+        self.connection_string = self.connection_string_beginning + \
+            self.username + ":" + self.password + self.connection_string_end
+        self.test_engine = create_engine(
+            os.environ.get("DB_STRING", self.connection_string))
+
+    def test_connection(self):
+        inspector = inspect(self.test_engine)
+        # use this if you want to trigger a reset of the database in GCP
+        # if len(inspector.get_table_names()) > 0:
+        if len(inspector.get_table_names()) == 0:
+            instantiate_db_connection()
+            self.test_engine.dispose()
+        return
+
+
+class Google_Cloud_Storage_API(object):
+    def __init__(self):
+        super().__init__()
+        # Imports the Google Cloud client library
+        from google.cloud import storage
+        app.config['GOOGLE_APPLICATION_CREDENTIALS'] = os.path.join(
+            os.getcwd(), "quickbev-60da4e7ea092.json")
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = app.config['GOOGLE_APPLICATION_CREDENTIALS']
+        self.bucket_name = "my-new-quickbev-bucket"
+        # Instantiates a client
+        self.storage_client = storage.Client()
+
+        self.bucket = self.storage_client.bucket(self.bucket_name)
+
+    def create_bucket(self):
+        # The name for the new bucket
+        bucket_name = "new-bucket"
+
+        # Creates the new bucket
+        bucket = self.storage_client.create_bucket(bucket_name)
+
+        print("Bucket {} created.".format(bucket.name))
+
+    def upload_menu_file(self, file, destination_blob_name):
+        """Uploads a file to the bucket."""
+        # bucket_name = "your-bucket-name"
+        # file = "local/path/to/file" this will be the business folder, with a folder named after the business' unique id, which will have the menu file in it
+        # destination_blob_name = "storage-object-name" this will be the business uuid
+        from werkzeug.utils import secure_filename
+
+        file_type = file.filename.rsplit('.', 1)[1].lower()
+        destination_blob_name = "business/" + \
+            str(destination_blob_name) + "/menu/" + "menu" "." + file_type
+        blob = self.bucket.blob(destination_blob_name)
+        blob.upload_from_file(file)
+        return True
+
+    def upload_drink_image_file(self, drink):
+        """Uploads a file to the bucket."""
+        # bucket_name = "your-bucket-name"
+        # file = "local/path/to/file" this will be the business folder, with a folder named after the business' unique id, which will have the menu file in it
+        # destination_blob_name = "storage-object-name" this will be the business uuid
+        file = drink.file
+        destination_blob_name = drink.blob_name
+        blob = self.bucket.blob(destination_blob_name)
+        blob.upload_from_file(file)
+        blob.make_public()
+        return True
+
+
+class Quick_Pass_Service(object):
+    def set_business_quick_pass(self, quick_pass):
+        with session_scope() as session:
+            return Quick_Pass_Repository().set_business_quick_pass(session, quick_pass)
+
+    def create_stripe_payment_intent(self, quick_pass):
+        quick_pass_domain = Quick_Pass_Domain(quick_pass_json=quick_pass)
+        with session_scope() as session:
+            business = Business_Domain(business_object=Business_Repository().get_business(
+                session, quick_pass_domain.business_id))
+            customer = Customer_Domain(customer_object= Customer_Repository().get_customer(
+                session, quick_pass_domain.customer_id))
+
+            stripe_price = business.quick_pass_price * 100
+            service_fee_total = int(
+                round(quick_pass_service_fee_percentage * stripe_price, 2))
+
+            pre_sales_tax_total = service_fee_total + stripe_price
+
+            sales_tax = round(pre_sales_tax_total *
+                              business.sales_tax_rate, 2)
+
+            total = int(round(sales_tax + stripe_price,2))
+
+            merchant_stripe_id = quick_pass_domain.merchant_stripe_id
+            payment_intent = stripe.PaymentIntent.create(
+                amount=total,
+                customer=customer.stripe_id,
+                setup_future_usage='on_session',
+                currency='usd',
+                application_fee_amount=service_fee_total,
+                transfer_data={
+                    "destination": merchant_stripe_id
+                }
+            )
+            response = {"payment_intent_id": payment_intent.id,
+                        "secret": payment_intent["client_secret"]}
+            return response
+
+    def add_quick_pass(self, quick_pass):
+        # calculate order values on backend to prevent malicious clients
+        quick_pass_domain = Quick_Pass_Domain(quick_pass_json=quick_pass)
+        with session_scope() as session:
+            business = Business_Domain(business_object=Business_Repository().get_business(
+                session, quick_pass_domain.business_id))
+
+            if business.quick_pass_queue >= 1:
+                new_queue = business.quick_pass_queue + 1
+                Business_Repository().update_quick_pass_queue(session=session, business_id=business.id, queue=new_queue)
+            price = business.quick_pass_price
+            service_fee_total = round(.1 * price, 2)
+
+            pre_sales_tax_total = service_fee_total + price
+
+            sales_tax_total = round(pre_sales_tax_total *
+                              business.sales_tax_rate, 2)
+            # the total will not be in addition to the service fee because the business is paying the service fee
+            total = price + sales_tax_total
             
-        elif order_json and not is_customer_order:
-            # an order received as order_json will be an order sent from an iOS device, thus service fee is not included as a value because it is calculated in the backend
-            self.id = order_json["id"]
-            # these props will only be send from iOS
-            if "customer" in order_json.keys():
-                self.customer = Customer_Domain(
-                    customer_json=order_json['customer'])
-                self.customer_first_name = self.customer.first_name
-                self.customer_last_name = self.customer.last_name
-                self.customer_stripe_id = self.customer.stripe_id
-            self.customer_id = order_json["customer_id"]
-            self.merchant_stripe_id = order_json["merchant_stripe_id"]
-            self.total = order_json["total"]
-            self.subtotal = order_json["subtotal"]
-            self.tip_percentage = order_json["tip_percentage"]
-            self.sales_tax_percentage = order_json["sales_tax_percentage"]
-            self.business_id = order_json["business_id"]
-            self.order_drink = Order_Drink_Domain(
-                order_id=self.id, order_drink_json=order_json['order_drink'], is_customer_order=False)
-            self.completed = order_json["completed"]
-            self.refunded = order_json["refunded"]
-            self.payment_intent_id = order_json["payment_intent_id"]
-            self.card_information = order_json["card_information"]
-
-        
+            quick_pass_domain.service_fee_total = service_fee_total
+            quick_pass_domain.total = total
+            quick_pass_domain.subtotal = price
             
+            quick_pass_domain.sales_tax_total = sales_tax_total
+            quick_pass_domain.price = price
+            Quick_Pass_Repository().add_quick_pass(session, quick_pass_domain)
+            return quick_pass_domain
+
+    def update_quick_pass(self, quick_pass_to_update):
+        with session_scope() as session:
+            quick_pass_domain = Quick_Pass_Domain(
+                js_object=quick_pass_to_update)
+            return Quick_Pass_Repository().update_quick_pass(session, quick_pass_domain)
         
-
-    def dto_serialize(self):
-        attribute_names = list(self.__dict__.keys())
-        attributes = list(self.__dict__.values())
-        serialized_attributes = {}
-        for i in range(len(attributes)):
-            # UUID is not json serializable so i have to stringify it
-            if attribute_names[i] == "id" or attribute_names[i] == "business_id" or attribute_names[i] == 'date_time':
-                serialized_attributes[attribute_names[i]] = str(attributes[i])
-            elif attribute_names[i] == "order_drink":
-                if self.is_customer_order == True:
-                    for order_drink in attributes[i]:
-                        print('order_drink',order_drink.dto_serialize())
-                        serialized_attributes[attribute_names[i]
-                                            ] = order_drink.dto_serialize()
-                else:
-                    if not isinstance(attributes[i], list):
-                        serialized_attributes[attribute_names[i]] = attributes[i].dto_serialize()
-                    else:
-                        serialized_attributes[attribute_names[i]] = attributes[i]
-            elif attribute_names[i] == "customer":
-                serialized_attributes[attribute_names[i]
-                                      ] = attributes[i].dto_serialize()
+    def get_bouncer_quick_passes(self, merchant_id):
+        with session_scope() as session:
+            quick_pass_domains = [Quick_Pass_Domain(quick_pass_object=x) for x in Quick_Pass_Repository().get_bouncer_quick_passes(
+                session=session, merchant_id=merchant_id)]
+            return quick_pass_domains
+    
+    def get_merchant_quick_passes(self, merchant_id):
+        with session_scope() as session:
+            quick_pass_domains = [Quick_Pass_Domain(quick_pass_object=x) for x in Quick_Pass_Repository().get_merchant_quick_passes(
+                session=session, merchant_id=merchant_id)]
+            return quick_pass_domains
+    def get_business_quick_pass(self, business_id, customer_id):
+        with session_scope() as session:
+            sold_out = False
+            business = Business_Domain(business_object=Business_Repository().get_business(session, business_id))
+            merchant = Merchant_Domain(merchant_object = Merchant_Repository().get_merchant(session, business.merchant_id))
+            
+            new_quick_pass = Quick_Pass_Domain(
+                should_display_expiration_time=should_diplay_expiration_time)
+            new_quick_pass.activation_time = datetime.now()
+            new_quick_pass.sold_out = sold_out
+           
+            # if the closing time is less than the opening time the day of closing time is 1 greater than the day of opening
+            if business.schedule[datetime.today().weekday()].closing_time.hour < business.schedule[datetime.today().weekday()].opening_time.hour:
+                closing_day = datetime.now().day + 1
             else:
-                serialized_attributes[attribute_names[i]] = attributes[i]
-        return serialized_attributes
+                closing_day = datetime.now().day
+            closing_date_time = datetime(datetime.now().year, datetime.now().month, closing_day,business.schedule[datetime.today().weekday()].closing_time.hour, business.schedule[datetime.today().weekday()].closing_time.minute) 
+            expiration_date_time = datetime(datetime.now().year, datetime.now().month, datetime.now().day,datetime.now().hour + 2, datetime.now().minute)
+            
+            if expiration_date_time > closing_date_time:
+                expiration_date_time = closing_date_time 
+            
+            if should_diplay_expiration_time == False:
+                expiration_date_time = closing_date_time
 
+            new_quick_pass.expiration_time = expiration_date_time
+            new_quick_pass.price = business.quick_pass_price
+            new_quick_pass.business_id = business.id
+            new_quick_pass.customer_id = customer_id
+            new_quick_pass.sales_tax_percentage = business.sales_tax_rate
+            new_quick_pass.merchant_stripe_id = merchant.stripe_id
+            new_quick_pass.date_time = datetime.now()
 
-class Order_Drink_Domain(object):
-    def __init__(self, order_id=None, order_drink_object=None, order_drink_json=None, drinks=None, is_customer_order = False):
-        self.order_drink: list[Order_Drink_Domain] = []
-        self.is_customer_order = is_customer_order
-        # might use this to pull in customer order objects when signing in to app, low priority
-        if order_drink_object and not drinks:
-            self.order_id = order_id
-            for order_drink_instance in order_drink_object:
-                new_drink = Drink_Domain(drink_object=order_drink_instance)
-                # order drink id will only exist when data if being pulled from the backend because the UUID is generated by the database
-                new_drink.order_drink_id = order_drink_instance.id
-                self.order_drink.append(new_drink)
-        elif order_drink_object and drinks:
-            self.order_id = order_id
-            for order_drink_instance in order_drink_object:
-                for drink in drinks:
-                    if order_drink_instance.drink_id == drink.id:
-                        new_drink = Drink_Domain(drink_object=drink)
-                        # order drink id will only exist when data if being pulled from the backend because the UUID is generated by the database
-                        new_drink.order_drink_id = order_drink_instance.id
-                        self.order_drink.append(new_drink)
-                        break
-        # this is for a customer order coming from iOS, much simpler data structure
-        elif order_drink_json and is_customer_order == True:
-            print('order_drink_json',order_drink_json)
-            self.order_id = order_drink_json["order_id"]
-            self.drink_id = order_drink_json["drink_id"]
-            self.quantity = order_drink_json["quantity"]
-            self.price = order_drink_json["price"]
-        
-        elif order_drink_json and not is_customer_order:
-            drink_id_list = list()
-            for customer_drink in order_drink_json:
-                print('customer_drink',customer_drink)
-                drink_domain = Drink_Domain(drink_json=customer_drink["drink"])
-                if drink_domain.id not in drink_id_list:
-                    drink_id_list.append(drink_domain.id)
-                    self.order_drink.append(drink_domain)
-                else:
-                    for drink in self.order_drink:
-                        if drink.id == drink_domain.id:
-                            drink.quantity += drink_domain.quantity
-
-
-
-    def dto_serialize(self):
-        serialized_attributes = {}
-        
-        if self.is_customer_order == True:
-            attribute_names = list(self.__dict__.keys())
-            attributes = list(self.__dict__.values())
-            serialized_attributes = {}
-            for i in range(len(attributes)):
-                if attribute_names[i] == 'id':
-                    serialized_attributes['id'] = str(self.id)
-                else:
-                    serialized_attributes[attribute_names[i]] = attributes[i]
-            return serialized_attributes
-        else:
-            serialized_attributes['order_id'] = str(self.order_id)
-            serialized_attributes["order_drink"] = [
-                x.dto_serialize() for x in self.order_drink]
-            print('serialized_attributes',serialized_attributes)
-            return serialized_attributes
-
-
-class Customer_Domain(object):
-    def __init__(self, customer_object=None, customer_json=None):
-        if customer_json == None and customer_object == None:
-            # this will be dummy data to display customer attributes to newly signed merchants
-            self.id = ""
-            self.first_name = ""
-            self.last_name = ""
-            self.has_registered = False
-            self.stripe_id = ""
-        if customer_object:
-            self.id = customer_object.id
-            self.first_name = customer_object.first_name
-            self.last_name = customer_object.last_name
-            self.email_verified = customer_object.email_verified
-            self.date_time = customer_object.date_time
-            self.is_active = customer_object.is_active
-            if "has_registered" in customer_object.__dict__.keys():
-                self.has_registered = customer_object.has_registered
-            # might not want to send this sensitive information in every request
-            if "password" in customer_object.__dict__.keys():
-                self.password = customer_object.password
-            if "stripe_id" in customer_object.__dict__.keys():
-                self.stripe_id = customer_object.stripe_id
-            if "apple_id" in customer_object.__dict__.keys():
-                self.apple_id = customer_object.apple_id
-        elif customer_json:
-            # has registered property will be false when the customer is created initially
-            self.id = customer_json["id"]
-            self.password = generate_password_hash(
-                customer_json["password"], "sha256")
-            self.email_verified = customer_json["email_verified"]
-            self.first_name = customer_json["first_name"]
-            self.last_name = customer_json["last_name"]
-            self.stripe_id = customer_json["stripe_id"]
-            # convert swift timestamp to python datetime
-            self.date_time = datetime.fromtimestamp(customer_json["date_time"])
-            print('self.date_time', self.date_time)
-            if "apple_id" in customer_json:
-                self.apple_id = customer_json["apple_id"]
-            else:
-                self.apple_id = ""
-
-    def dto_serialize(self):
-        attribute_names = list(self.__dict__.keys())
-        attributes = list(self.__dict__.values())
-        serialized_attributes = {}
-        for i in range(len(attributes)):
-            if attribute_names[i] == 'id':
-                serialized_attributes['id'] = str(self.id)
-            elif attribute_names[i] == 'date_time':
-                # return timestamp whenever sending python datetime object in JSON
-                serialized_attributes[attribute_names[i]
-                                      ] = self.date_time.timestamp()
-            else:
-                serialized_attributes[attribute_names[i]] = attributes[i]
-        return serialized_attributes
-
-
-class Merchant_Domain(object):
-    def __init__(self, merchant_object=None, merchant_json=None):
-        self.id = ''
-        self.password = ''
-        self.first_name = ''
-        self.last_name = ''
-        self.phone_number = ''
-        self.number_of_businesses = ''
-        self.stripe_id = ''
-        self.is_administrator = False
-        self.status = ""
-        if merchant_object:
-            self.id = merchant_object.id
-            self.password = merchant_object.password
-            self.first_name = merchant_object.first_name
-            self.last_name = merchant_object.last_name
-            self.phone_number = merchant_object.phone_number
-            self.number_of_businesses = merchant_object.number_of_businesses
-            self.stripe_id = merchant_object.stripe_id
-            self.status = "confirmed"
-            if merchant_object.id == 'patardriscoll@gmail.com':
-                self.is_administrator = True
-
-        elif merchant_json:
-            self.id = merchant_json["id"]
-            self.password = merchant_json["password"]
-            self.first_name = merchant_json["first_name"]
-            self.last_name = merchant_json["last_name"]
-            self.phone_number = merchant_json["phone_number"]
-            if merchant_json["id"] == 'patardriscoll@gmail.com':
-                self.is_administrator = True
-            # number of locations is added as a property later in the signup process so it won't be present when checking if the merchant exists at step one
-            if "number_of_businesses" in merchant_json:
-                self.number_of_businesses = merchant_json["number_of_businesses"]
-            # when the merchant object is validated it wont be present initially
-            if "stripe_id" in merchant_json:
-                self.stripe_id = merchant_json["stripe_id"]
-
-    def dto_serialize(self):
-        attribute_names = list(self.__dict__.keys())
-        attributes = list(self.__dict__.values())
-        serialized_attributes = {}
-        for i in range(len(attributes)):
-            if attribute_names[i] == 'id':
-                serialized_attributes['id'] = str(self.id)
-            else:
-                serialized_attributes[attribute_names[i]] = attributes[i]
-        return serialized_attributes
-
-
-class Bouncer_Domain(object):
-    def __init__(self, bouncer_object=None, bouncer_json=None, isStagedBouncer=False):
-        self.id = ''
-        self.first_name = ''
-        self.last_name = ''
-        self.business_id = ''
-        self.merchant_id = ''
-        self.logged_in = False
-        self.status = ''
-        if bouncer_object:
-            print('bouncer_object', bouncer_object.serialize)
-            self.id = bouncer_object.id
-            self.merchant_id = bouncer_object.merchant_id
-            self.business_id = bouncer_object.business_id
-            self.first_name = bouncer_object.first_name
-            self.last_name = bouncer_object.last_name
-            if isStagedBouncer == True:
-                self.status = bouncer_object.status
-            if isStagedBouncer == False:
-                self.logged_in = bouncer_object.logged_in
-
-        elif bouncer_json:
-            print('bouncer_json', bouncer_json)
-            self.id = bouncer_json["id"]
-            self.first_name = bouncer_json["first_name"]
-            self.last_name = bouncer_json["last_name"]
-            self.business_id = bouncer_json['business_id']
-            self.merchant_id = bouncer_json['merchant_id']
-            self.logged_in = bouncer_json['logged_in']
-            self.status = bouncer_json['status']
-
-    def dto_serialize(self):
-        attribute_names = list(self.__dict__.keys())
-        attributes = list(self.__dict__.values())
-        serialized_attributes = {}
-        for i in range(len(attributes)):
-            if attribute_names[i] == 'id':
-                serialized_attributes['id'] = str(self.id)
-            elif attribute_names[i] == 'merchant_id' or attribute_names[i] == 'business_id':
-                serialized_attributes[attribute_names[i]] = str(attributes[i])
-            else:
-                serialized_attributes[attribute_names[i]] = attributes[i]
-        return serialized_attributes
-
-
-class Merchant_Employee_Domain(object):
-    def __init__(self, merchant_employee_object=None, merchant_employee_json=None):
-        self.id = ''
-        self.pin = ''
-        self.first_name = ''
-        self.last_name = ''
-        self.phone_number = ''
-        self.pin = ''
-        self.business_id = ''
-        self.merchant_id = ''
-        self.stripe_id = ''
-        self.logged_in = ''
-        self.status = ''
-        if merchant_employee_object:
-            self.id = merchant_employee_object.id
-            self.merchant_id = merchant_employee_object.merchant_id
-            self.business_id = merchant_employee_object.business_id
-            self.pin = merchant_employee_object.pin
-            self.first_name = merchant_employee_object.first_name
-            self.last_name = merchant_employee_object.last_name
-            self.phone_number = merchant_employee_object.phone_number
-            self.logged_in = merchant_employee_object.logged_in
-            # stripe ID is in an associative table now so if a vanilla merchant_employee object is returned then it wont have the stripe id
-            if 'stripe_id' in merchant_employee_object.__dict__:
-                self.stripe_id = merchant_employee_object.stripe_id
-
-        elif merchant_employee_json:
-            self.id = merchant_employee_json["id"]
-            self.pin = merchant_employee_json["pin"]
-            self.first_name = merchant_employee_json["first_name"]
-            self.last_name = merchant_employee_json["last_name"]
-            self.business_id = merchant_employee_json['business_id']
-            self.merchant_id = merchant_employee_json['merchant_id']
-            self.phone_number = merchant_employee_json["phone_number"]
-            self.logged_in = merchant_employee_json['logged_in']
-            # when the merchant_employee object is validated it wont be present initially
-            if "stripe_id" in merchant_employee_json:
-                self.stripe_id = merchant_employee_json["stripe_id"]
-
-    def dto_serialize(self):
-        attribute_names = list(self.__dict__.keys())
-        attributes = list(self.__dict__.values())
-        serialized_attributes = {}
-        for i in range(len(attributes)):
-            if attribute_names[i] == 'id':
-                serialized_attributes['id'] = str(self.id)
-            elif attribute_names[i] == 'merchant_id':
-                serialized_attributes['merchant_id'] = str(self.merchant_id)
-            elif attribute_names[i] == 'business_id':
-                serialized_attributes['business_id'] = str(self.business_id)
-            else:
-                serialized_attributes[attribute_names[i]] = attributes[i]
-        return serialized_attributes
-
-
-class Business_Schedule_Day_Domain(object):
-    def __init__(self, business_schedule_day_object=None, business_schedule_day_json=None):
-        self.day = ''
-        self.opening_time = ''
-        self.closing_time = ''
-        self.is_closed = ''
-        self.business_id = ''
-
-        if business_schedule_day_object != None:
-            self.day = business_schedule_day_object.day
-            self.is_closed = business_schedule_day_object.is_closed
-            self.business_id = business_schedule_day_object.business_id
-            if self.is_closed == False:
-                self.opening_time = business_schedule_day_object.opening_time
-                self.closing_time = business_schedule_day_object.closing_time
-
-        if business_schedule_day_json != None:
-            self.day = business_schedule_day_json["day"]
-            self.is_closed = business_schedule_day_json["isClosed"]
-            if self.is_closed == False:
-                self.opening_time = datetime.strptime(
-                    business_schedule_day_json["openingTime"], '%H:%M').time()
-                self.closing_time = datetime.strptime(
-                    business_schedule_day_json["closingTime"], '%H:%M').time()
-            else:
-                self.opening_time = ""
-                self.closing_time = ""
-
-    def dto_serialize(self):
-        attribute_names = list(self.__dict__.keys())
-        attributes = list(self.__dict__.values())
-        serialized_attributes = {}
-        for i in range(len(attributes)):
-            if attribute_names[i] == 'opening_time' or attribute_names[i] == 'closing_time' or attribute_names[i] == 'business_id':
-                if self.is_closed == False or attribute_names[i] == 'business_id':
-                    serialized_attributes[attribute_names[i]] = str(
-                        attributes[i])
-                else:
-                    serialized_attributes[attribute_names[i]] = ""
-            else:
-                serialized_attributes[attribute_names[i]] = attributes[i]
-        return serialized_attributes
-
-
-class Business_Domain(object):
-    def __init__(self, business_object: Business = None, business_json: dict = None):
-        self.sales_tax_rate = 0.0625
-        self.id = ''
-        self.merchant_id = ''
-        self.name = ''
-        self.phone_number = ''
-        self.address = ''
-        self.classification = ''
-        self.merchant_stripe_id = ''
-        self.street = ''
-        self.city = ''
-        self.state = ''
-        self.zipcode = ''
-        self.at_capacity = False
-        self.schedule = []
-        self.service_fee_percentage = service_fee_percentage
-        if business_object:
-            self.id = business_object.id
-            self.merchant_id = business_object.merchant_id
-            self.name = business_object.name
-            self.phone_number = business_object.phone_number
-
-            self.address = business_object.address
-
-            address_list = business_object.address.split(",")
-
-            self.street = address_list[0]
-            self.city = address_list[1]
-
-            state_and_zipcode = address_list[2].split(" ")
-
-            self.state = state_and_zipcode[1]
-            self.zipcode = state_and_zipcode[2]
-
-            self.sales_tax_rate = business_object.sales_tax_rate
-            self.classification = business_object.classification
-            self.merchant_stripe_id = business_object.merchant_stripe_id
-            self.menu = [Drink_Domain(drink_object=x)
-                         for x in business_object.drink]
-            self.at_capacity = business_object.at_capacity
-            for day_object in business_object.schedule:
-                new_day_domain = Business_Schedule_Day_Domain(
-                    business_schedule_day_object=day_object)
-                self.schedule.append(new_day_domain)
-            self.is_active = business_object.is_active
-            self.quick_pass_price = business_object.quick_pass_price
-            self.quick_pass_queue = business_object.quick_pass_queue
-
-        if business_json:
-            print('business_json', business_json)
-            self.id = uuid.uuid4()
-            self.phone_number = business_json["phone_number"]
-            self.merchant_id = business_json["merchant_id"]
-            self.merchant_stripe_id = business_json["merchant_stripe_id"]
-            self.name = business_json["name"]
-            self.classification = business_json["classification"]
-            self.address = business_json["address"]
-            self.at_capacity = business_json['at_capacity']
-            for day_json in business_json["schedule"]:
-                day_json['business_id'] = self.id
-                new_day_domain = Business_Schedule_Day_Domain(
-                    business_schedule_day_json=day_json)
-                self.schedule.append(new_day_domain)
-            try:
-                address_list = [x.strip()
-                                for x in business_json["address"].split(",")]
-                self.street = address_list[0]
-                self.city = address_list[1]
-
-                state_and_zipcode = address_list[2].split(" ")
-                while "" in state_and_zipcode:
-                    state_and_zipcode.remove("")
-                if len(state_and_zipcode) > 1:
-                    self.state = state_and_zipcode[0]
-                    self.zipcode = state_and_zipcode[1]
-                elif len(state_and_zipcode) == 1:
-                    self.state = state_and_zipcode[0]
-                    self.zipcode = None
-            except Exception as e:
-                print('address exception', e)
-            if "menu_url" in business_json:
-                self.menu_url = business_json["menu_url"]
-            else:
-                self.menu_url = None
-
-    def dto_serialize(self):
-        attribute_names = list(self.__dict__.keys())
-        attributes = list(self.__dict__.values())
-        serialized_attributes = {}
-        for i in range(len(attributes)):
-            if attribute_names[i] == 'id':
-                serialized_attributes['id'] = str(attributes[i])
-            elif attribute_names[i] == 'menu':
-                serialized_attributes['menu'] = [
-                    x.dto_serialize() for x in attributes[i]]
-            elif attribute_names[i] == 'schedule':
-                serialized_attributes['schedule'] = [
-                    x.dto_serialize() for x in self.schedule]
-            else:
-                serialized_attributes[attribute_names[i]] = attributes[i]
-        return serialized_attributes
-
-
-class Tab_Domain(object):
-    def __init__(self, tab_object=None, tab_json=None):
-        self.id = ''
-        self.name = ''
-        self.business_id = ''
-        self.customer_id = ''
-        self.address = ''
-        self.date_time = ''
-        self.description = ''
-        self.minimum_contribution = ''
-        self.fundraising_goal = ''
-        if tab_object:
-            self.id = tab_object.id
-            self.name = tab_object.name
-            self.business_id = tab_object.business_id
-            self.customer_id = tab_object.customer_id
-            self.address = tab_object.address
-            self.description = tab_object.description
-            self.minimum_contribution = tab_object.minimum_contribution
-            self.fundraising_goal = tab_object.fundraising_goal
-        if tab_json:
-            self.id = tab_json["id"]
-            self.name = tab_json["name"]
-            self.business_id = tab_json["business_id"]
-            self.customer_id = tab_json["customer_id"]
-            self.address = tab_json["address"]
-
-            address_list = tab_json["address"].split(",")
-            self.street = address_list[0]
-            self.city = address_list[1]
-            self.state = address_list[2]
-            self.zipcode = address_list[3]
-            self.description = tab_json["description"]
-            self.minimum_contribution = tab_json["minimum_contribution"]
-            self.fundraising_goal = tab_json["fundraising_goal"]
-
-    def serialize(self):
-        attribute_names = list(self.__dict__.keys())
-        attributes = list(self.__dict__.values())
-        serialized_attributes = {}
-        for i in range(len(attributes)):
-            serialized_attributes[attribute_names[i]] = attributes[i]
-        return serialized_attributes
-
-
-class ETag_Domain(object):
-    def __init__(self, etag_object=None, etag_json=None):
-        if etag_object:
-            self.id = etag_object.id
-            self.category = etag_object.category
-        elif etag_json:
-            self.id = etag_json["id"]
-            self.category = etag_json["category"]
-
-    def serialize(self):
-        attribute_names = list(self.__dict__.keys())
-        attributes = list(self.__dict__.values())
-        serialized_attributes = {}
-        for i in range(len(attributes)):
-            serialized_attributes[attribute_names[i]] = attributes[i]
-        return serialized_attributes
-
-
-class Quick_Pass_Domain(object):
-    def __init__(self, quick_pass_object=None, quick_pass_json=None, js_object=None, should_display_expiration_time=False):
-        print('quick_pass_json', quick_pass_json)
-        self.id = ''
-        self.customer_id = ''
-        self.customer_first_name = ''
-        self.customer_last_name = ''
-        self.business_id = ''
-        self.merchant_stripe_id = ''
-        self.price = 0.0
-        self.service_fee_total = 0.0
-        self.sales_tax_total = 0.0
-        self.sales_tax_percentage = 0.0
-        self.total = 0.0
-        self.subtotal = 0.0
-        self.date_time = ''
-        self.payment_intent_id = ''
-        self.activation_time = datetime.now()
-        self.expiration_time = ''
-        self.time_checked_in = ''
-        self.should_display_expiration_time = should_display_expiration_time
-        self.sold_out = False
-        self.card_information = ''
-        if quick_pass_object:
-            self.id = quick_pass_object.id
-            self.business_id = quick_pass_object.business_id
-            self.customer_id = quick_pass_object.customer_id
-            self.customer_first_name = quick_pass_object.customer.first_name
-            self.customer_last_name = quick_pass_object.customer.last_name
-            self.price = quick_pass_object.price
-            self.total = quick_pass_object.total
-            self.service_fee_total = quick_pass_object.service_fee_total
-            self.sales_tax_total = quick_pass_object.sales_tax
-            self.merchant_stripe_id = quick_pass_object.merchant_stripe_id
-            self.activation_time = quick_pass_object.activation_time
-            self.expiration_time = quick_pass_object.expiration_time
-            self.card_information = quick_pass_object.card_information
-        elif quick_pass_json:
-            # service_fee_total will never be sent from front end, it will always be computed or pulled from database
-            self.id = quick_pass_json["id"]
-            self.customer_id = quick_pass_json["customer_id"]
-            self.activation_time = datetime.fromtimestamp(
-                quick_pass_json['activation_time'])
-            self.date_time = datetime.fromtimestamp(
-                quick_pass_json['date_time'])
-            # will only need this property when receiving a new business queue order from a customer
-            self.business_id = quick_pass_json["business_id"]
-            self.merchant_stripe_id = quick_pass_json["merchant_stripe_id"]
-            self.payment_intent_id = quick_pass_json["payment_intent_id"]
-            self.total = quick_pass_json["total"]
-            self.price = quick_pass_json["price"]
-            self.sales_tax_percentage = quick_pass_json["sales_tax_percentage"]
-            self.sales_tax_total = quick_pass_json["sales_tax_total"]
-            self.expiration_time = datetime.fromtimestamp(
-                quick_pass_json["expiration_time"])
-            self.card_information = quick_pass_json["card_information"]
-            # optional values
-            if quick_pass_json.__contains__('time_checked_in'):
-                self.time_checked_in = datetime.fromtimestamp(
-                    quick_pass_json["time_checked_in"])
-        elif js_object:
-            self.id = js_object["id"]
-            self.customer_id = js_object["customer_id"]
-            self.activation_time = datetime.fromtimestamp(
-                js_object['activation_time'])
-            self.business_id = js_object["business_id"]
-            self.time_checked_in = datetime.fromtimestamp(
-                js_object["time_checked_in"])
-
-        # this is dummy data if there at no quick passes created yet
-        elif quick_pass_json == None and quick_pass_object == None and js_object == None:
-            self.expiration_time = datetime.now()
-            self.activation_time = datetime.now()
-            self.date_time = datetime.now()
-
-    def dto_serialize(self):
-        attribute_names = list(self.__dict__.keys())
-        attributes = list(self.__dict__.values())
-        serialized_attributes = {}
-        for i in range(len(attributes)):
-            # UUID is not json serializable so i have to stringify it
-            if attribute_names[i] == "id" or attribute_names[i] == "business_id":
-                serialized_attributes[attribute_names[i]] = str(attributes[i])
-            elif attribute_names[i] == 'date_time' or attribute_names[i] == 'activation_time' or attribute_names[i] == 'time_checked_in' or attribute_names[i] == 'expiration_time':
-                if attributes[i] != '':
-                    my_date = attributes[i].timestamp()
-                    serialized_attributes[attribute_names[i]] = my_date
-                else:
-                    serialized_attributes[attribute_names[i]] = attributes[i]
-            else:
-                serialized_attributes[attribute_names[i]] = attributes[i]
-        return serialized_attributes
+            # must create a dummy id for swift data type
+            new_quick_pass.id = uuid.uuid4()
+            return new_quick_pass

@@ -16,7 +16,7 @@ import Select from "@material-ui/core/Select";
 import { FormGroup } from "@material-ui/core";
 import InputLabel from "@material-ui/core/InputLabel";
 import { useState } from "react";
-import { Business, Drink } from "../../Models";
+import { Business, Drink, LocalStorageManager } from "../../Models";
 import Grid from "@material-ui/core/Grid";
 import { toCapitalizedWords } from "../../Models";
 
@@ -33,10 +33,9 @@ const Menu = (props) => {
       padding: theme.spacing(2),
     },
   }));
-  const businesses = props.businesses.map((businessJSON) => {
-    return new Business(businessJSON, true);
-  });
+  const businesses = LocalStorageManager.shared.businesses;
   console.log("businesses", businesses);
+  console.log("businesses.length", businesses.length);
 
   const classes = useStyles();
   const [businessIndex, setBusinessIndex] = useState(0);
@@ -48,7 +47,7 @@ const Menu = (props) => {
     <Container maxWidth="xl">
       <Paper className={props.classes.paper}>
         <Title>Menu</Title>
-        <Form style={{ marginTop: "20px" }}>
+        <Form style={{ marginTop: "2vh" }}>
           <FormGroup>
             <Form.Row>
               <Col xs={"auto"}>
@@ -64,7 +63,7 @@ const Menu = (props) => {
                   >
                     {businesses.map((business, i) => (
                       <MenuItem key={i} value={i}>
-                        {toCapitalizedWords(business.name)}
+                        {business.name}
                         <br />
                         {business.address}
                       </MenuItem>
@@ -76,71 +75,67 @@ const Menu = (props) => {
           </FormGroup>
         </Form>
         <Grid container className={classes.gridRoot} spacing={2} xs={12}>
-          {businesses[businessIndex].menu.map((drink, i) => {
-            const menuDrink = new Drink(drink);
-            return (
-              <Grid
-                container
-                align="center"
-                direction="row"
-                xs={3}
-                key={i}
-                alignItems="stretch"
-              >
-                <Grid item xs={12} key={i}>
-                  <Card
-                    key={i}
-                    className={classes.root}
-                    style={{ maxHeight: "300px" }}
-                  >
-                    <CardActionArea>
-                      <div
-                        style={{ display: "flex", justifyContent: "center" }}
-                      >
-                        <CardMedia
-                          style={{
-                            width: "auto",
-                            maxHeight: "15vh",
-                            marginTop: "20px",
-                          }}
-                          component="img"
-                          src={menuDrink.imageUrl}
-                          title="Contemplative Reptile"
-                        />
-                      </div>
-                      <CardContent>
-                        <Typography gutterBottom variant="h5" component="h2">
-                          {toCapitalizedWords(menuDrink.name)}
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          color="textSecondary"
-                          component="p"
+          {businesses.length > 0 ? (
+            businesses[businessIndex].menu.map((drink, i) => {
+              const menuDrink = new Drink(drink);
+              return (
+                <Grid
+                  container
+                  align="center"
+                  direction="row"
+                  xs={3}
+                  key={i}
+                  alignItems="stretch"
+                >
+                  <Grid item xs={12} key={i}>
+                    <Card
+                      key={i}
+                      className={classes.root}
+                      style={{ maxHeight: "40vh" }}
+                    >
+                      <CardActionArea>
+                        <div
+                          style={{ display: "flex", justifyContent: "center" }}
                         >
-                          {menuDrink.description}
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          color="textSecondary"
-                          component="p"
-                        >
-                          {menuDrink.price}
-                        </Typography>
-                      </CardContent>
-                    </CardActionArea>
-                    {/* <CardActions>
-            <Button size="small" color="primary">
-              Share
-            </Button>
-            <Button size="small" color="primary">
-              Learn More
-            </Button>
-          </CardActions> */}
-                  </Card>
+                          <CardMedia
+                            style={{
+                              width: "auto",
+                              maxHeight: "22vh",
+                              marginTop: "2vh",
+                            }}
+                            component="img"
+                            src={menuDrink.imageUrl}
+                            title="Contemplative Reptile"
+                          />
+                        </div>
+                        <CardContent>
+                          <Typography gutterBottom variant="h5" component="h2">
+                            {toCapitalizedWords(menuDrink.name)}
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            color="textSecondary"
+                            component="p"
+                          >
+                            {menuDrink.description}
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            color="textSecondary"
+                            component="p"
+                          >
+                            {`$${menuDrink.price}`}
+                          </Typography>
+                        </CardContent>
+                      </CardActionArea>
+                    </Card>
+                  </Grid>
                 </Grid>
-              </Grid>
-            );
-          })}
+              );
+            })
+          ) : (
+            <></>
+          )}
         </Grid>
       </Paper>
     </Container>

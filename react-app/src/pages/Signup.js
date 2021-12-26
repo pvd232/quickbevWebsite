@@ -584,7 +584,18 @@ const BusinessFieldset = (props) => {
     if (validate(form)) {
       // set all the values for the business
       // if the user comes back to this page before submitting to change stuff it will reset the values
-      const copyOfFormValue = { ...formValue };
+      const copyOfFormValue = {   
+        name: formValue["name"],
+        phone_number: formValue["phoneNumber"],
+        address: formValue["address"],
+        street: formValue["street"],
+        suite: formValue["suite"],
+        city: formValue["city"],
+        state: formValue["state"],
+        zipcode: formValue["zipcode"],
+        schedule: [] 
+      };
+
       copyOfFormValue.schedule = schedule;
       const newBusiness = new Business(copyOfFormValue);
       const result = await props.onSubmit(newBusiness, merchantStripeId);
@@ -789,8 +800,8 @@ const Signup = () => {
     console.log("newBusiness", newBusiness);
     newForm.append("business", JSON.stringify(newBusiness));
 
-    LocalStorageManager.shared.setLocalStorage("merchant", newMerchant);
-    LocalStorageManager.shared.setLocalStorage("business", newBusiness);
+    LocalStorageManager.shared.setItem("merchant", newMerchant);
+    LocalStorageManager.shared.setItem("business", newBusiness);
     // set in local storage if user has multiple businesses so we can display a tab to add more businesses late
     let responseBody = await API.makeRequest(
       "POST",
@@ -802,9 +813,7 @@ const Signup = () => {
     console.log("responseBody", responseBody);
 
     const confirmed_new_business = new Business(
-      responseBody.confirmed_new_business,
-      true,
-      false
+      responseBody.confirmed_new_business
     );
     const confirmed_new_merchant = new Merchant(
       "json",
@@ -813,15 +822,15 @@ const Signup = () => {
     console.log("confirmed_new_business", confirmed_new_business);
     console.log("responseBody.token", responseBody.headers.token);
 
-    LocalStorageManager.shared.setLocalStorage(
+    LocalStorageManager.shared.setItem(
       "business",
       confirmed_new_business
     );
-    LocalStorageManager.shared.setLocalStorage(
+    LocalStorageManager.shared.setItem(
       "merchant",
       confirmed_new_merchant
     );
-    LocalStorageManager.shared.setLocalStorage(
+    LocalStorageManager.shared.setItem(
       "session_token",
       responseBody.headers.token
     );

@@ -13,6 +13,7 @@ const PayoutSetup = (props) => {
     <FontAwesomeIcon icon={faSpinner} className="fa-spin" />
   );
   var redirectUrl = null;
+
   const getRedirectInfo = async () => {
     if (!props.callback) {
       console.log("not callback");
@@ -95,7 +96,7 @@ const PayoutSetup = (props) => {
               const eventTarget = event.target;
               handleConnect().then((merchantStripeId) =>
                 props.onSubmit(eventTarget, merchantStripeId).then(() => {
-                  LocalStorageManager.shared.setLocalStorage(
+                  LocalStorageManager.shared.setItem(
                     "first_login",
                     true
                   );

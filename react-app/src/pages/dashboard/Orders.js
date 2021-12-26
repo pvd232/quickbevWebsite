@@ -10,7 +10,7 @@ import Paper from "@material-ui/core/Paper";
 import Title from "./Title";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
-import { Order, OrderDrink } from "../../Models";
+import { LocalStorageManager, OrderItem } from "../../Models";
 import { CSVLink } from "react-csv";
 import { toCapitalizedWords } from "../../Models";
 
@@ -22,37 +22,51 @@ const useStyles = makeStyles({
 
 const Orders = (props) => {
   const classes = useStyles();
-  const mappedOrders = props.orders.map((orderJSON) => {
-    return new Order(orderJSON);
-  });
-
-  const formattedMappedOrders = mappedOrders.map((order) => {
-    order.total = Math.round(order.total);
-    order.subtotal = Math.round(order.subtotal);
-    order.tipTotal = Math.round(order.tipTotal);
-    order.salesTaxTotal = Math.round(order.salesTaxTotal);
-    order.serviceFee = Math.round(order.serviceFee);
-    const orderBusiness = props.businesses.filter(
+  const formattedOrders = LocalStorageManager.shared.orders.map((order) => {
+    // format Order objects by transforming them into OrderItems
+    const orderItem = new OrderItem(order);
+    const orderBusiness = LocalStorageManager.shared.businesses.filter(
       (business) => order.businessId === business.id
     );
     if (orderBusiness.length > 0) {
-      order.businessName = orderBusiness[0].name;
+      orderItem.businessName = orderBusiness[0].name;
+      const bizAddy = orderBusiness[0].address;
+      const bizAddyParts = bizAddy.split(",");
+
+      // remove trailing 'USA' from address, initially all businesses will be in the USA
+      for (const part of bizAddyParts) {
+        if (part.trim() === "USA") {
+          const index = bizAddyParts.indexOf(part);
+          if (index > -1) {
+            bizAddyParts.splice(index, 1);
+          }
+        }
+      }
+      const newAddy = bizAddyParts.join(", ");
+      orderItem.address = newAddy;
     }
-    return order;
+    return orderItem;
   });
-  formattedMappedOrders.sort((a, b) => {
+  
+
+  const sortedFormattedOrders = formattedOrders.sort((a, b) => {
     const aDate = new Date(a.dateTime);
     const bDate = new Date(b.dateTime);
     return bDate.getTime() - aDate.getTime();
   });
-  const csvData = formattedMappedOrders.map((order) => {
+  if (sortedFormattedOrders.length === 0) {
+    formattedOrders.push(new OrderItem(false))
+  }
+  const csvData = sortedFormattedOrders.map((order) => {
     const orderData = [];
     // eslint-disable-next-line array-callback-return
     Object.values(order).map((key) => {
-      if (key instanceof OrderDrink) {
+      if (key instanceof Array) {
         // eslint-disable-next-line array-callback-return
-        Object.values(key.orderDrink).map((drink) => {
-          orderData.push(String(drink.quantity) + "x " + drink.name);
+        Object.values(key).map((orderDrink) => {
+          orderData.push(
+            String(orderDrink.quantity) + "x " + orderDrink.drinkName
+          );
         });
       } else {
         orderData.push(key);
@@ -63,7 +77,7 @@ const Orders = (props) => {
 
   // add row headers
   csvData.unshift(
-    Object.keys(formattedMappedOrders[0]).map((key) =>
+    Object.keys(sortedFormattedOrders[0]).map((key) =>
       // if the key is "id" than we want to display an email label
       key === "tipPercentage"
         ? "Tip %"
@@ -73,7 +87,7 @@ const Orders = (props) => {
           )
     )
   );
-  if (formattedMappedOrders) {
+  if (sortedFormattedOrders) {
     return (
       <TableContainer>
         <Paper className={props.classes.paper}>
@@ -102,7 +116,7 @@ const Orders = (props) => {
                 <TableCell align="left" key={"row #"}>
                   Row
                 </TableCell>
-                {Object.keys(formattedMappedOrders[0]).map((key, i) => (
+                {Object.keys(sortedFormattedOrders[0]).map((key, i) => (
                   <TableCell align="left" key={i}>
                     {key === "tipPercentage"
                       ? "Tip %"
@@ -115,24 +129,32 @@ const Orders = (props) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {formattedMappedOrders[0].id !== "" ? (
-                formattedMappedOrders.map((row, i) => (
+              {sortedFormattedOrders[0].id !== "" ? (
+                sortedFormattedOrders.map((row, i) => (
                   <TableRow key={row.id}>
                     <TableCell>{i}</TableCell>
                     {Object.values(row).map((key, i) => {
                       console.log("key", key);
-                      if (key instanceof OrderDrink) {
+                      if (key instanceof Array) {
                         console.log("orderDrink key", key);
                         return (
                           <TableCell align="left" key={i}>
-                            {Object.values(key.orderDrink).map((drink) => {
-                              return String(drink.quantity) + "x " + drink.name;
+                            {Object.values(key).map((orderDrink) => {
+                              return (
+                                String(orderDrink.quantity) +
+                                "x " +
+                                orderDrink.drinkName
+                              );
                             })}
                           </TableCell>
                         );
                       } else {
                         return (
-                          <TableCell align="left" key={i}>
+                          <TableCell
+                            align="left"
+                            key={i}
+                            style={{ maxWidth: "14vw" }}
+                          >
                             {key}
                           </TableCell>
                         );

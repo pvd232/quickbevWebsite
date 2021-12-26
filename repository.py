@@ -1,4 +1,3 @@
-from ctypes import Array
 from sqlalchemy.orm.scoping import scoped_session
 from models import *
 from domain import Bouncer_Domain, Business_Domain, Customer_Domain, Drink_Domain, ETag_Domain, Merchant_Domain, Merchant_Employee_Domain, Order_Domain, Quick_Pass_Domain, Tab_Domain
@@ -6,16 +5,26 @@ import stripe
 from werkzeug.security import generate_password_hash, check_password_hash
 
 
-
 class Drink_Repository(object):
     def get_drinks(self, session):
         drinks = session.query(Drink)
         return drinks
 
+    def get_merchant_drinks(self, session: scoped_session, merchant_id: str):
+        merchant_drinks = []
+        merchant_businesses = Business_Repository().get_merchant_businesses(
+            session=session, merchant_id=merchant_id)
+        for business in merchant_businesses:
+            drinks = session.query(Drink).filter(
+                Drink.business_id == business.id)
+            for drink in drinks:
+                merchant_drinks.append(drink)
+        return merchant_drinks
+
     def add_drinks(self, session: scoped_session, drink_list: list[Drink_Domain]):
         for drink in drink_list:
             new_drink = Drink(id=drink.id, name=drink.name, description=drink.description,
-                              price=drink.price, business_id=drink.business_id, has_image=drink.has_image)
+                              price=drink.price, business_id=drink.business_id)
             session.add(new_drink)
         return drink_list
 
@@ -33,12 +42,11 @@ class Order_Repository(object):
             Order.customer_id == customer_id).all()
         return customer_orders
 
-    def get_order(self, session: scoped_session, order_id: str):
-        database_order = session.query(Order, Business.id.label("business_id"),  # select from allows me to pull the entire Order from the database so I can get the Order_Drink relationship values
-                                       Business.address.label("business_address"), Business.name.label("business_name"), Customer.first_name.label('customer_first_name'), Customer.last_name.label('customer_last_name')).select_from(Order).join(Business, Order.business_id == Business.id).join(Customer, Order.customer_id == Customer.id).filter(Order.id == order_id).all()
-        # database_order.completed = True
-        drinks = session.query(Drink)
-        return database_order, drinks
+    def get_order(self, session: scoped_session, order_id: UUID):
+        order = session.query(Order, Customer.first_name.label('customer_first_name'), Customer.last_name.label(
+            'customer_last_name')).join(Customer, Order.customer_id == Customer.id).filter(Order.id == order_id).first()
+        print('order', order)
+        return order
 
     def update_order(self, session: scoped_session, order: Order_Domain):
         database_order = session.query(Order).filter(
@@ -68,7 +76,6 @@ class Order_Repository(object):
                 new_order_tip = Order_Tip(
                     order_id=order.id, merchant_employee_id=server.id, tip_total=tip_per_server)
                 session.add(new_order_tip)
-        print('order', order.dto_serialize())
         return order
 
     def get_customer_orders(self, session: scoped_session, username: str):
@@ -77,24 +84,23 @@ class Order_Repository(object):
         return orders
 
     def get_merchant_orders(self, session: scoped_session, username: str):
-        orders = session.query(Order, Business.id.label("business_id"),  # select from allows me to pull the entire Order from the database so I can get the Order_Drink relationship values
-                               Business.address.label("business_address"), Business.name.label("business_name"), Customer.first_name.label('customer_first_name'), Customer.last_name.label('customer_last_name')).select_from(Order).join(Business, Order.business_id == Business.id).join(Customer, Order.customer_id == Customer.id).filter(Business.merchant_id == username).all()
-        # businesses_associated_with_merchant = session.query(Business).filter(Business.merchant_id == username).all()
-        # business_id_list = []
-        # for business in businesses_associated_with_merchant:
-        #     business_id_list.append(business.id)
-        drinks = session.query(Drink)
-        orders
-        print('orders',len(orders))
-        return orders, drinks
+        orders = []
+        merchant_businesses = Business_Repository().get_merchant_businesses(
+            session=session, merchant_id=username)
+        for business in merchant_businesses:
+            business_orders = session.query(Order).filter(
+                Order.business_id == business.id).all()
+            for order in business_orders:
+                orders.append(order)
+        return orders
 
     def get_merchant_employee_orders(self, session: scoped_session, business_id: UUID):
+        print('business_id', business_id)
         # only get active orders
-        orders = session.query(Order, Business.id.label("business_id"),  # select from allows me to pull the entire Order from the database so I can get the Order_Drink relationship values
-                               Business.address.label("business_address"), Business.name.label("business_name"), Customer.first_name.label('customer_first_name'), Customer.last_name.label('customer_last_name')).select_from(Order).join(Business, Order.business_id == Business.id).join(Customer, Order.customer_id == Customer.id).filter(Business.id == business_id, Order.completed == False, Order.refunded == False).all()
-        drinks = session.query(Drink).filter(
-            Drink.business_id == business_id).all()
-        return orders, drinks
+        orders = session.query(Order, Customer.first_name.label('customer_first_name'), Customer.last_name.label('customer_last_name')).join(
+            Customer, Order.customer_id == Customer.id).filter(Order.business_id == business_id, Order.completed == False, Order.refunded == False).all()
+        print('orders', orders)
+        return orders
 
     def create_stripe_ephemeral_key(self, session: scoped_session, request: dict):
         customer = request['stripe_id']
@@ -128,17 +134,13 @@ class Order_Repository(object):
             refund_application_fee=True,
             reverse_transfer=True,
         )
-        print('refund', refund)
 
         transfer_group = charge["transfer_group"]
-        print('transfer_group', transfer_group)
         transfers_associated_data = stripe.Transfer.list(
             transfer_group=transfer_group)
         transfers_list = transfers_associated_data["data"]
 
         for transfer in transfers_list:
-            print('transfer', transfer)
-            print('transfer["reversed"]', transfer["reversed"])
             if transfer["reversed"] != True:
                 stripe.Transfer.create_reversal(
                     transfer["id"], amount=transfer["amount"])
@@ -192,8 +194,6 @@ class Customer_Repository(object):
             if customer.apple_id != "":
                 new_customer.apple_id = customer.apple_id
             session.add(new_customer)
-            print('new_customer', new_customer.serialize)
-            print('new_customer.date_time', new_customer.date_time)
             return new_customer
         else:
             return False
@@ -276,12 +276,16 @@ class Business_Repository(object):
         businesses = session.query(Business).all()
         return businesses
 
+    def get_merchant_businesses(self, session: scoped_session, merchant_id: str):
+        businesses = session.query(Business).filter(
+            Business.merchant_id == merchant_id).all()
+        return businesses
+
     def get_business(self, session: scoped_session, business_id: UUID):
         business = session.query(Business).filter(
             Business.id == business_id).first()
         if business:
-            business_domain = Business_Domain(business_object=business)
-            return business_domain
+            return business
         else:
             return False
 
@@ -407,19 +411,13 @@ class Merchant_Repository(object):
         return new_account
 
     def authenticate_merchant(self, session: scoped_session, email: str, password: str):
-        print('password', password)
-        print('email', email)
         for merchant in session.query(Merchant):
-            print('merchant',merchant.id)
-            print('check_password_hash(merchant.password, password)',check_password_hash(merchant.password, password))
             if merchant.id == email and check_password_hash(merchant.password, password) == True:
                 return merchant
         return False
 
     def validate_merchant(self, session: scoped_session, email: str):
-        print('email', email)
         for merchant in session.query(Merchant):
-            print('merchant', merchant.serialize)
             if merchant.id == email:
                 return merchant
         return False
@@ -430,7 +428,7 @@ class Merchant_Repository(object):
 
     def add_merchant(self, session: scoped_session, requested_merchant: Merchant_Domain):
         new_merchant = Merchant(id=requested_merchant.id, password=generate_password_hash(requested_merchant.password), first_name=requested_merchant.first_name,
-                                last_name=requested_merchant.last_name, phone_number=requested_merchant.phone_number, number_of_businesses=requested_merchant.number_of_businesses, stripe_id=requested_merchant.stripe_id)
+                                last_name=requested_merchant.last_name, phone_number=requested_merchant.phone_number, number_of_businesses=requested_merchant.number_of_businesses, stripe_id=requested_merchant.stripe_id, drink_e_tag_id=requested_merchant.drink_e_tag_id, business_e_tag_id=requested_merchant.business_e_tag_id)
         session.add(new_merchant)
         return requested_merchant
 
@@ -438,8 +436,7 @@ class Merchant_Repository(object):
         requested_merchant = session.query(Merchant).filter(
             Merchant.id == merchant_id).first()
         if requested_merchant:
-            requested_merchant_domain = Merchant_Domain(merchant_object=requested_merchant)
-            return requested_merchant_domain
+            return requested_merchant
         else:
             return False
 
@@ -455,10 +452,7 @@ class Bouncer_Repository(object):
         else:
             staged_bouncer = session.query(Staged_Bouncer).filter(
                 Staged_Bouncer.id == username, Staged_Bouncer.status == 'pending').first()
-            print('staged_bouncer', staged_bouncer)
-
             if staged_bouncer != None:
-                print(2)
                 return 2
             # if the merchant employee id has not already been staged by the merchant then the account should not be created
             else:
@@ -498,7 +492,6 @@ class Bouncer_Repository(object):
         return new_staged_bouncer
 
     def remove_staged_bouncer(self, session: scoped_session, bouncer_id: str):
-        print('bouncer_id', bouncer_id)
         staged_bouncer_to_remove = session.query(Staged_Bouncer).filter(
             Staged_Bouncer.id == bouncer_id).delete()
         return
@@ -508,7 +501,6 @@ class Merchant_Employee_Repository(object):
     def get_stripe_account(self, session: scoped_session, merchant_employee_id: str):
         merchant_employee = session.query(Merchant_Employee).filter(
             Merchant_Employee.id == merchant_employee_id).first()
-        print('merchant_employee', merchant_employee)
         return merchant_employee.stripe_id
 
     # this validates that the pin number is unique for the tablet upon which the merchant employee is registering
@@ -579,15 +571,22 @@ class Merchant_Employee_Repository(object):
             Staged_Merchant_Employee.merchant_id == merchant_id, Staged_Merchant_Employee.status == "pending").all()
         return staged_merchant_employees, merchant_employees
 
-    def add_staged_merchant_employee(self, session: scoped_session, merchant_id:str, merchant_employee_id: str):
+    def log_out_merchant_employees(self, session: scoped_session, business_id: str):
+        # continue here
+        merchant_employees = session.query(Merchant_Employee).filter(
+            Merchant_Employee.business_id == business_id).all()
+        for merchant_employee in merchant_employees:
+            merchant_employee.logged_in = False
+        return
+
+    def add_staged_merchant_employee(self, session: scoped_session, merchant_id: str, merchant_employee_id: str):
         new_staged_merchant_employee = Staged_Merchant_Employee(
             id=merchant_employee_id, merchant_id=merchant_id, status="pending")
         session.add(new_staged_merchant_employee)
         return
 
     def remove_staged_merchant_employee(self, session: scoped_session, merchant_employee_id: str):
-        print('merchant_employee_id', merchant_employee_id)
-        staged_merchant_employee_to_remove = session.query(Staged_Merchant_Employee).filter(
+        session.query(Staged_Merchant_Employee).filter(
             Staged_Merchant_Employee.id == merchant_employee_id).delete()
         return
 
@@ -602,10 +601,19 @@ class ETag_Repository(object):
         etag = session.query(ETag).filter(ETag.category == category).first()
         return etag
 
+    def get_merchant_etag(self, session: scoped_session, e_tag_category: str, merchant_id: str):
+        requested_merchant = session.query(Merchant).filter(
+            Merchant.id == merchant_id).first()
+        if e_tag_category == "drink":
+            e_tag_id = requested_merchant.drink_e_tag_id
+        elif e_tag_category == "business":
+            e_tag_id = requested_merchant.business_e_tag_id
+        return e_tag_id
+
     def update_etag(self, session: scoped_session, category: str):
         etag = session.query(ETag).filter(ETag.category == category).first()
         etag.id += 1
-        return etag.id
+        return etag
 
     def validate_etag(self, session: scoped_session, etag: ETag_Domain):
         validation = session.query(ETag).filter(
@@ -614,6 +622,43 @@ class ETag_Repository(object):
             return True
         else:
             return False
+
+    def update_merchant_etag(self, session: scoped_session, e_tag: ETag_Domain, business_id: str):
+        business_updated = Business_Repository().get_business(
+            session=session, business_id=business_id)
+        merchant_to_update = Merchant_Repository().get_merchant(
+            session=session, merchant_id=business_updated.merchant_id)
+        if e_tag.category == "drink":
+            merchant_to_update.drink_e_tag_id = e_tag.id
+        elif e_tag.category == "business":
+            merchant_to_update.business_e_tag_id = e_tag.id
+
+    def validate_merchant_etag(self, session: scoped_session, e_tag: ETag_Domain, merchant_id: int):
+        merchant = Merchant_Repository().get_merchant(
+            session=session, merchant_id=merchant_id)
+        if e_tag.category == "drink":
+            if merchant.drink_e_tag_id != e_tag.id:
+                return False
+            else:
+                return True
+        elif e_tag.category == "business":
+            if merchant.business_e_tag_id != e_tag.id:
+                return False
+            else:
+                return True
+
+    def update_business_etag(self, session: scoped_session, e_tag: ETag_Domain, business_id: str):
+        business_to_update = Business_Repository().get_business(
+            session=session, business_id=business_id)
+        business_to_update.drink_e_tag_id = e_tag.id
+
+    def validate_business_etag(self, session: scoped_session, e_tag: ETag_Domain, business_id: int):
+        business = Business_Repository().get_business(
+            session=session, business_id=business_id)
+        if business.drink_e_tag_id != e_tag.id:
+            return False
+        else:
+            return True
 
 
 class Quick_Pass_Repository(object):

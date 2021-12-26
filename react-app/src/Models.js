@@ -1,22 +1,110 @@
 export class LocalStorageManager {
   static shared = new LocalStorageManager();
-  getLocalStorage(key) {
-    return JSON.parse(localStorage.getItem(key));
+  constructor() {
+    this.storage = localStorage;
   }
-  setLocalStorage(key, object) {
-    localStorage.setItem(key, JSON.stringify(object));
+  getRawItem(key) {
+    return this.storage.getItem(key);
+  }
+  setRawItem(key, object) {
+    localStorage.setItem(key, object);
+  }
+  getItem(key) {
+    const itemJSON = this.storage.getItem(key);
+    // console.log("itemJSON in getItem", itemJSON);
+    if (itemJSON !== "undefined") {
+      return JSON.parse(this.storage.getItem(key));
+    } else {
+      return false;
+    }
+  }
+  setItem(key, object) {
+    if (typeof object !== "undefined") {
+      localStorage.setItem(key, JSON.stringify(object));
+    }
+  }
+  get drinks() {
+    const drinks = [];
+    if (this.getItem("drinks")) {
+      for (const drink of this.getItem("drinks")) {
+        drinks.push(drink["drink"]);
+      }
+      return drinks;
+    } else {
+      // this should never happen, either drinks are not set in localStorage because the merchant is logging in for the first time, thus drinks will be set before they are requested, or drinks will already exist in local storage
+      return [new Drink()];
+    }
+  }
+  set drinks(newDrinkArray) {
+    // if drinks are being set then they have been received from the backend
+    this.setItem("drinks", newDrinkArray);
+  }
+  getDrink(drinkId) {
+    console.log("drinkId", drinkId);
+    for (const drink of this.drinks) {
+      console.log("drink", drink);
+      if (drink.id === drinkId) {
+        return drink;
+      }
+    }
+  }
+  get orders() {
+    const orders = [];
+    if (this.getItem("orders")) {
+      for (const order of this.getItem("orders")) {
+        orders.push(new Order(order));
+      }
+      return orders;
+    }
+    return orders;
+  }
+  set orders(newOrdersArray) {
+    this.setItem("orders", newOrdersArray);
+  }
+  get businesses() {
+    const businesses = [];
+    if (this.getItem("businesses")) {
+      for (const business of this.getItem("businesses")) {
+        businesses.push(new Business(business));
+      }
+      return businesses;
+    } else {
+      // this should never happen, either drinks are not set in localStorage because the merchant is logging in for the first time, thus drinks will be set before they are requested, or drinks will already exist in local storage
+      return [];
+    }
+  }
+  set businesses(newBusinessesArray) {
+    // if drinks are being set then they have been received from the backend
+    this.setItem("businesses", newBusinessesArray);
   }
   get firstLogin() {
-    return JSON.parse(localStorage.getItem("first_login"));
+    return this.getItem("first_login");
   }
   get currentMerchant() {
-    return new Merchant("localStorage", localStorage.getItem("merchant"));
+    return new Merchant("json", this.getItem("merchant"));
   }
   get currentBusiness() {
-    return new Business(localStorage.getItem("business"), false, true, false);
+    return new Business(this.getItem("business"));
   }
   get sessionToken() {
-    return JSON.parse(localStorage.getItem("session_token"));
+    return this.getItem("session_token");
+  }
+  get drinkETag() {
+    if (this.getItem("drink_etag") !== false) {
+      return this.getItem("drink_etag");
+    } else {
+      return 0;
+    }
+  }
+  set drinkETag(newDrinkETagId) {
+    console.log("newDrinkETagId", newDrinkETagId);
+    this.setItem("drink_etag", newDrinkETagId);
+  }
+  get businessETag() {
+    return this.getItem("business_etag");
+  }
+  set businessEtag(newETagId) {
+    this.setItem("business_etag", newETagId);
   }
 }
 
@@ -76,84 +164,55 @@ export class Drink {
       price: this.price,
       quantity: this.quantity,
       description: this.description,
-      orderDrinkId: this.orderDrinkId,
-      businessId: this.businessId,
-      imageUrl: this.imageUrl,
+      order_drink_id: this.orderDrinkId,
+      business_id: this.businessId,
+      image_url: this.imageUrl,
     };
     return data;
   }
 }
 
+export class OrderDrinkItem {
+  constructor(orderDrinkObject) {
+    console.log("orderDrinkObject", orderDrinkObject);
+    this.drinkId = orderDrinkObject.drinkId;
+    this.quantity = orderDrinkObject.quantity;
+    this.drinkName = LocalStorageManager.shared.getDrink(this.drinkId).name;
+  }
+}
+// new order drink data structure
 export class OrderDrink {
   constructor(orderDrinkObject) {
+    this.orderId = orderDrinkObject.order_id;
+    this.drinkId = orderDrinkObject.drink_id;
+    this.quantity = orderDrinkObject.quantity;
+  }
+}
+
+// new order structure
+export class Order {
+  constructor(orderObject) {
+    console.log("orderObject", orderObject);
+    this.id = orderObject.id;
+    this.customerId = orderObject.customer_id;
+    this.total = Math.round(orderObject.total);
+    this.subtotal = Math.round(orderObject.subtotal);
+    this.tipTotal = Math.round(orderObject.tip_total);
+    this.salesTaxTotal = Math.round(orderObject.sales_tax_total);
+    this.serviceFeeTotal = Math.round(orderObject.service_fee_total);
+    this.tipPercentage = orderObject.tip_percentage;
+    this.businessId = orderObject.business_id;
+    this.formattedDateTime = orderObject.formatted_date_time;
+    this.dateTime = new Date(orderObject.date_time);
     this.orderDrink = [];
-    for (var i = 0; i < orderDrinkObject.order_drink.length; i++) {
-      const newDrink = new Drink(orderDrinkObject.order_drink[i]);
-      if (!this.orderDrink.find((drink) => drink.id === newDrink.id)) {
-        this.orderDrink.push(newDrink);
-      } else {
-        this.orderDrink.find((drink) => drink.id === newDrink.id).quantity += 1;
+    if (orderObject.order_drink.length > 0) {
+      for (const orderDrink of orderObject.order_drink) {
+        console.log("orderDrink", orderDrink);
+        const newOrderDrink = new OrderDrink(orderDrink);
+        this.orderDrink.push(newOrderDrink);
       }
     }
   }
-}
-
-export class OrderItem {
-  constructor(order_object) {
-    console.log("order_object", order_object);
-    this.id = order_object.id;
-    this.customerId = order_object.customer_id;
-    this.total = order_object.total;
-    this.subtotal = order_object.subtotal;
-    this.tipPercentage = order_object.tip_percentage;
-    this.tipTotal = order_object.tip_total;
-    this.salesTaxTotal = order_object.sales_tax_total;
-    this.businessId = order_object.business_id;
-    // this property will be extracted from the business in the front end and set after the business is initialized
-    this.businessName = "";
-    this.businessAddress = order_object.business_address;
-    this.dateTime = order_object.formatted_date_time;
-    this.serviceFee = order_object.service_fee_total;
-    this.orderDrink = [];
-    // if there are no orders then the backend will send an empty order so we dont need to construct an order drink
-    if (
-      Array.isArray(order_object.order_drink.order_drink) &&
-      order_object.order_drink.order_drink.length >= 1 &&
-      order_object.order_drink.order_drink[0].id !== ""
-    ) {
-      this.orderDrink = new OrderDrink(order_object.order_drink);
-      this.orderDrink.orderId = this.id;
-    }
-  }
-}
-export class Order {
-  constructor(order_object) {
-    console.log("order_object", order_object);
-    this.id = order_object.id;
-    this.customerId = order_object.customer_id;
-    this.total = order_object.total;
-    this.subtotal = order_object.subtotal;
-    this.tipPercentage = order_object.tip_percentage;
-    this.tipTotal = order_object.tip_total;
-    this.salesTaxTotal = order_object.sales_tax_total;
-    this.businessId = order_object.business_id;
-    // this property will be extracted from the business in the front end and set after the business is initialized
-    this.businessName = "";
-    this.businessAddress = order_object.business_address;
-    this.dateTime = order_object.formatted_date_time;
-    this.serviceFee = order_object.service_fee_total;
-    this.orderDrink = [];
-    // if there are no orders then the backend will send an empty order so we dont need to construct an order drink
-    if (
-      Array.isArray(order_object.order_drink.order_drink) &&
-      order_object.order_drink.order_drink.length >= 1 &&
-      order_object.order_drink.order_drink[0].id !== ""
-    ) {
-      this.orderDrink = new OrderDrink(order_object.order_drink);
-      this.orderDrink.orderId = this.id;
-    }
-  }
-
   toJSON() {
     const data = {
       id: this.id,
@@ -172,9 +231,55 @@ export class Order {
     return data;
   }
 }
+export class OrderItem {
+  constructor(orderObject) {
+    if (orderObject) {
+      this.orderId = orderObject.id;
+      this.customerId = orderObject.customerId;
+      this.total = orderObject.total;
+      this.subtotal = orderObject.subtotal;
+      this.tip = orderObject.tipTotal;
+      this.salesTax = orderObject.salesTaxTotal;
+      this.serviceFee = orderObject.serviceFeeTotal;
+      // these properties will be extracted from the business and set after the OrderItem is initialized
+      this.businessName = "";
+      this.address = "";
+      this.dateAndTime =
+        orderObject.formattedDateTime +
+        " at " +
+        orderObject.dateTime
+          .toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+          .replace(/^0(?:0:0?)?/, "");
+      this.orderDrinks = [];
+      if (orderObject.orderDrink.length > 0) {
+        for (const orderDrink of orderObject.orderDrink) {
+          console.log("orderDrink in orderItem", orderDrink);
+          const newOrderDrink = new OrderDrinkItem(orderDrink);
+          this.orderDrinks.push(newOrderDrink);
+        }
+      }
+    } else {
+      this.orderId = orderObject.id;
+      this.customerId = orderObject.customerId;
+      this.total = orderObject.total;
+      this.subtotal = orderObject.subtotal;
+      this.tip = orderObject.tipTotal;
+      this.salesTax = orderObject.salesTaxTotal;
+      this.serviceFee = orderObject.serviceFeeTotal;
+      // these properties will be extracted from the business and set after the OrderItem is initialized
+      this.businessName = "";
+      this.address = "";
+      this.dateAndTime = "";
+      this.orderDrink = [];
+    }
+  }
+}
+
 export class Merchant {
   constructor(objectType, object) {
-    console.log("object", object);
     this.isAdministrator = false;
     if (objectType === "json") {
       // the merchant object will be pre-populated with values from the form thus it will use camelCase notation
@@ -196,8 +301,6 @@ export class Merchant {
     } else if (objectType === "localStorage") {
       // number of businessess and stripe id is set extraneously after object initialization so it will only need to be recalled from local storage
       const data = JSON.parse(object);
-      console.log("object", object);
-      console.log("data", data);
       this.id = data.id;
       this.password = data.password;
       this.firstName = data.first_name;
@@ -230,39 +333,14 @@ export class Merchant {
   }
 }
 export class Business {
-  constructor(
-    businessObject,
-    isSnakeCase = false,
-    isJSON = false,
-    tableDisplay = false
-  ) {
-    // this is the business that is created from the form during the signup process
-    if (businessObject && !isSnakeCase && !isJSON && !tableDisplay) {
-      this.id = businessObject.id;
-      this.name = businessObject.name;
-      this.merchantId = businessObject.merchantId;
-      this.merchantStripeId = businessObject.merchantStripeId;
-      this.address = businessObject.address;
-      this.street = businessObject.street;
-      this.city = businessObject.city;
-      this.state = businessObject.state;
-      this.zipcode = businessObject.zipcode;
-      this.phoneNumber = businessObject.phoneNumber;
-      this.menuUrl = businessObject.menuUrl;
-      this.classification = businessObject.classification;
-      this.salesTaxRate = businessObject.salesTaxRate;
-      this.menu = businessObject.menu;
-      this.atCapacity = false;
-      this.schedule = businessObject.schedule;
-      // this is the business that is saved in local storage when received as a confirmed business from the backend
-    } else if (businessObject && isSnakeCase && !isJSON && !tableDisplay) {
+  constructor(businessObject) {
       this.id = businessObject.id;
       this.name = businessObject.name;
       this.merchantId = businessObject.merchant_id;
       this.merchantStripeId = businessObject.merchant_stripe_id;
       this.address = businessObject.address;
       this.street = businessObject.street;
-      this.city = businessObject.city;
+      this.city = businessObject.city.trim();
       this.state = businessObject.state;
       this.zipcode = businessObject.zipcode;
       this.phoneNumber = businessObject.phone_number;
@@ -272,51 +350,6 @@ export class Business {
       this.menu = businessObject.menu;
       this.atCapacity = businessObject.at_capacity;
       this.schedule = businessObject.schedule;
-    } else if (businessObject && isJSON && isSnakeCase) {
-      const businessJson = JSON.parse(businessObject);
-      this.id = businessJson.id;
-      this.name = businessJson.name;
-      this.merchantId = businessJson.merchant_id;
-      this.merchantStripeId = businessJson.merchant_stripe_id;
-      this.address = businessJson.address;
-      this.street = businessJson.street;
-      this.city = businessJson.city;
-      this.state = businessJson.state;
-      this.zipcode = businessJson.zipcode;
-      this.phoneNumber = businessJson.phone_number;
-      this.menuUrl = businessJson.menu_url;
-      this.classification = businessJson.classification;
-      this.salesTaxRate = businessJson.sales_tax_rate;
-      this.menu = businessJson.menu;
-      this.atCapacity = businessJson.at_capacity;
-      this.schedule = businessJson.schedule;
-    } else if (businessObject && !isJSON && tableDisplay) {
-      this.id = businessObject.id;
-      this.name = businessObject.name;
-      this.address = businessObject.address;
-      this.phoneNumber = businessObject.phone_number;
-      this.classification = businessObject.classification;
-      this.salesTaxRate = businessObject.sales_tax_rate;
-    } else {
-      this.id = null;
-      this.name = null;
-      this.merchantId = null;
-      this.merchantStripeId = null;
-      this.stripeId = null;
-      this.address = null;
-      this.street = null;
-      this.city = null;
-      this.state = null;
-      this.zipcode = null;
-      this.phoneNumber = null;
-      this.numberOfBusinesses = null;
-      this.menuUrl = null;
-      this.classification = null;
-      this.salesTaxRate = null;
-      this.menu = null;
-      this.atCapacity = null;
-      this.schedule = null;
-    }
   }
   toJSON() {
     const data = {
@@ -341,10 +374,29 @@ export class Business {
     return data;
   }
 }
+export class BusinessItem {
+  constructor(businessObject) {
+    if (businessObject) {
+      this.id = businessObject.id;
+      this.name = businessObject.name;
+      this.address = businessObject.address;
+      this.phoneNumber = businessObject.phoneNumber;
+      this.classification = businessObject.classification;
+      this.salesTaxRate = businessObject.salesTaxRate;
+    }
+    else {
+      this.id = "";
+      this.name = "";
+      this.address = "";
+      this.phoneNumber = "";
+      this.classification = "";
+      this.salesTaxRate = "";
+    }
+  }
+}
 export class QuickPass {
   constructor(quickPassObject) {
     if (quickPassObject) {
-      console.log("quickPassObject", quickPassObject);
       this.id = quickPassObject.id;
       this.customerFirstName = quickPassObject.customer_first_name;
       this.customerLastName = quickPassObject.customer_last_name;
@@ -378,8 +430,6 @@ export class QuickPass {
     // Create a new JavaScript Date object based on the timestamp
     // multiplied by 1000 so that the argument is in milliseconds, not seconds.
     const unixTimestamp = this.activationTime;
-    console.log("this.activationTime", this.activationTime);
-    console.log("unixTimestamp", unixTimestamp);
     const date = new Date(unixTimestamp * 1000);
     // console.log("date", date);
     // // Hours part from the timestamp

@@ -9,7 +9,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import Title from "./Title";
-import { Order, Business } from "../../Models";
+import { Business, LocalStorageManager } from "../../Models";
 import InputLabel from "@material-ui/core/InputLabel";
 import MenuItem from "@material-ui/core/MenuItem";
 import FormControl from "@material-ui/core/FormControl";
@@ -41,12 +41,8 @@ export default function Chart(props) {
     }
   );
   // Generate Sales Data
-  const orders = props.orders.map((orderJSON) => {
-    return new Order(orderJSON);
-  });
-  const businesses = props.businesses.map((businessJSON) => {
-    return new Business(businessJSON, true);
-  });
+  const orders = LocalStorageManager.shared.orders;
+  const businesses = LocalStorageManager.shared.businesses;
 
   const monthsLookup = [
     "january",
@@ -91,12 +87,14 @@ export default function Chart(props) {
     });
   };
   const createData = (order, dataGroupedByDate, month = false) => {
-    const dateWithYear = order.dateTime.split("/");
+    console.log("order", order);
+    const dateWithYear = order.formattedDateTime.split("/");
     const orderDay = dateWithYear[1];
     const orderMonth = dateWithYear[0];
     const date = orderMonth + "/" + orderDay;
     const amount = order.total;
-    const orderDateTime = new Date(order.dateTime);
+    const orderDateTime = order.dateTime;
+    console.log("orderDateTime", orderDateTime);
     const monthIndex = monthsLookup.indexOf(month);
     const monthPresentIndex = intermediaryMonths.indexOf(
       monthsLookup[orderDateTime.getMonth()]
@@ -115,7 +113,7 @@ export default function Chart(props) {
     var filterBusiness = "";
     // the first filtration will be done by business, because this will affect the normalization of the order dates
     if (formValue.business !== "all") {
-      filterBusiness = new Business(formValue.business, true, true);
+      filterBusiness = new Business(JSON.parse(formValue.business));
       if (orderBusinessId !== filterBusiness.id) {
         return;
       }
@@ -176,9 +174,8 @@ export default function Chart(props) {
     const lastday = (y, m) => {
       return new Date(y, m + 1, 0).getDate();
     };
-    const monthForSet = copyOfDateArray[
-      copyOfDateArray.length - 1
-    ].dateTime.getMonth();
+    const monthForSet =
+      copyOfDateArray[copyOfDateArray.length - 1].dateTime.getMonth();
     const lastMonthDayForSet = lastday(2021, monthForSet);
     for (var i = 0; i < copyOfDateArray.length - 1; i++) {
       const currentIndexmonth = copyOfDateArray[i].dateTime.getMonth();
@@ -267,16 +264,18 @@ export default function Chart(props) {
     return newWeekDateArray;
   };
   const summateSales = (dateArray) => {
+    console.log("dateArray", dateArray);
     var sum = 0;
     for (var i = 0; i < dateArray.length; i++) {
       sum += dateArray[i].amount;
     }
+    console.log("sum", sum);
     return sum;
   };
   const getTimeIntervalAndBusiness = () => {
     var businessName = "";
     if (formValue.business !== "all") {
-      const filterBusiness = new Business(formValue.business, true, true);
+      const filterBusiness = new Business(JSON.parse(formValue.business));
       businessName = filterBusiness.name;
       businessName += " ";
     }
@@ -301,7 +300,9 @@ export default function Chart(props) {
     }
   };
   const prepareData = () => {
-    if (orders.length === 1 && orders[0].total === 0) {
+    console.log("orders", orders);
+    // if the user has no orders then we bypass the chart analytics algorithims
+    if (orders.length === 0) {
       return;
     }
     var dataGroupedByDate = [];

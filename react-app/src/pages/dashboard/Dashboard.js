@@ -160,7 +160,7 @@ const Dashboard = (props) => {
   const [helpOpen, setHelpOpen] = useState(false);
 
   const modalHandleClose = () => {
-    LocalStorageManager.shared.setLocalStorage("first_login", false);
+    LocalStorageManager.shared.setItem("first_login", false);
     setModalOpen(false);
   };
   const settingsAnchorRef = useRef(null);
@@ -190,9 +190,9 @@ const Dashboard = (props) => {
   const prevSettingsOpen = useRef(settingsOpen);
   const prevHelpOpen = useRef(settingsOpen);
 
-  const handleAddMerchantEmployee = () => {
-    props.handleAddMerchantEmployee();    
-  }
+  // const handleAddMerchantEmployee = () => {
+  //   props.handleAddMerchantEmployee();
+  // }
   useEffect(() => {
     if (prevSettingsOpen.current === true && settingsOpen === false) {
       settingsAnchorRef.current.focus();
@@ -205,8 +205,8 @@ const Dashboard = (props) => {
   }, [settingsOpen, helpOpen]);
   const pages = [
     <HomeSplash
-      orders={props.orders}
-      businesses={props.businesses}
+      // orders={props.orders}
+      // businesses={props.businesses}
       fixedHeightPaper={fixedHeightPaper}
       classes={classes}
     />,
@@ -219,8 +219,9 @@ const Dashboard = (props) => {
       merchantEmployees={props.merchantEmployees}
       fixedHeightPaper={fixedHeightPaper}
       classes={classes}
-      onUpdate={(newMerchantEmployee) => props.updateMerchantEmployee(newMerchantEmployee)}
-
+      onUpdate={(newMerchantEmployee) =>
+        props.updateMerchantEmployee(newMerchantEmployee)
+      }
     />,
     <Bouncers
       bouncers={props.bouncers}
@@ -228,18 +229,19 @@ const Dashboard = (props) => {
       classes={classes}
     />,
     <Orders
-      orders={props.orders}
-      businesses={props.businesses}
+      // drinks={props.drinks}
+      // orders={props.orders}
+      // businesses={props.businesses}
       fixedHeightPaper={fixedHeightPaper}
       classes={classes}
     />,
     <Menu
-      businesses={props.businesses}
+      // businesses={props.businesses}
       fixedHeightPaper={fixedHeightPaper}
       classes={classes}
     ></Menu>,
     <Businesses
-      businesses={props.businesses}
+      // businesses={props.businesses}
       fixedHeightPaper={fixedHeightPaper}
       classes={classes}
       onUpdate={(newBusinesses) => props.updateBusinesses(newBusinesses)}

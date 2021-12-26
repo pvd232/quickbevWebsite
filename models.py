@@ -52,7 +52,6 @@ class Drink(db.Model):
     name = db.Column(db.String(80), nullable=False)
     description = db.Column(db.String(80), nullable=False)
     price = db.Column(db.Float(), nullable=False)
-    has_image = db.Column(db.Boolean(), default=False, nullable=False)
     image_url = db.Column(db.String(200), nullable=True)
     is_active = db.Column(db.Boolean(), default=True, nullable=False)
     business_id = db.Column(UUID(as_uuid=True), db.ForeignKey(
@@ -108,7 +107,7 @@ class Business(db.Model):
     is_active = db.Column(db.Boolean(), default=True, nullable=False)
     device_token = db.Column(db.String(200), nullable=True)
     phone_number = db.Column(db.BigInteger(), nullable=False)
-
+    drink_e_tag_id = db.Column(db.BigInteger(), nullable=True)
     # not all businesses will have a menu URL or file upload, but they could be specific to each business
     menu_url = db.Column(db.String(80), nullable=True)
     street = db.Column(db.String(80), nullable=False)
@@ -241,6 +240,8 @@ class Merchant(db.Model):
     stripe_id = db.Column(db.String(80), db.ForeignKey(
         'merchant_stripe_account.id'), nullable=False)
     is_active = db.Column(db.Boolean(), default=True, nullable=False)
+    drink_e_tag_id = db.Column(db.String(80), nullable=False)
+    business_e_tag_id = db.Column(db.String(80), nullable=False)
     merchant_employee = relationship(
         "Merchant_Employee", lazy=True, backref="merchant")
     business = relationship(
@@ -571,9 +572,8 @@ def create_drink():
         name = drink['name']
         description = drink['description']
         price = drink['price']
-        has_image = drink["has_image"]
         new_drink = Drink(id=id, name=name,
-                          description=description, price=price, business_id=businesses[business_counter].id, has_image=has_image)
+                          description=description, price=price, business_id=businesses[business_counter].id)
         # alternate between the two business address objects when assingning the drinks a business address id
         if business_counter == 0:
             business_counter = 1

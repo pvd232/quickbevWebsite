@@ -2,8 +2,8 @@ import { Merchant, LocalStorageManager } from "../Models.js";
 
 class Client {
   constructor() {
-    this.baseUrl = "https://quickbev.us";
-    // this.mode = "cors";
+    this.baseUrl = "http://192.168.1.192:5000";
+    this.mode = "cors";
   }
   async makeRequest(
     method,
@@ -98,11 +98,8 @@ class Client {
       return false;
     } else {
       const loggedInMerchant = new Merchant("json", await response.json());
-      LocalStorageManager.shared.setLocalStorage("merchant", loggedInMerchant);
-      LocalStorageManager.shared.setLocalStorage(
-        "session_token",
-        headers["jwt-token"]
-      );
+      LocalStorageManager.shared.setItem("merchant", loggedInMerchant);
+      LocalStorageManager.shared.setItem("session_token", headers["jwt-token"]);
       return true;
     }
   };
@@ -122,7 +119,6 @@ class Client {
       this.baseUrl +
       "/customer?session_token=" +
       LocalStorageManager.shared.sessionToken;
-    console.log("this.url", this.url);
 
     const headers = new Headers();
     // will uncomment this when i have added menu for new businesses
@@ -190,6 +186,40 @@ class Client {
     };
     return fetch(myRequest, requestParams).then((data) => data.json());
   };
+  getDrinks = async () => {
+    this.url =
+      this.baseUrl + "/drink/" + LocalStorageManager.shared.sessionToken;
+
+    const requestHeaders = new Headers();
+    const myRequest = new Request(this.url);
+    requestHeaders.set(
+      "merchant-id",
+      LocalStorageManager.shared.currentMerchant.id
+    );
+    requestHeaders.set(
+      "If-None-Match",
+      JSON.stringify({
+        id: LocalStorageManager.shared.drinkETag,
+        category: "drink",
+      })
+    );
+
+    const requestParams = {
+      method: "GET",
+      headers: requestHeaders,
+      mode: this.mode,
+      cache: "default",
+    };
+    const response = await fetch(myRequest, requestParams);
+    const headers = {};
+    for (const [key, value] of response.headers.entries()) {
+      headers[key] = value;
+    }
+    if (typeof headers["e-tag-id"] !== "undefined") {
+      LocalStorageManager.shared.drinkETag = headers["e-tag-id"];
+    }
+    return response.json();
+  };
   checkStripeStatus = async () => {
     this.url =
       this.baseUrl +
@@ -228,14 +258,36 @@ class Client {
   getBusinesses = async () => {
     this.url =
       this.baseUrl + "/business/" + LocalStorageManager.shared.sessionToken;
-    const headers = new Headers();
-    // will uncomment this when i have added menu for new businesses
-    headers.set("merchant-id", LocalStorageManager.shared.currentMerchant.id);
+    const myRequest = new Request(this.url);
 
-    return fetch(this.url, {
-      headers: headers,
+    const requestHeaders = new Headers();
+    requestHeaders.set(
+      "merchant-id",
+      LocalStorageManager.shared.currentMerchant.id
+    );
+    requestHeaders.set(
+      "If-None-Match",
+      JSON.stringify({
+        id: LocalStorageManager.shared.businessETag,
+        category: "business",
+      })
+    );
+    const requestParams = {
+      method: "GET",
       mode: this.mode,
-    }).then((data) => data.json());
+      headers: requestHeaders,
+      cache: "default",
+    };
+    const response = await fetch(myRequest, requestParams);
+    const headers = {};
+    for (const [key, value] of response.headers.entries()) {
+      headers[key] = value;
+    }
+    if (typeof headers["e-tag-id"] !== "undefined") {
+      LocalStorageManager.shared.businessETag = headers["e-tag-id"];
+    }
+    // change this to add If-None-Match to only pull merchant businesses from backend if their values have changed
+    return response.json();
   };
 }
 export default new Client();

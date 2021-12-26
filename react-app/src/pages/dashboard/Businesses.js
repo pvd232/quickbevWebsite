@@ -10,7 +10,7 @@ import Paper from "@material-ui/core/Paper";
 import Title from "./Title";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
-import { Business, LocalStorageManager } from "../../Models";
+import { Business, BusinessItem, LocalStorageManager } from "../../Models";
 import { CSVLink } from "react-csv";
 import { toCapitalizedWords } from "../../Models";
 import CloseIcon from "@material-ui/icons/Close";
@@ -58,10 +58,14 @@ const useStyles = makeStyles((theme) => ({
 const Businesses = (props) => {
   const classes = useStyles();
   const [mappedBusinesses, setMappedBusinesses] = useState(
-    props.businesses.map((businessJSON) => {
-      return new Business(businessJSON, true, false, true);
+    LocalStorageManager.shared.businesses.map((business) => {
+      return new BusinessItem(business);
     })
   );
+  if (mappedBusinesses.length === 0) {
+    mappedBusinesses.push(new BusinessItem(false));
+  }
+
   const [csvData, setCsvData] = useState(() => makeCSVData());
   const [modalOpen, setModalOpen] = useState(false);
   const [isSpinning, setIsSpinning] = useState(null);
@@ -176,10 +180,23 @@ const Businesses = (props) => {
         setErrorMsg(newErrorMsgState);
         return false;
       }
-      const copyOfFormValue = { ...formValue };
+      const copyOfFormValue = {
+        name: formValue["name"],
+        phone_number: formValue["phoneNumber"],
+        address: formValue["address"],
+        street: formValue["street"],
+        suite: formValue["suite"],
+        city: formValue["city"],
+        state: formValue["state"],
+        zipcode: formValue["zipcode"],
+        menu_url: formValue["menuUrl"],
+        classification: "bar",
+        schedule: [],
+      };
+
       copyOfFormValue.schedule = schedule;
       const newBusiness = new Business(copyOfFormValue);
-      newBusiness.menuUrl = copyOfFormValue.menuUrl;
+      // newBusiness.menu_url = copyOfFormValue.menu_url;
       newBusiness.merchantId = LocalStorageManager.shared.currentMerchant.id;
       newBusiness.merchantStripeId =
         LocalStorageManager.shared.currentMerchant.stripeId;
@@ -197,23 +214,22 @@ const Businesses = (props) => {
       ).then((response) => {
         if (response.status === 200) {
           const confirmedNewBusiness = new Business(
-            response.confirmed_new_business,
-            true,
-            false,
-            true
+            response.confirmed_new_business
           );
           const newMappedBusinesses = [];
           setMappedBusinesses((prevMapppedBusinesses) => {
             // if the merchant had 0 employees then the mappedEmployees array will have 1 single dummy merchant employee. so we want to remove this once a real merchant emplyee is added
-            if (prevMapppedBusinesses[0].id === "") {
-              newMappedBusinesses.unshift(confirmedNewBusiness);
-            } else {
-              for (var i in prevMapppedBusinesses) {
-                newMappedBusinesses.push(prevMapppedBusinesses[i]);
-              }
-              newMappedBusinesses.unshift(confirmedNewBusiness);
+            // if (prevMapppedBusinesses[0].id === "") {
+            //   newMappedBusinesses.unshift(confirmedNewBusiness);
+            // } else {
+            for (const business of prevMapppedBusinesses) {
+              console.log("business", business);
+              newMappedBusinesses.push(business);
             }
+            newMappedBusinesses.unshift(new BusinessItem(confirmedNewBusiness));
+            console.log("newMappedBusinesses", newMappedBusinesses);
             return newMappedBusinesses;
+            // }
           });
           setCsvData(makeCSVData());
           props.onUpdate(newMappedBusinesses);
@@ -231,7 +247,7 @@ const Businesses = (props) => {
             classification: "bar",
             schedule: [],
           });
-          setIsSpinning(false)
+          setIsSpinning(false);
           return true;
         } else {
           return false;
@@ -565,8 +581,9 @@ const Businesses = (props) => {
                 {Object.keys(mappedBusinesses[0]).map((key, i) => (
                   <TableCell align="left" key={i}>
                     {toCapitalizedWords(
+                      key
                       // the object keys are the objects private properties so we have to remove the underscores
-                      key.replace("_", "")
+                      // key.replace("_", "")
                     )}
                   </TableCell>
                 ))}
