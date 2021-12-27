@@ -103,7 +103,7 @@ export class LocalStorageManager {
   get businessETag() {
     return this.getItem("business_etag");
   }
-  set businessEtag(newETagId) {
+  set businessETag(newETagId) {
     this.setItem("business_etag", newETagId);
   }
 }
@@ -334,22 +334,22 @@ export class Merchant {
 }
 export class Business {
   constructor(businessObject) {
-      this.id = businessObject.id;
-      this.name = businessObject.name;
-      this.merchantId = businessObject.merchant_id;
-      this.merchantStripeId = businessObject.merchant_stripe_id;
-      this.address = businessObject.address;
-      this.street = businessObject.street;
-      this.city = businessObject.city.trim();
-      this.state = businessObject.state;
-      this.zipcode = businessObject.zipcode;
-      this.phoneNumber = businessObject.phone_number;
-      this.menuUrl = businessObject.menu_url;
-      this.classification = businessObject.classification;
-      this.salesTaxRate = businessObject.sales_tax_rate;
-      this.menu = businessObject.menu;
-      this.atCapacity = businessObject.at_capacity;
-      this.schedule = businessObject.schedule;
+    this.id = businessObject.id;
+    this.name = businessObject.name;
+    this.merchantId = businessObject.merchant_id;
+    this.merchantStripeId = businessObject.merchant_stripe_id;
+    this.address = businessObject.address;
+    this.street = businessObject.street;
+    this.city = businessObject.city.trim();
+    this.state = businessObject.state;
+    this.zipcode = businessObject.zipcode;
+    this.phoneNumber = businessObject.phone_number;
+    this.menuUrl = businessObject.menu_url;
+    this.classification = businessObject.classification;
+    this.salesTaxRate = businessObject.sales_tax_rate;
+    this.menu = businessObject.menu;
+    this.atCapacity = businessObject.at_capacity;
+    this.schedule = businessObject.schedule;
   }
   toJSON() {
     const data = {
@@ -383,8 +383,7 @@ export class BusinessItem {
       this.phoneNumber = businessObject.phoneNumber;
       this.classification = businessObject.classification;
       this.salesTaxRate = businessObject.salesTaxRate;
-    }
-    else {
+    } else {
       this.id = "";
       this.name = "";
       this.address = "";
