@@ -795,10 +795,21 @@ class Quick_Pass_Service(object):
             new_quick_pass.sold_out = sold_out
            
             # if the closing time is less than the opening time the day of closing time is 1 greater than the day of opening
+            print('business.schedule[datetime.today().weekday()].closing_time',business.schedule[datetime.today().weekday()].closing_time)
+            print('type(business.schedule[datetime.today().weekday()].closing_time)',type(business.schedule[datetime.today().weekday()].closing_time))
+            
+            print('type(business.schedule[datetime.today().weekday()].closing_time)',type(business.schedule[datetime.today().weekday()].closing_time))
+            
+            print('business.schedule[datetime.today().weekday()].opening_time.hour',business.schedule[datetime.today().weekday()].opening_time.hour)
+            if business.schedule[datetime.today().weekday()].is_closed == True:
+                return False
             if business.schedule[datetime.today().weekday()].closing_time.hour < business.schedule[datetime.today().weekday()].opening_time.hour:
                 closing_day = datetime.now().day + 1
             else:
                 closing_day = datetime.now().day
+            closing_hour = datetime.now().hour + 2
+            if closing_hour >= 24:
+                closing_hour = closing_hour - 24
             closing_date_time = datetime(datetime.now().year, datetime.now().month, closing_day,business.schedule[datetime.today().weekday()].closing_time.hour, business.schedule[datetime.today().weekday()].closing_time.minute) 
             expiration_date_time = datetime(datetime.now().year, datetime.now().month, datetime.now().day,datetime.now().hour + 2, datetime.now().minute)
             
