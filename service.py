@@ -676,7 +676,6 @@ class Google_Cloud_Storage_API(object):
         # bucket_name = "your-bucket-name"
         # file = "local/path/to/file" this will be the business folder, with a folder named after the business' unique id, which will have the menu file in it
         # destination_blob_name = "storage-object-name" this will be the business uuid
-        from werkzeug.utils import secure_filename
 
         file_type = file.filename.rsplit('.', 1)[1].lower()
         destination_blob_name = "business/" + \
@@ -795,12 +794,6 @@ class Quick_Pass_Service(object):
             new_quick_pass.sold_out = sold_out
            
             # if the closing time is less than the opening time the day of closing time is 1 greater than the day of opening
-            print('business.schedule[datetime.today().weekday()].closing_time',business.schedule[datetime.today().weekday()].closing_time)
-            print('type(business.schedule[datetime.today().weekday()].closing_time)',type(business.schedule[datetime.today().weekday()].closing_time))
-            
-            print('type(business.schedule[datetime.today().weekday()].closing_time)',type(business.schedule[datetime.today().weekday()].closing_time))
-            
-            print('business.schedule[datetime.today().weekday()].opening_time.hour',business.schedule[datetime.today().weekday()].opening_time.hour)
             if business.schedule[datetime.today().weekday()].is_closed == True:
                 return False
             if business.schedule[datetime.today().weekday()].closing_time.hour < business.schedule[datetime.today().weekday()].opening_time.hour:
@@ -811,13 +804,10 @@ class Quick_Pass_Service(object):
             if closing_hour >= 24:
                 closing_hour = closing_hour - 24
             closing_date_time = datetime(datetime.now().year, datetime.now().month, closing_day,business.schedule[datetime.today().weekday()].closing_time.hour, business.schedule[datetime.today().weekday()].closing_time.minute) 
-            expiration_date_time = datetime(datetime.now().year, datetime.now().month, datetime.now().day,datetime.now().hour + 2, datetime.now().minute)
+            expiration_date_time = datetime(datetime.now().year, datetime.now().month, datetime.now().day,closing_hour, datetime.now().minute)
             
-            if expiration_date_time > closing_date_time:
+            if expiration_date_time > closing_date_time or should_diplay_expiration_time == False:
                 expiration_date_time = closing_date_time 
-            
-            if should_diplay_expiration_time == False:
-                expiration_date_time = closing_date_time
 
             new_quick_pass.expiration_time = expiration_date_time
             new_quick_pass.price = business.quick_pass_price

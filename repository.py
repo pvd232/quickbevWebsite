@@ -23,6 +23,7 @@ class Drink_Repository(object):
 
     def add_drinks(self, session: scoped_session, drink_list: list[Drink_Domain]):
         for drink in drink_list:
+            print('drink biz id',type(drink.business_id))
             new_drink = Drink(id=drink.id, name=drink.name, description=drink.description,
                               price=drink.price, business_id=drink.business_id)
             session.add(new_drink)

@@ -29,7 +29,7 @@ class Drink_Domain(object):
         self.name = ''
         self.description = ''
         self.price = ''
-        self.business_id = ''
+        self.business_id: uuid = ''
         self.image_url = ''
         if drink_object:
             self.id = drink_object.id
@@ -59,7 +59,7 @@ class Drink_Domain(object):
             self.name = drink_json["name"]
             self.description = drink_json["description"]
             self.price = drink_json["price"]
-            self.business_id = drink_json["business_id"]
+            self.business_id = uuid.UUID(drink_json["business_id"])
 
     def set_image_url(self, file_name):
         self.image_url = f'https://storage.googleapis.com/my-new-quickbev-bucket/business/{str(self.business_id)}/menu-images/' + \
@@ -237,7 +237,7 @@ class Order_Domain(object):
             self.payment_intent_id = order_object.payment_intent_id
         elif order_json and is_customer_order:
             # an order received as order_json will be an order sent from an iOS device, thus service fee is not included as a value because it is calculated in the backend
-            self.id = order_json["id"]
+            self.id = uuid.UUID(order_json["id"])
             # these props will only be send from iOS
             if "customer" in order_json.keys():
                 self.customer = Customer_Domain(
@@ -263,7 +263,7 @@ class Order_Domain(object):
             self.card_information = order_json["card_information"]
         elif order_json and is_merchant_employee_order:
             # an order received as order_json will be an order sent from an iOS device, thus service fee is not included as a value because it is calculated in the backend
-            self.id = order_json["id"]
+            self.id = uuid.UUID(order_json["id"])
             # these props will only be send from iOS
             if "customer" in order_json.keys():
                 self.customer = Customer_Domain(
@@ -381,19 +381,19 @@ class Order_Drink_Domain(object):
             self.quantity = 1
         # this is for a customer order coming from iOS, much simpler data structure
         elif order_drink_json and is_customer_order == True:
-            self.order_id = order_drink_json["order_id"]
-            self.drink_id = order_drink_json["drink_id"]
+            self.order_id = uuid.UUID(order_drink_json["order_id"])
+            self.drink_id = uuid.UUID(order_drink_json["drink_id"])
             self.quantity = order_drink_json["quantity"]
             self.price = order_drink_json["price"]
         elif order_drink_json and is_merchant_employee_order == True:
-            self.order_id = order_drink_json["order_id"]
-            self.drink_id = order_drink_json["drink_id"]
+            self.order_id = uuid.UUID(order_drink_json["order_id"])
+            self.drink_id = uuid.UUID(order_drink_json["drink_id"])
             self.quantity = order_drink_json["quantity"]
                 
         elif order_drink_json and not is_customer_order:
             self.order_drink: list[Order_Drink_Domain] = []
             
-            drink_id_list = list()
+            drink_id_list = []
             for customer_drink in order_drink_json:
                 drink_domain = Drink_Domain(drink_json=customer_drink["drink"])
                 if drink_domain.id not in drink_id_list:
@@ -563,7 +563,7 @@ class Bouncer_Domain(object):
             self.id = bouncer_json["id"]
             self.first_name = bouncer_json["first_name"]
             self.last_name = bouncer_json["last_name"]
-            self.business_id = bouncer_json['business_id']
+            self.business_id = uuid.UUID(bouncer_json['business_id'])
             self.merchant_id = bouncer_json['merchant_id']
             self.logged_in = bouncer_json['logged_in']
             self.status = bouncer_json['status']
@@ -613,7 +613,7 @@ class Merchant_Employee_Domain(object):
             self.pin = merchant_employee_json["pin"]
             self.first_name = merchant_employee_json["first_name"]
             self.last_name = merchant_employee_json["last_name"]
-            self.business_id = merchant_employee_json['business_id']
+            self.business_id = uuid.UUID(merchant_employee_json['business_id']) 
             self.merchant_id = merchant_employee_json['merchant_id']
             self.phone_number = merchant_employee_json["phone_number"]
             self.logged_in = merchant_employee_json['logged_in']
@@ -888,14 +888,14 @@ class Quick_Pass_Domain(object):
             self.card_information = quick_pass_object.card_information
         elif quick_pass_json:
             # service_fee_total will never be sent from front end, it will always be computed or pulled from database
-            self.id = quick_pass_json["id"]
+            self.id = uuid.UUID(quick_pass_json["id"])
             self.customer_id = quick_pass_json["customer_id"]
             self.activation_time = datetime.fromtimestamp(
                 quick_pass_json['activation_time'])
             self.date_time = datetime.fromtimestamp(
                 quick_pass_json['date_time'])
             # will only need this property when receiving a new business queue order from a customer
-            self.business_id = quick_pass_json["business_id"]
+            self.business_id = uuid.UUID(quick_pass_json["business_id"])
             self.merchant_stripe_id = quick_pass_json["merchant_stripe_id"]
             self.payment_intent_id = quick_pass_json["payment_intent_id"]
             self.total = quick_pass_json["total"]
@@ -914,7 +914,7 @@ class Quick_Pass_Domain(object):
             self.customer_id = js_object["customer_id"]
             self.activation_time = datetime.fromtimestamp(
                 js_object['activation_time'])
-            self.business_id = js_object["business_id"]
+            self.business_id = uuid.UUID(js_object["business_id"])
             self.time_checked_in = datetime.fromtimestamp(
                 js_object["time_checked_in"])
 
