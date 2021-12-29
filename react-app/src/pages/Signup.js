@@ -584,7 +584,7 @@ const BusinessFieldset = (props) => {
     if (validate(form)) {
       // set all the values for the business
       // if the user comes back to this page before submitting to change stuff it will reset the values
-      const copyOfFormValue = {   
+      const copyOfFormValue = {
         name: formValue["name"],
         phone_number: formValue["phoneNumber"],
         address: formValue["address"],
@@ -593,7 +593,7 @@ const BusinessFieldset = (props) => {
         city: formValue["city"],
         state: formValue["state"],
         zipcode: formValue["zipcode"],
-        schedule: [] 
+        schedule: [],
       };
 
       copyOfFormValue.schedule = schedule;
@@ -725,7 +725,7 @@ const BusinessFieldset = (props) => {
             ></PayoutSetup>
           </Col>
         </Row>
-        <Row style={{ justifyContent: "space-around" }}>
+        {/* <Row style={{ justifyContent: "space-around" }}>
           <Form.Control
             type="button"
             name="previous"
@@ -736,7 +736,7 @@ const BusinessFieldset = (props) => {
               props.onClick("previous");
             }}
           />
-        </Row>
+        </Row> */}
       </fieldset>
     </Form>
   );
@@ -822,14 +822,8 @@ const Signup = () => {
     console.log("confirmed_new_business", confirmed_new_business);
     console.log("responseBody.token", responseBody.headers.token);
 
-    LocalStorageManager.shared.setItem(
-      "business",
-      confirmed_new_business
-    );
-    LocalStorageManager.shared.setItem(
-      "merchant",
-      confirmed_new_merchant
-    );
+    LocalStorageManager.shared.setItem("business", confirmed_new_business);
+    LocalStorageManager.shared.setItem("merchant", confirmed_new_merchant);
     LocalStorageManager.shared.setItem(
       "session_token",
       responseBody.headers.token

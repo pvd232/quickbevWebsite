@@ -23,7 +23,7 @@ apns = "production"
 # nice seafoam color #19cca3
 
 
-def send_apn(device_token, action, order_id=None):
+def send_apn(device_token, action, order_id: UUID = None):
     print('order_id', order_id)
     team_id = '6YGH9XK378'
     # converted authkey to private key that can be properly encoded as RSA key by jwt.encode method using advice here https://github.com/lcobucci/jwt/issues/244
@@ -56,7 +56,7 @@ def send_apn(device_token, action, order_id=None):
             title="Order Completed",
             message="Your order is ready for pickup!",
             category=action,
-            extra={"order_id": order_id}
+            extra={"order_id": str(order_id)}
         )
     elif action == "order_refunded":
         client.send(
@@ -64,7 +64,7 @@ def send_apn(device_token, action, order_id=None):
             title="Order Refunded",
             message="Items in your order are out of stock. We refunded you.",
             category=action,
-            extra={"order_id": order_id}
+            extra={"order_id": str(order_id)}
         )
 
 
@@ -75,7 +75,7 @@ def send_fcm(device_token, new_order):
     notification = {
         'title': new_order.customer_first_name, 'body': new_order.customer_last_name}
     message = {"message": "new_order",
-               "notification": notification, "order": new_order.id}
+               "notification": notification, "order": str(new_order.id)}
 
     # Send to single device.
     # NOTE: Keyword arguments are optional.
