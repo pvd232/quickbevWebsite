@@ -725,6 +725,7 @@ def validate_customer():
     if status:
         response = {}
         response["customer"] = status.dto_serialize()
+        print('response["customer"]',response["customer"])
         jwt_token = jwt.encode(
             {"sub": customer_id}, key=secret, algorithm="HS256")
         headers = {"jwt-token": jwt_token}
