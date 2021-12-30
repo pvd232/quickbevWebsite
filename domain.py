@@ -505,7 +505,7 @@ class Merchant_Domain(object):
             self.number_of_businesses = merchant_object.number_of_businesses
             self.stripe_id = merchant_object.stripe_id
             self.status = "confirmed"
-            if merchant_object.id == 'patardriscoll@gmail.com':
+            if merchant_object.id == 'patardriscoll@gmail.com' or merchant_object.id == 'bbucey@utexas.edu':
                 self.is_administrator = True
             self.drink_e_tag_id = merchant_object.drink_e_tag_id
             self.business_e_tag_id = merchant_object.business_e_tag_id
