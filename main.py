@@ -1231,15 +1231,24 @@ def validate_pin(session_token):
 def authenticate_business(session_token):
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
+    
+    def is_valid_uuid(val):
+        try:
+            uuid.UUID(str(val))
+            return True
+        except ValueError:
+            return False
+        
+        
     headers = {}
     business_id = json.loads(request.data)['business_id']
-    business_status = Business_Service().authenticate_business(business_id)
-    if business_status == True:
-        headers["jwt-token"] = jwt.encode(
-            {"sub": business_id}, key=secret, algorithm="HS256")
-        return Response(status=200, headers=headers)
-    else:
-        return Response(status=400)
+    if is_valid_uuid(business_id) == True:
+        business_status = Business_Service().authenticate_business(business_id)
+        if business_status == True:
+            headers["jwt-token"] = jwt.encode(
+                {"sub": business_id}, key=secret, algorithm="HS256")
+            return Response(status=200, headers=headers)
+    return Response(status=400)
 
 
 @app.route('/pin', methods=['POST'])
