@@ -860,8 +860,11 @@ def business(session_token):
         else:
             businesses = Business_Service().get_businesses()
             customer_etag = json.loads(request.headers.get("If-None-Match"))
+            print('customer_etag',customer_etag)
             if customer_etag:
+                print("biz etag exists")
                 if not ETag_Service().validate_etag(customer_etag):
+                    print("biz etag exists and was validated")
                     for business in businesses:
                         # turn into dictionaries
                         businessDTO = {}
@@ -873,9 +876,9 @@ def business(session_token):
                     headers["e-tag-category"] = etag.category
                     headers["e-tag-id"] = str(etag.id)
                 else:
-                    print('client etag exists but it was validated')
+                    print('biz client etag exists but it was validated')
             else:
-                print('no client etag')
+                print('no biz client etag')
                 etag = ETag_Service().get_etag("business")
                 headers["e-tag-category"] = etag.category
                 headers["e-tag-id"] = str(etag.id)
@@ -965,63 +968,6 @@ def business_phone_number():
     else:
         # if the business phone exists then the business id will be returned
         return Response(status=200, response=json.dumps(business_phone_number_status.dto_serialize()))
-
-
-@app.route('/merchant/sign_up', methods=['POST', 'OPTIONS'])
-def create_account():
-    response = {"msg": ""}
-    headers = {}
-    if request.method == 'OPTIONS':
-        headers["Access-Control-Allow-Origin"] = request.origin
-        headers["Access-Control-Allow-Headers"] = request.headers.get(
-            'Access-Control-Request-Headers')
-
-        headers["Access-Control-Expose-Headers"] = "*"
-        return Response(status=200, headers=headers)
-    elif request.method == 'POST':
-        headers["Access-Control-Allow-Headers"] = request.headers.get(
-            'Access-Control-Request-Headers')
-        headers["Access-Control-Allow-Origin"] = request.origin
-        headers["Access-Control-Expose-Headers"] = "*"
-        # check if the post request has the file part
-        requested_merchant = json.loads(request.form.get("merchant"))
-        requested_business = json.loads(request.form.get("business"))
-
-        new_merchant = Merchant_Service().add_merchant(requested_merchant)
-        new_business = Business_Service().add_business(requested_business)
-        if new_merchant and new_business:
-            # when a merchant is created their business and drink etag ids are 0
-            new_merchant.business_e_tag_id = 0
-            new_merchant.drink_e_tag_id = 0
-            # this is a quick fix because for some reason front end cannot read dict key jwt-token
-            headers["token"] = jwt.encode(
-                {"sub": new_merchant.id}, key=secret, algorithm="HS256")
-
-            send_confirmation_email(
-                jwt_token=headers["token"], email_type="merchant_confirmation", user=new_merchant, business=new_business)
-            stripe_account_status = Merchant_Service(
-            ).authenticate_merchant_stripe(new_merchant.stripe_id)
-            send_confirmation_email(
-                jwt_token=headers["token"], email_type="merchant_sign_up_notification", user=new_merchant, business=new_business, stripe_account_status=stripe_account_status)
-            response['confirmed_new_business'] = new_business.dto_serialize()
-            response['confirmed_new_merchant'] = new_merchant.dto_serialize()
-            if 'file' not in request.files:
-                response["msg"] = "No file part in request"
-                return Response(status=200, response=json.dumps(response), headers=headers)
-
-            file = request.files['file']
-            # merchant does not select file
-            if file.filename == '':
-                response["msg"] = "No file file uploaded"
-                return Response(status=200, response=json.dumps(response), headers=headers)
-
-            if file:
-                Google_Cloud_Storage_API().upload_menu_file(file, new_business.id)
-                response["msg"] = "File successfully uploaded!"
-                return Response(status=200, response=json.dumps(response), headers=headers)
-
-        response["msg"] = "An unknown internal server error occured"
-        return Response(status=500, response=json.dumps(response), headers=headers)
 
 
 @app.route('/merchant_employee/stripe', methods=['GET', 'OPTIONS'])
@@ -1348,10 +1294,10 @@ def reset_pin():
             return Response(status=400)
 
 
-@app.route('/merchant', methods=['GET', 'OPTIONS'])
-def authenticate_merchant():
+@app.route('/merchant', methods=['GET', 'OPTIONS', 'POST'])
+def merchant():
+    response = {"msg": ""}
     headers = {}
-    response = {}
     headers["Access-Control-Allow-Origin"] = request.origin
     headers["Access-Control-Allow-Headers"] = request.headers.get(
         'Access-Control-Request-Headers')
@@ -1371,6 +1317,54 @@ def authenticate_merchant():
             return Response(status=200, response=json.dumps(merchant.dto_serialize()), headers=headers)
         else:
             return Response(status=204, response=json.dumps(response), headers=headers)
+    elif request.method == 'POST':
+        headers["Access-Control-Allow-Headers"] = request.headers.get(
+            'Access-Control-Request-Headers')
+        headers["Access-Control-Allow-Origin"] = request.origin
+        headers["Access-Control-Expose-Headers"] = "*"
+        # check if the post request has the file part
+        requested_merchant = json.loads(request.form.get("merchant"))
+        requested_business = json.loads(request.form.get("business"))
+
+        new_merchant = Merchant_Service().add_merchant(requested_merchant)
+        new_business = Business_Service().add_business(requested_business)
+        biz_etag = ETag_Service().get_etag(category="business")
+        print('1332 biz_etag',biz_etag)
+        if new_merchant and new_business:
+            ETag_Service().update_etag(category="business")
+            print('1335 biz_etag',biz_etag)
+            # when a merchant is created their business and drink etag ids are 0
+            new_merchant.business_e_tag_id = 0
+            new_merchant.drink_e_tag_id = 0
+            # this is a quick fix because for some reason front end cannot read dict key jwt-token
+            headers["token"] = jwt.encode(
+                {"sub": new_merchant.id}, key=secret, algorithm="HS256")
+
+            send_confirmation_email(
+                jwt_token=headers["token"], email_type="merchant_confirmation", user=new_merchant, business=new_business)
+            stripe_account_status = Merchant_Service(
+            ).authenticate_merchant_stripe(new_merchant.stripe_id)
+            send_confirmation_email(
+                jwt_token=headers["token"], email_type="merchant_sign_up_notification", user=new_merchant, business=new_business, stripe_account_status=stripe_account_status)
+            response['confirmed_new_business'] = new_business.dto_serialize()
+            response['confirmed_new_merchant'] = new_merchant.dto_serialize()
+            if 'file' not in request.files:
+                response["msg"] = "No file part in request"
+                return Response(status=200, response=json.dumps(response), headers=headers)
+
+            file = request.files['file']
+            # merchant does not select file
+            if file.filename == '':
+                response["msg"] = "No file file uploaded"
+                return Response(status=200, response=json.dumps(response), headers=headers)
+
+            if file:
+                Google_Cloud_Storage_API().upload_menu_file(file, new_business.id)
+                response["msg"] = "File successfully uploaded!"
+                return Response(status=200, response=json.dumps(response), headers=headers)
+
+        response["msg"] = "An unknown internal server error occured"
+        return Response(status=500, response=json.dumps(response), headers=headers)
 
 
 @app.route('/merchant/validate', methods=['GET', 'OPTIONS'])

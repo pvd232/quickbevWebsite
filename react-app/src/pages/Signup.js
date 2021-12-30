@@ -805,7 +805,7 @@ const Signup = () => {
     // set in local storage if user has multiple businesses so we can display a tab to add more businesses late
     let responseBody = await API.makeRequest(
       "POST",
-      "/merchant/sign_up",
+      "/merchant",
       newForm,
       false,
       true
