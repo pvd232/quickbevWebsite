@@ -670,10 +670,10 @@ def customer():
             headers["jwt-token"] = jwt_token
             send_confirmation_email(
                 jwt_token=jwt_token, email_type="customer_confirmation", user=generated_new_customer)
-            if generated_new_customer.has_registered == True:
-                status = 201
-            else:
-                status = 200
+            # if generated_new_customer.has_registered == True:
+            #     status = 201
+            # else:
+            status = 200
             # dont inlcude jwt_token in headers because it has already been sent when the user was validated in /customer/validate
             return Response(response=json.dumps(generated_new_customer.dto_serialize()), status=status, headers=headers)
         else:
