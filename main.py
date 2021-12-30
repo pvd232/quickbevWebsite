@@ -911,7 +911,7 @@ def business(session_token):
                 return Response(status=200, response=json.dumps(response), headers=headers)
 
             if file:
-                Google_Cloud_Storage_API().upload_menu_file(file, new_business.id)
+                Google_Cloud_Storage_Service().upload_menu_file(file, new_business.id)
                 response["msg"] = "File successfully uploaded!"
                 return Response(status=200, response=json.dumps(response), headers=headers)
         response["msg"] = "An unknown internal server error occured"
@@ -1296,7 +1296,7 @@ def reset_pin():
 
 @app.route('/merchant', methods=['GET', 'OPTIONS', 'POST'])
 def merchant():
-    response = {"msg": ""}
+    response = {}
     headers = {}
     headers["Access-Control-Allow-Origin"] = request.origin
     headers["Access-Control-Allow-Headers"] = request.headers.get(
@@ -1359,7 +1359,7 @@ def merchant():
                 return Response(status=200, response=json.dumps(response), headers=headers)
 
             if file:
-                Google_Cloud_Storage_API().upload_menu_file(file, new_business.id)
+                Google_Cloud_Storage_Service().upload_menu_file(file, new_business.id)
                 response["msg"] = "File successfully uploaded!"
                 return Response(status=200, response=json.dumps(response), headers=headers)
 
@@ -1531,7 +1531,7 @@ def add_menu():
                 # update the drink image url for each drink, keeping the proper index intact by extracting only drinks with an image
                 drink.set_image_url(file.filename)
                 drink.file = file
-                Google_Cloud_Storage_API().upload_drink_image_file(drink)
+                Google_Cloud_Storage_Service().upload_drink_image_file(drink)
                 response["msg"] = "File successfully uploaded!"
             Drink_Service().update_drinks(drinks_with_images)
             return Response(status=200, response=json.dumps(response), headers=headers)
