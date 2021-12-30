@@ -276,6 +276,7 @@ class Customer_Service(object):
             if customer_object:
                 customer_domain = Customer_Domain(
                     customer_object=customer_object)
+                customer_domain.password = password
                 return customer_domain
             else:
                 return False
@@ -298,6 +299,7 @@ class Customer_Service(object):
             if registered_new_customer:
                 registered_new_customer_domain = Customer_Domain(
                     customer_object=registered_new_customer)
+                registered_new_customer_domain.password = requested_new_customer_domain.password
                 return registered_new_customer_domain
             else:
                 return False
