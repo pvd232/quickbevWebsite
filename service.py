@@ -815,6 +815,8 @@ class Quick_Pass_Service(object):
             else:
                 closing_day = datetime.now().day
             
+            closing_year = datetime.today().year
+            closing_month = datetime.today().month
             if datetime.today().month in [9, 4, 6, 11]:
                 if closing_day >= 31:
                     closing_day = 1
@@ -826,17 +828,16 @@ class Quick_Pass_Service(object):
             if closing_month > 12:
                 closing_month = 1
                 closing_year = datetime.today().year + 1
-            else:
-                closing_year = datetime.today().year + 1
+            
                 
             expiration_hour = datetime.now().hour + 2
+            expiration_day = datetime.now().day
+            expiration_year = datetime.today().year
+            expiration_month = datetime.today().month
             # check for new intervals
             if expiration_hour >= 24:
                 expiration_hour = expiration_hour - 24
                 expiration_day = datetime.now().day + 1
-            else:
-                expiration_day = datetime.now().day
-                
             if datetime.today().month in [9, 4, 6, 11]:
                 if expiration_day >= 31:
                     expiration_day = 1
@@ -847,8 +848,6 @@ class Quick_Pass_Service(object):
                     expiration_month = datetime.today().month + 1
             if expiration_month > 12:
                 expiration_month = 1
-                expiration_year = datetime.today().year + 1
-            else:
                 expiration_year = datetime.today().year + 1
                 
             
