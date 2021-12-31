@@ -815,12 +815,30 @@ class Quick_Pass_Service(object):
             else:
                 closing_day = datetime.now().day
             closing_hour = datetime.now().hour + 2
+            
+            # check for new intervals
             if closing_hour >= 24:
                 closing_hour = closing_hour - 24
-            closing_date_time = datetime(datetime.now().year, datetime.now().month, closing_day, business.schedule[datetime.today(
+            if datetime.today().month in [9, 4, 6, 11]:
+                if closing_day >= 31:
+                    closing_day = 1
+                    closing_month = datetime.today().month + 1   
+            else:
+                if closing_day > 31:
+                    closing_day = 1
+                    closing_month = datetime.today().month + 1
+            if closing_month > 12:
+                closing_month = 1
+                closing_year = datetime.today().year + 1
+            else:
+                closing_year = datetime.today().year + 1
+                    
+            
+            
+            closing_date_time = datetime(closing_year, closing_month, closing_day, business.schedule[datetime.today(
             ).weekday()].closing_time.hour, business.schedule[datetime.today().weekday()].closing_time.minute)
-            expiration_date_time = datetime(datetime.now().year, datetime.now(
-            ).month, datetime.now().day, closing_hour, datetime.now().minute)
+            
+            expiration_date_time = datetime(closing_year, closing_month, closing_day, closing_hour, datetime.now().minute)
 
             if expiration_date_time > closing_date_time or should_diplay_expiration_time == False:
                 expiration_date_time = closing_date_time

@@ -39,7 +39,7 @@ class Drink_Domain(object):
             self.business_id = drink_object.business_id
             self.is_active = drink_object.is_active
             self.image_url = drink_object.image_url
-            
+
             if drink_object.image_url != None:
                 # the drink image url will always follow this pattern
                 self.image_url = drink_object.image_url
@@ -80,7 +80,7 @@ class Drink_Domain(object):
 
 
 class Order_Domain(object):
-    def __init__(self, order_object=None, order_json=None, drinks=None, is_customer_order = False, is_merchant_order = False, is_merchant_employee_order = False):
+    def __init__(self, order_object=None, order_json=None, drinks=None, is_customer_order=False, is_merchant_order=False, is_merchant_employee_order=False):
         self.id = ''
         self.customer_id = ''
         # this property does not exist in the database, it is used for stripe_payment_intent and is captured in iOS during the order process
@@ -114,7 +114,7 @@ class Order_Domain(object):
         self.is_customer_order = is_customer_order
         self.is_merchant_order = is_merchant_order
         self.is_merchant_employee_order = is_merchant_employee_order
-        
+
         if order_object and drinks:
             # these attributes were from the join and are not nested in the result object
             self.business_name = order_object.business_name
@@ -146,7 +146,7 @@ class Order_Domain(object):
             self.date_time = order_object.Order.date_time
             self.merchant_stripe_id = order_object.Order.merchant_stripe_id
             self.order_drink = Order_Drink_Domain(
-                order_id = order_object.Order.id, order_drink_object=order_object.Order.order_drink, drinks=drinks)
+                order_id=order_object.Order.id, order_drink_object=order_object.Order.order_drink, drinks=drinks)
             self.completed = order_object.Order.completed
             self.refunded = order_object.Order.refunded
             self.payment_intent_id = order_object.Order.payment_intent_id
@@ -158,14 +158,14 @@ class Order_Domain(object):
                 self.active = False
 
         elif order_object and is_merchant_employee_order:
-            print('order_object',order_object)
+            print('order_object', order_object)
             self.id = order_object.Order.id
             self.customer_id = order_object.Order.customer_id
-            
+
             # custom properties for android tablet
             self.customer_first_name = order_object.customer_first_name
             self.customer_last_name = order_object.customer_last_name
-            
+
             self.business_id = order_object.Order.business_id
             self.total = order_object.Order.total
             self.subtotal = order_object.Order.subtotal
@@ -188,7 +188,8 @@ class Order_Domain(object):
             for order_drink in order_object.Order.order_drink:
                 if order_drink.drink_id not in unique_drinks_ids:
                     unique_drinks_ids.append(order_drink.drink_id)
-                    new_order_drink = Order_Drink_Domain(order_drink_object=order_drink, is_merchant_order=True)
+                    new_order_drink = Order_Drink_Domain(
+                        order_drink_object=order_drink, is_merchant_order=True)
                     self.order_drink.append(new_order_drink)
                 else:
                     for previous_order_drink in self.order_drink:
@@ -198,7 +199,7 @@ class Order_Domain(object):
             self.completed = order_object.Order.completed
             self.refunded = order_object.Order.refunded
             self.payment_intent_id = order_object.Order.payment_intent_id
-        
+
         # javascript orders
         elif order_object and is_merchant_order:
             self.id = order_object.id
@@ -225,7 +226,8 @@ class Order_Domain(object):
             for order_drink in order_object.order_drink:
                 if order_drink.drink_id not in unique_drinks_ids:
                     unique_drinks_ids.append(order_drink.drink_id)
-                    new_order_drink = Order_Drink_Domain(order_drink_object=order_drink, is_merchant_order=True)
+                    new_order_drink = Order_Drink_Domain(
+                        order_drink_object=order_drink, is_merchant_order=True)
                     self.order_drink.append(new_order_drink)
                 else:
                     for previous_order_drink in self.order_drink:
@@ -253,8 +255,9 @@ class Order_Domain(object):
             self.sales_tax_percentage = order_json["sales_tax_percentage"]
             self.business_id = order_json["business_id"]
             for order_drink in order_json['order_drink']:
-                print('order_drink',order_drink)
-                new_order_drink = Order_Drink_Domain(order_drink_json=order_drink, is_customer_order=True)
+                print('order_drink', order_drink)
+                new_order_drink = Order_Drink_Domain(
+                    order_drink_json=order_drink, is_customer_order=True)
                 self.order_drink.append(new_order_drink)
             self.date_time = datetime.fromtimestamp(order_json["date_time"])
             self.completed = order_json["completed"]
@@ -279,14 +282,16 @@ class Order_Domain(object):
             self.sales_tax_percentage = order_json["sales_tax_percentage"]
             self.business_id = order_json["business_id"]
             for order_drink in order_json['order_drink']:
-                print('order_drink',order_drink)
-                new_order_drink = Order_Drink_Domain(order_drink_json=order_drink, is_merchant_employee_order=True)
+                print('order_drink', order_drink)
+                new_order_drink = Order_Drink_Domain(
+                    order_drink_json=order_drink, is_merchant_employee_order=True)
                 self.order_drink.append(new_order_drink)
-            self.date_time = datetime.fromtimestamp(int(order_json["date_time"]))
+            self.date_time = datetime.fromtimestamp(
+                int(order_json["date_time"]))
             self.completed = order_json["completed"]
             self.refunded = order_json["refunded"]
             self.payment_intent_id = order_json["payment_intent_id"]
-            self.card_information = order_json["card_information"]            
+            self.card_information = order_json["card_information"]
         elif order_json and not is_customer_order:
             # an order received as order_json will be an order sent from an iOS device, thus service fee is not included as a value because it is calculated in the backend
             self.id = order_json["id"]
@@ -311,10 +316,6 @@ class Order_Domain(object):
             self.payment_intent_id = order_json["payment_intent_id"]
             self.card_information = order_json["card_information"]
 
-        
-            
-        
-
     def dto_serialize(self):
         attribute_names = list(self.__dict__.keys())
         attributes = list(self.__dict__.values())
@@ -324,19 +325,22 @@ class Order_Domain(object):
             if attribute_names[i] == "id" or attribute_names[i] == "business_id":
                 serialized_attributes[attribute_names[i]] = str(attributes[i])
             elif attribute_names[i] == 'date_time':
-                serialized_attributes[attribute_names[i]] = attributes[i].timestamp()
+                serialized_attributes[attribute_names[i]
+                                      ] = attributes[i].timestamp()
             elif attribute_names[i] == "order_drink":
                 if self.is_customer_order == True or self.is_merchant_order == True or self.is_merchant_employee_order == True:
                     order_drink_list = []
                     for order_drink in attributes[i]:
                         order_drink_list.append(order_drink.dto_serialize())
                     serialized_attributes[attribute_names[i]
-                                            ] = order_drink_list
+                                          ] = order_drink_list
                 else:
                     if not isinstance(attributes[i], list):
-                        serialized_attributes[attribute_names[i]] = attributes[i].dto_serialize()
+                        serialized_attributes[attribute_names[i]
+                                              ] = attributes[i].dto_serialize()
                     else:
-                        serialized_attributes[attribute_names[i]] = attributes[i]
+                        serialized_attributes[attribute_names[i]
+                                              ] = attributes[i]
             elif attribute_names[i] == "customer":
                 serialized_attributes[attribute_names[i]
                                       ] = attributes[i].dto_serialize()
@@ -346,7 +350,7 @@ class Order_Domain(object):
 
 
 class Order_Drink_Domain(object):
-    def __init__(self, order_id=None, order_drink_object=None, order_drink_json=None, drinks=None, is_customer_order = False, is_merchant_order = False, is_merchant_employee_order = False):
+    def __init__(self, order_id=None, order_drink_object=None, order_drink_json=None, drinks=None, is_customer_order=False, is_merchant_order=False, is_merchant_employee_order=False):
         self.is_customer_order = is_customer_order
         self.is_merchant_order = is_merchant_order
         # might use this to pull in customer order objects when signing in to app, low priority
@@ -360,7 +364,7 @@ class Order_Drink_Domain(object):
         # dart orders
         if order_drink_object and drinks and not is_merchant_order:
             self.order_drink: list[Order_Drink_Domain] = []
-            
+
             self.order_id = order_id
             for order_drink_instance in order_drink_object:
                 for drink in drinks:
@@ -389,10 +393,10 @@ class Order_Drink_Domain(object):
             self.order_id = uuid.UUID(order_drink_json["order_id"])
             self.drink_id = uuid.UUID(order_drink_json["drink_id"])
             self.quantity = order_drink_json["quantity"]
-                
+
         elif order_drink_json and not is_customer_order:
             self.order_drink: list[Order_Drink_Domain] = []
-            
+
             drink_id_list = []
             for customer_drink in order_drink_json:
                 drink_domain = Drink_Domain(drink_json=customer_drink["drink"])
@@ -404,18 +408,17 @@ class Order_Drink_Domain(object):
                         if drink.id == drink_domain.id:
                             drink.quantity += drink_domain.quantity
 
-
-
     def dto_serialize(self):
         serialized_attributes = {}
-        
+
         if self.is_customer_order == True or self.is_merchant_order == True:
             attribute_names = list(self.__dict__.keys())
             attributes = list(self.__dict__.values())
             serialized_attributes = {}
             for i in range(len(attributes)):
                 if attribute_names[i] in ['id', 'drink_id', 'order_id']:
-                    serialized_attributes[attribute_names[i]] = str(attributes[i])
+                    serialized_attributes[attribute_names[i]] = str(
+                        attributes[i])
                 else:
                     serialized_attributes[attribute_names[i]] = attributes[i]
             return serialized_attributes
@@ -509,8 +512,6 @@ class Merchant_Domain(object):
                 self.is_administrator = True
             self.drink_e_tag_id = merchant_object.drink_e_tag_id
             self.business_e_tag_id = merchant_object.business_e_tag_id
-            
-            
 
         elif merchant_json:
             self.id = merchant_json["id"]
@@ -613,7 +614,7 @@ class Merchant_Employee_Domain(object):
             self.pin = merchant_employee_json["pin"]
             self.first_name = merchant_employee_json["first_name"]
             self.last_name = merchant_employee_json["last_name"]
-            self.business_id = uuid.UUID(merchant_employee_json['business_id']) 
+            self.business_id = uuid.UUID(merchant_employee_json['business_id'])
             self.merchant_id = merchant_employee_json['merchant_id']
             self.phone_number = merchant_employee_json["phone_number"]
             self.logged_in = merchant_employee_json['logged_in']
@@ -738,10 +739,10 @@ class Business_Domain(object):
             self.name = business_json["name"]
             self.classification = business_json["classification"]
             self.address = business_json["address"]
-            
+
             # this property is set in the backend
             # self.at_capacity = business_json['at_capacity']
-            
+
             for day_json in business_json["schedule"]:
                 day_json['business_id'] = self.id
                 new_day_domain = Business_Schedule_Day_Domain(
