@@ -814,11 +814,7 @@ class Quick_Pass_Service(object):
                 closing_day = datetime.now().day + 1
             else:
                 closing_day = datetime.now().day
-            closing_hour = datetime.now().hour + 2
             
-            # check for new intervals
-            if closing_hour >= 24:
-                closing_hour = closing_hour - 24
             if datetime.today().month in [9, 4, 6, 11]:
                 if closing_day >= 31:
                     closing_day = 1
@@ -832,13 +828,37 @@ class Quick_Pass_Service(object):
                 closing_year = datetime.today().year + 1
             else:
                 closing_year = datetime.today().year + 1
+                
+            expiration_hour = datetime.now().hour + 2
+            # check for new intervals
+            if expiration_hour >= 24:
+                expiration_hour = expiration_hour - 24
+                expiration_day = datetime.now().day + 1
+            else:
+                expiration_day = datetime.now().day
+                
+            if datetime.today().month in [9, 4, 6, 11]:
+                if expiration_day >= 31:
+                    expiration_day = 1
+                    expiration_month = datetime.today().month + 1   
+            else:
+                if expiration_day > 31:
+                    expiration_day = 1
+                    expiration_month = datetime.today().month + 1
+            if expiration_month > 12:
+                expiration_month = 1
+                expiration_year = datetime.today().year + 1
+            else:
+                expiration_year = datetime.today().year + 1
+                
+            
                     
             
             
             closing_date_time = datetime(closing_year, closing_month, closing_day, business.schedule[datetime.today(
             ).weekday()].closing_time.hour, business.schedule[datetime.today().weekday()].closing_time.minute)
             
-            expiration_date_time = datetime(closing_year, closing_month, closing_day, closing_hour, datetime.now().minute)
+            expiration_date_time = datetime(expiration_year, expiration_month, expiration_day, expiration_hour, datetime.now().minute)
 
             if expiration_date_time > closing_date_time or should_diplay_expiration_time == False:
                 expiration_date_time = closing_date_time
