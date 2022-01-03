@@ -849,6 +849,12 @@ def business(session_token):
 
         # javascript businesses
         if merchant_id:
+            merchant = Merchant_Service().get_merchant(merchant_id=merchant_id)
+            if merchant.is_administrator:
+                businesses = Business_Service().get_merchant_business(merchant_id=merchant.id)
+                response["businesses"] = businesses
+                return Response(status=200, response=json.dumps(response), headers=headers)
+            
             business_e_tag = json.loads(request.headers.get("If-None-Match"))
             status = ETag_Service().validate_merchant_etag(
                 merchant_id=merchant_id, e_tag=business_e_tag)
