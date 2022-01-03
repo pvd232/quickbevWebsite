@@ -14,7 +14,8 @@ import BouncerEmailConfirmed from "./pages/BouncerEmailConfirmed.js";
 import ResetPassword from "./pages/PasswordReset.js";
 import PasswordResetEmailForm from "./pages/PasswordResetEmailForm.js";
 import MenuBuilder from "./pages/admin/MenuBuilder.js";
-import DeactivateBusiness from "./pages/admin/DeactivateBusiness";
+import DeactivateBusiness from "./pages/admin/DeactivateBusiness.js";
+import DeactivateDrink from "./pages/admin/DeactivateDrink.js";
 import BouncerQuickPass from "./pages/BouncerQuickPass.js";
 
 const Main = () => {
@@ -41,13 +42,17 @@ const Main = () => {
         path="/payout-setup-callback"
         component={PayoutSetupCallback}
       ></Route>
-      <Route exact path="/menubuilder" component={MenuBuilder}></Route>
+      <Route exact path="/menu-builder" component={MenuBuilder}></Route>
       <Route
         exact
         path="/deactivate-business"
         component={DeactivateBusiness}
       ></Route>
-
+<Route
+        exact
+        path="/deactivate-drink"
+        component={DeactivateDrink}
+      ></Route>
       <Route exact path="/" component={Splash}></Route>
       <Switch>
         <Route

@@ -193,9 +193,6 @@ const Dashboard = (props) => {
   const prevSettingsOpen = useRef(settingsOpen);
   const prevHelpOpen = useRef(settingsOpen);
 
-  // const handleAddMerchantEmployee = () => {
-  //   props.handleAddMerchantEmployee();
-  // }
   useEffect(() => {
     if (prevSettingsOpen.current === true && settingsOpen === false) {
       settingsAnchorRef.current.focus();
@@ -207,12 +204,7 @@ const Dashboard = (props) => {
     prevHelpOpen.current = helpOpen;
   }, [settingsOpen, helpOpen]);
   const pages = [
-    <HomeSplash
-      // orders={props.orders}
-      // businesses={props.businesses}
-      fixedHeightPaper={fixedHeightPaper}
-      classes={classes}
-    />,
+    <HomeSplash fixedHeightPaper={fixedHeightPaper} classes={classes} />,
     <Customers
       customers={props.customers}
       fixedHeightPaper={fixedHeightPaper}
@@ -231,20 +223,9 @@ const Dashboard = (props) => {
       fixedHeightPaper={fixedHeightPaper}
       classes={classes}
     />,
-    <Orders
-      // drinks={props.drinks}
-      // orders={props.orders}
-      // businesses={props.businesses}
-      fixedHeightPaper={fixedHeightPaper}
-      classes={classes}
-    />,
-    <Menu
-      // businesses={props.businesses}
-      fixedHeightPaper={fixedHeightPaper}
-      classes={classes}
-    ></Menu>,
+    <Orders fixedHeightPaper={fixedHeightPaper} classes={classes} />,
+    <Menu fixedHeightPaper={fixedHeightPaper} classes={classes}></Menu>,
     <Businesses
-      // businesses={props.businesses}
       fixedHeightPaper={fixedHeightPaper}
       classes={classes}
       onUpdate={(newBusinesses) => props.updateBusinesses(newBusinesses)}
@@ -330,15 +311,15 @@ const Dashboard = (props) => {
           {LocalStorageManager.shared.currentMerchant.isAdministrator ===
           true ? (
             <>
-              <IconButton color="inherit" href="/menubuilder">
+              <IconButton color="inherit" href="/menu-builder">
                 <SmokeFreeIcon></SmokeFreeIcon>
               </IconButton>
 
-              <IconButton color="inherit" href="/deactivate-business">
+              <IconButton color="inherit" href="/deactivate-drink">
                 <LocalDrinkIcon></LocalDrinkIcon>
               </IconButton>
 
-              <IconButton color="inherit" href="/deactivate-drink">
+              <IconButton color="inherit" href="/deactivate-business">
                 <BusinessIcon></BusinessIcon>
               </IconButton>
             </>
