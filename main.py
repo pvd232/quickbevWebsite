@@ -1,5 +1,5 @@
 from flask import Response, request, render_template
-from models import app, instantiate_db_connection, inactivate_db
+from models import app, instantiate_db_connection, deactivate_db
 from service import *
 import json
 import stripe
@@ -107,33 +107,33 @@ def b():
 
 @app.route("/c")
 def c():
-    inactivate_db()
+    deactivate_db()
     return Response(status=200)
 
 # will need to link this to web interface and add session_token (grabbed from LocalStorage) for better security
 
 
-@app.route("/drink/inactivate/<string_session_token>")
-def inactivate_drink(session_token):
+@app.route("/drink/deactivate/<string_session_token>")
+def deactivate_drink(session_token):
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
 
     drink_id = request.args.get('drink_id')
     drink_uuid = uuid.UUID(drink_id)
-    Drink_Service().inactivate_drink(drink_id=drink_uuid)
+    Drink_Service().deactivate_drink(drink_id=drink_uuid)
     return Response(status=200)
 
 # will need to link this to web interface and add session_token (grabbed from LocalStorage) for better security
 
 
-@app.route("/business/inactivate/<string_session_token>")
-def inactivate_business(session_token):
+@app.route("/business/deactivate/<string_session_token>")
+def deactivate_business(session_token):
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
 
     business_id = request.args.get('business_id')
     business_uuid = uuid.UUID(business_id)
-    Business_Service().inactivate_business(business_id=business_uuid)
+    Business_Service().deactivate_business(business_id=business_uuid)
     return Response(status=200)
 
 

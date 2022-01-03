@@ -2,7 +2,6 @@ from domain import *
 from models import stripe_fee_percentage, service_fee_percentage, quick_pass_service_fee_percentage
 import uuid
 import os
-import time
 from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
@@ -66,7 +65,7 @@ class Drink_Service(object):
         with session_scope() as session:
             return [Drink_Domain(drink_object=x) for x in Drink_Repository().get_merchant_drinks(session=session, merchant_id=merchant_id)]
 
-    def add_drinks(self, business_id, drinks):
+    def add_drinks(self, business_id: uuid, drinks: list[dict]):
         with session_scope() as session:
             new_drink_list = [Drink_Domain(
                 drink_json=x, init=True) for x in drinks]
@@ -74,41 +73,40 @@ class Drink_Service(object):
                 drink.business_id = business_id
                 id = uuid.uuid4()
                 drink.id = id
-            return Drink_Repository().add_drinks(session, new_drink_list)
+            return Drink_Repository().add_drinks(session=session, drink_list=new_drink_list)
 
-    def update_drinks(self, drinks):
+    def update_drinks(self, drinks: list[Drink_Domain]):
         with session_scope() as session:
-            return Drink_Repository().update_drinks(session, drinks)
+            return Drink_Repository().update_drinks(session=session, drinks=drinks)
 
-    def inactivate_drink(self, drink_id):
+    def deactivate_drink(self, drink_id: uuid):
         with session_scope() as session:
-            return Drink_Repository().inactivate_drink(session=session, drink_id=drink_id)
+            return Drink_Repository().deactivate_drink(session=session, drink_id=drink_id)
 
 
 class Order_Service(object):
     def get_customer_order_status(self, customer_id: str):
         with session_scope() as session:
             customer_order_status = [Customer_Order_Status(order_object=x).dto_serialize(
-            ) for x in Order_Repository().get_customer_order_status(session, customer_id)]
+            ) for x in Order_Repository().get_customer_order_status(session=session, customer_id=customer_id)]
             return customer_order_status
 
-    def get_order(self, order_id: str):
+    def get_order(self, order_id: uuid):
         with session_scope() as session:
-            order = Order_Repository().get_order(session, order_id)
+            order = Order_Repository().get_order(session=session, order_id=order_id)
             new_order_domain = Order_Domain(
                 order_object=order, is_merchant_employee_order=True)
             return new_order_domain
 
-    def update_order(self, order):
+    def update_order(self, order: dict):
         with session_scope() as session:
             new_order_domain = Order_Domain(
                 order_json=order, is_merchant_employee_order=True)
-            Order_Repository().update_order(session, new_order_domain)
+            Order_Repository().update_order(session=session, order=new_order_domain)
 
     def create_order(self, order):
         # calculate order values on backend to prevent malicious clients
-        new_order_domain = Order_Domain(
-            order_json=order, is_customer_order=True)
+        new_order_domain = Order_Domain(order_json=order)
 
         # 1 subtotal is the sum of drink quantity to price
         subtotal = 0.0
@@ -162,47 +160,47 @@ class Order_Service(object):
         new_order_domain.net_service_fee_total = net_service_fee_total
 
         with session_scope() as session:
-            return Order_Repository().create_order(session, new_order_domain)
+            return Order_Repository().create_order(session=session, order=new_order_domain)
 
     def get_customer_orders(self, username):
         response = []
         with session_scope() as session:
-            orders = Order_Repository().get_customer_orders(session, username)
+            orders = Order_Repository().get_customer_orders(
+                session=session, username=username)
             for order in orders:
                 order_domain = Order_Domain(order_object=order)
                 order_dto = order_domain.dto_serialize()
                 response.append(order_dto)
             return response
 
-    def get_merchant_orders(self, username):
+    def get_merchant_orders(self, username: str):
         response = []
         with session_scope() as session:
             orders = Order_Repository().get_merchant_orders(
-                session, username)
+                session=session, username=username)
             for order in orders:
-                order_domain = Order_Domain(
-                    order_object=order, is_merchant_order=True)
+                order_domain = Order_Domain(order_object=order)
                 response.append(order_domain)
             return response
 
-    def get_merchant_employee_orders(self, business_id):
+    def get_merchant_employee_orders(self, business_id: uuid):
         response = []
         with session_scope() as session:
             orders = Order_Repository().get_merchant_employee_orders(
-                session, business_id)
+                session=session, business_id=business_id)
+            print('orders in merchant employee', orders)
             for order in orders:
                 order_domain = Order_Domain(
                     order_object=order, is_merchant_employee_order=True)
                 response.append(order_domain)
             return response
 
-    def create_stripe_ephemeral_key(self, request):
+    def create_stripe_ephemeral_key(self, request: dict):
         with session_scope() as session:
-            return Order_Repository().create_stripe_ephemeral_key(session, request)
+            return Order_Repository().create_stripe_ephemeral_key(session=session, request=request)
 
-    def create_stripe_payment_intent(self, request):
-        new_order_domain = Order_Domain(
-            order_json=request['order'], is_customer_order=True)
+    def create_stripe_payment_intent(self, request: dict):
+        new_order_domain = Order_Domain(order_json=request['order'])
 
         # 1 subtotal is the sum of drink quantity to price
         subtotal = 0.0
@@ -252,7 +250,7 @@ class Order_Service(object):
         )
         with session_scope() as session:
             servers = Merchant_Employee_Repository().get_servers(
-                session, business_id=new_order_domain.business_id)
+                session=session, business_id=new_order_domain.business_id)
             for server in servers:
                 tip_per_server = int(round(tip_total/len(servers), 2) * 100)
                 stripe.Transfer.create(
@@ -265,53 +263,50 @@ class Order_Service(object):
                         "secret": payment_intent["client_secret"]}
             return response
 
-    def refund_stripe_order(self, order):
-        with session_scope() as session:
-            new_order_domain = Order_Domain(order_json=order)
-            return Order_Repository().refund_stripe_order(new_order_domain)
+    def refund_stripe_order(self, order: dict):
+        new_order_domain = Order_Domain(order_json=order)
+        return Order_Repository().refund_stripe_order(new_order_domain)
 
 
 class Customer_Service(object):
-    def authenticate_customer(self, email, password):
+    def authenticate_customer(self, email: str, password: str):
         with session_scope() as session:
             customer_object = Customer_Repository().authenticate_customer(
-                session, email, password)
+                session=session, email=email, password=password)
             if customer_object:
                 customer_domain = Customer_Domain(
                     customer_object=customer_object)
-                customer_domain.password = password
                 return customer_domain
             else:
                 return False
 
-    def validate_username(self, username=None, hashed_username=None):
+    def validate_username(self, username: str = None, hashed_username: str = None):
         with session_scope() as session:
             customer_object = Customer_Repository().validate_username(
-                session, username, hashed_username)
+                session=session, username=username, hashed_username=hashed_username)
             if customer_object:
                 return True
             else:
                 return False
 
-    def register_new_customer(self, customer):
+    def register_new_customer(self, customer: dict):
         with session_scope() as session:
             requested_new_customer_domain = Customer_Domain(
                 customer_json=customer)
             registered_new_customer = Customer_Repository().register_new_customer(
-                session, requested_new_customer_domain)
+                session=session, customer=requested_new_customer_domain)
             if registered_new_customer:
                 registered_new_customer_domain = Customer_Domain(
                     customer_object=registered_new_customer)
-                registered_new_customer_domain.password = requested_new_customer_domain.password
                 return registered_new_customer_domain
             else:
                 return False
 
-    def get_customers(self, merchant_id):
+    def get_customers(self, merchant_id: str):
         with session_scope() as session:
             # pheew this is sexy. list comprehension while creating a customer dto
             customers = [Customer_Domain(customer_object=x) for x in Customer_Repository().get_customers(
-                session, merchant_id)]
+                session=session, merchant_id=merchant_id)]
             customers_without_passswords = []
             for customer in customers:
                 new_customer_without_password = customer
@@ -320,39 +315,41 @@ class Customer_Service(object):
                     new_customer_without_password)
             return customers_without_passswords
 
-    def update_device_token(self, device_token, customer_id):
+    def update_device_token(self, device_token: str, customer_id: str):
         with session_scope() as session:
-            return Customer_Repository().update_device_token(session, device_token, customer_id)
+            return Customer_Repository().update_device_token(session=session, device_token=device_token, customer_id=customer_id)
 
-    def get_device_token(self, customer_id):
+    def get_device_token(self, customer_id: str):
         with session_scope() as session:
-            return Customer_Repository().get_device_token(session, customer_id)
+            return Customer_Repository().get_device_token(session=session, customer_id=customer_id)
 
-    def update_email_verification(self, customer_id):
+    def update_email_verification(self, customer_id: str):
         with session_scope() as session:
-            return Customer_Repository().update_email_verification(session, customer_id)
+            return Customer_Repository().update_email_verification(session=session, customer_id=customer_id)
 
-    def update_password(self, customer_id, new_password):
+    def update_password(self, customer_id: str, new_password: str):
         with session_scope() as session:
-            return Customer_Repository().update_password(session, customer_id, new_password)
+            return Customer_Repository().update_password(session=session, customer_id=customer_id, new_password=new_password)
 
-    def get_customer(self, customer_id):
+    def get_customer(self, customer_id: str):
         with session_scope() as session:
-            customer = Customer_Repository().get_customer(session, customer_id)
+            customer = Customer_Repository().get_customer(
+                session=session, customer_id=customer_id)
             if customer:
-                return Customer_Domain(customer_object=Customer_Repository().get_customer(session, customer_id))
+                return Customer_Domain(customer_object=Customer_Repository().get_customer(session=session, customer_id=customer_id))
             else:
                 return customer
 
-    def get_customer_apple_id(self, apple_id):
+    def get_customer_apple_id(self, apple_id: str):
         with session_scope() as session:
-            customer = Customer_Repository().get_customer_apple_id(session, apple_id)
+            customer = Customer_Repository().get_customer_apple_id(
+                session=session, apple_id=apple_id)
             if customer:
                 return Customer_Domain(customer_object=customer)
             else:
                 return customer
 
-    def set_customer_apple_id(self, customer_id, apple_id):
+    def set_customer_apple_id(self, customer_id: str, apple_id: str):
         with session_scope() as session:
             return Customer_Repository().set_customer_apple_id(session=session, customer_id=customer_id, apple_id=apple_id)
 
@@ -360,12 +357,12 @@ class Customer_Service(object):
 class Merchant_Service(object):
     def create_stripe_account(self):
         with session_scope() as session:
-            return Merchant_Repository().create_stripe_account(session)
+            return Merchant_Repository().create_stripe_account(session=session)
 
-    def authenticate_merchant(self, email, password):
+    def authenticate_merchant(self, email: str, password: str):
         with session_scope() as session:
             merchant_object = Merchant_Repository().authenticate_merchant(
-                session, email, password)
+                session=session, email=email, password=password)
             if merchant_object:
                 merchant_domain = Merchant_Domain(
                     merchant_object=merchant_object)
@@ -373,43 +370,43 @@ class Merchant_Service(object):
             else:
                 return False
 
-    def validate_merchant(self, email):
+    def validate_merchant(self, email: str):
         with session_scope() as session:
-            status = Merchant_Repository().validate_merchant(session, email)
+            status = Merchant_Repository().validate_merchant(session=session, email=email)
             if status:
                 return Merchant_Domain(merchant_object=status)
             else:
                 return False
 
-    def authenticate_merchant_stripe(self, stripe_id):
-        return Merchant_Repository().authenticate_merchant_stripe(stripe_id)
+    def authenticate_merchant_stripe(self, stripe_id: str):
+        return Merchant_Repository().authenticate_merchant_stripe(stripe_id=stripe_id)
 
-    def add_merchant(self, merchant):
+    def add_merchant(self, merchant: dict):
         with session_scope() as session:
             requested_new_merchant = Merchant_Domain(merchant_json=merchant)
             return Merchant_Repository().add_merchant(
-                session, requested_new_merchant)
+                session=session, requested_merchant=requested_new_merchant)
 
-    def get_merchant(self, merchant_id):
+    def get_merchant(self, merchant_id: str):
         with session_scope() as session:
-            return Merchant_Domain(merchant_object=Merchant_Repository().get_merchant(session, merchant_id))
+            return Merchant_Domain(merchant_object=Merchant_Repository().get_merchant(session=session, merchant_id=merchant_id))
 
 
 class Bouncer_Service(object):
-    def add_bouncer(self, bouncer_id):
+    def add_bouncer(self, bouncer_id: str):
         with session_scope() as session:
             return Bouncer_Domain(bouncer_object=Bouncer_Repository().add_bouncer(
-                session, bouncer_id))
+                session=session, bouncer_id=bouncer_id))
 
-    def validate_username(self, username):
+    def validate_username(self, username: str):
         with session_scope() as session:
             return Bouncer_Repository().validate_username(
-                session, username)
+                session=session, username=username)
 
-    def get_bouncers(self, merchant_id):
+    def get_bouncers(self, merchant_id: str):
         with session_scope() as session:
             staged_bouncers, bouncers = Bouncer_Repository().get_bouncers(
-                session, merchant_id)
+                session=session, merchant_id=merchant_id)
             bouncer_domains = [Bouncer_Domain(
                 bouncer_object=x) for x in bouncers]
 
@@ -427,36 +424,36 @@ class Bouncer_Service(object):
                     bouncer_domains.insert(0, staged_domain)
             return bouncer_domains
 
-    def add_staged_bouncer(self, bouncer):
+    def add_staged_bouncer(self, bouncer: dict):
         with session_scope() as session:
-            return Bouncer_Domain(bouncer_object=Bouncer_Repository().add_staged_bouncer(session, Bouncer_Domain(bouncer_json=bouncer)), isStagedBouncer=True)
+            return Bouncer_Domain(bouncer_object=Bouncer_Repository().add_staged_bouncer(session=session, bouncer=Bouncer_Domain(bouncer_json=bouncer)), isStagedBouncer=True)
 
-    def remove_staged_bouncer(self, bouncer_id):
+    def remove_staged_bouncer(self, bouncer_id: str):
         with session_scope() as session:
-            return Bouncer_Repository().remove_staged_bouncer(session, bouncer_id)
+            return Bouncer_Repository().remove_staged_bouncer(session=session, bouncer_id=bouncer_id)
 
-    def get_bouncer(self, bouncer_id):
+    def get_bouncer(self, bouncer_id: str):
         with session_scope() as session:
             bouncer_domain = Bouncer_Domain(
-                bouncer_object=Bouncer_Repository().get_bouncer(session, bouncer_id))
+                bouncer_object=Bouncer_Repository().get_bouncer(session=session, bouncer_id=bouncer_id))
             return bouncer_domain
 
 
 class Merchant_Employee_Service(object):
-    def get_stripe_account(self, merchant_employee_id):
+    def get_stripe_account(self, merchant_employee_id: str):
         with session_scope() as session:
-            return Merchant_Employee_Repository().get_stripe_account(session, merchant_employee_id)
+            return Merchant_Employee_Repository().get_stripe_account(session=session, merchant_employee_id=merchant_employee_id)
 
-    def validate_pin(self, business_id, pin):
+    def validate_pin(self, business_id: uuid, pin: int):
         with session_scope() as session:
-            pin_status = Merchant_Employee_Repository().validate_pin(session,
-                                                                     business_id, pin)
+            pin_status = Merchant_Employee_Repository().validate_pin(
+                session=session, business_id=business_id, pin=pin)
             return pin_status
 
-    def authenticate_pin(self, pin, login_status):
+    def authenticate_pin(self, pin: int, login_status: str):
         with session_scope() as session:
             merchant_employee_object = Merchant_Employee_Repository().authenticate_pin(
-                session, pin, login_status)
+                session=session, pin=pin, login_status=login_status)
             if merchant_employee_object:
                 merchant_employee_domain = Merchant_Employee_Domain(
                     merchant_employee_object=merchant_employee_object)
@@ -464,10 +461,10 @@ class Merchant_Employee_Service(object):
             else:
                 return False
 
-    def reset_pin(self, merchant_employee_id, pin):
+    def reset_pin(self, merchant_employee_id: str, pin: int):
         with session_scope() as session:
             merchant_employee_object = Merchant_Employee_Repository().reset_pin(
-                session, merchant_employee_id, pin)
+                session=session, merchant_employee_id=merchant_employee_id, pin=pin)
             if merchant_employee_object:
                 merchant_employee_domain = Merchant_Employee_Domain(
                     merchant_employee_object=merchant_employee_object)
@@ -475,26 +472,25 @@ class Merchant_Employee_Service(object):
             else:
                 return False
 
-    def add_merchant_employee(self, merchant_employee):
+    def add_merchant_employee(self, merchant_employee: dict):
         with session_scope() as session:
             requested_new_merchant_employee = Merchant_Employee_Domain(
                 merchant_employee_json=merchant_employee)
             return Merchant_Employee_Repository().add_merchant_employee(
-                session, requested_new_merchant_employee)
+                session=session, requested_merchant_employee=requested_new_merchant_employee)
 
-    def validate_username(self, username):
+    def validate_username(self, username: str):
         with session_scope() as session:
             return Merchant_Employee_Repository().validate_username(
-                session, username)
+                session=session, username=username)
 
-    def authenticate_merchant_employee_stripe(self, stripe_id):
-        with session_scope() as session:
-            return Merchant_Employee_Repository().authenticate_merchant_employee_stripe(stripe_id)
+    def authenticate_merchant_employee_stripe(self, stripe_id: str):
+        return Merchant_Employee_Repository().authenticate_merchant_employee_stripe(stripe_id=stripe_id)
 
-    def get_merchant_employees(self, merchant_id):
+    def get_merchant_employees(self, merchant_id: str):
         with session_scope() as session:
             staged_merchant_employees, merchant_employees = Merchant_Employee_Repository().get_merchant_employees(
-                session, merchant_id)
+                session=session, merchant_id=merchant_id)
             merchant_employee_domains = [Merchant_Employee_Domain(
                 merchant_employee_object=x) for x in merchant_employees]
             for merchant_employee_domain in merchant_employee_domains:
@@ -510,33 +506,33 @@ class Merchant_Employee_Service(object):
                 merchant_employee_domains.insert(0, staged_domain)
             return merchant_employee_domains
 
-    def log_out_merchant_employees(self, business_id):
+    def log_out_merchant_employees(self, business_id: uuid):
         with session_scope() as session:
             return Merchant_Employee_Repository().log_out_merchant_employees(session=session, business_id=business_id)
 
-    def add_staged_merchant_employee(self, merchant_id, merchant_employee_id):
+    def add_staged_merchant_employee(self, merchant_id: str, merchant_employee_id: str):
         with session_scope() as session:
-            return Merchant_Employee_Repository().add_staged_merchant_employee(session, merchant_id, merchant_employee_id)
+            return Merchant_Employee_Repository().add_staged_merchant_employee(session=session, merchant_id=merchant_id, merchant_employee_id=merchant_employee_id)
 
-    def remove_staged_merchant_employee(self, merchant_employee_id):
+    def remove_staged_merchant_employee(self, merchant_employee_id: str):
         with session_scope() as session:
-            return Merchant_Employee_Repository().remove_staged_merchant_employee(session, merchant_employee_id)
+            return Merchant_Employee_Repository().remove_staged_merchant_employee(session=session, merchant_employee_id=merchant_employee_id)
 
 
 class Business_Service(object):
-    def authenticate_business(self, business_id):
+    def authenticate_business(self, business_id: uuid):
         with session_scope() as session:
             business_status = Business_Repository().authenticate_business(
-                session, business_id)
+                session=session, business_id=business_id)
             return business_status
 
-    def update_device_token(self, device_token, business_id):
+    def update_device_token(self, device_token: str, business_id: uuid):
         with session_scope() as session:
-            return Business_Repository().update_device_token(session, device_token, business_id)
+            return Business_Repository().update_device_token(session=session, device_token=device_token, business_id=business_id)
 
-    def get_device_token(self, business_id):
+    def get_device_token(self, business_id: uuid):
         with session_scope() as session:
-            return Business_Repository().get_device_token(session, business_id)
+            return Business_Repository().get_device_token(session=session, business_id=business_id)
 
     def get_businesses(self):
         with session_scope() as session:
@@ -547,72 +543,73 @@ class Business_Service(object):
                 response.append(business_domain)
             return response
 
-    def add_business(self, business):
+    def add_business(self, business: uuid):
         with session_scope() as session:
             business_domain = Business_Domain(business_json=business)
             business_database_object = Business_Repository().add_business(
-                session, business_domain)
+                session=session, business=business_domain)
             if business_database_object:
                 # the new business domain has a UUID that was created during initialization
                 return business_domain
             else:
                 return False
 
-    def get_merchant_business(self, merchant_id):
+    def get_merchant_business(self, merchant_id: str):
         with session_scope() as session:
             response = []
-            for business in Business_Repository().get_merchant_businesses(session, merchant_id):
+            for business in Business_Repository().get_merchant_businesses(session=session, merchant_id=merchant_id):
                 business_domain = Business_Domain(business_object=business)
                 response.append(business_domain)
             return response
 
-    def get_menu(self, business_id):
+    def get_menu(self, business_id: uuid):
         with session_scope() as session:
-            menu = Business_Repository().get_menu(session, business_id)
+            menu = Business_Repository().get_menu(session=session, business_id=business_id)
             if menu:
                 menu = [Drink_Domain(drink_object=x) for x in menu]
             return menu
 
-    def get_business_phone_number(self, business_phone_number):
+    def get_business_phone_number(self, business_phone_number: int):
         with session_scope() as session:
             business_with_associated_phone_number = Business_Repository(
-            ).get_business_phone_number(session, business_phone_number)
+            ).get_business_phone_number(session=session, business_phone_number=business_phone_number)
             business_domain = Business_Domain(
                 business_object=business_with_associated_phone_number)
             return business_domain
 
-    def set_merchant_pin(self, business_id, pin):
+    def set_merchant_pin(self, business_id: uuid, pin: int):
         with session_scope() as session:
-            return Business_Repository().set_merchant_pin(session, business_id, pin)
+            return Business_Repository().set_merchant_pin(session=session, business_id=business_id, pin=pin)
 
-    def authenticate_merchant_pin(self, business_id, pin):
+    def authenticate_merchant_pin(self, business_id: uuid, pin: int):
         with session_scope() as session:
-            merchant = Business_Repository().authenticate_merchant_pin(session, business_id, pin)
+            merchant = Business_Repository().authenticate_merchant_pin(
+                session=session, business_id=business_id, pin=pin)
             if merchant:
                 merchant_domain = Merchant_Domain(merchant_object=merchant)
                 return merchant_domain
             return merchant
 
-    def update_business_capacity(self, business_id, capacity_status):
+    def update_business_capacity(self, business_id: uuid, capacity_status: str):
         with session_scope() as session:
-            return Business_Repository().update_capactiy_status(session, business_id, capacity_status)
+            return Business_Repository().update_capacity_status(session=session, business_id=business_id, capacity_status=capacity_status)
 
-    def inactivate_business(self, business_id):
+    def deactivate_business(self, business_id: uuid):
         with session_scope() as session:
-            return Business_Repository().inactivate_business(session=session, business_id=business_id)
+            return Business_Repository().deactivate_business(session=session, business_id=business_id)
 
 
 class Tab_Service(object):
     def post_tab(self, tab: dict):
         with session_scope() as session:
             new_tab_domain = Tab_Domain(tab_json=tab)
-            return Tab_Repository().post_tab(session, new_tab_domain)
+            return Tab_Repository().post_tab(session=session, tab=new_tab_domain)
 
 
 class ETag_Service(object):
     def get_etag(self, category: str):
         with session_scope() as session:
-            return ETag_Domain(etag_object=ETag_Repository().get_etag(session, category))
+            return ETag_Domain(etag_object=ETag_Repository().get_etag(session=session, category=category))
 
     def get_merchant_etag(self, e_tag: dict, merchant_id: str):
         with session_scope() as session:
@@ -622,11 +619,11 @@ class ETag_Service(object):
     def validate_etag(self, etag: dict):
         with session_scope() as session:
             etag_domain = ETag_Domain(etag_json=etag)
-            return ETag_Repository().validate_etag(session, etag_domain)
+            return ETag_Repository().validate_etag(session=session, etag=etag_domain)
 
     def update_etag(self, category: str):
         with session_scope() as session:
-            return ETag_Domain(etag_object=ETag_Repository().update_etag(session, category))
+            return ETag_Domain(etag_object=ETag_Repository().update_etag(session=session, category=category))
 
     def update_merchant_etag(self, business_id: str, e_tag: dict):
         with session_scope() as session:
@@ -688,7 +685,7 @@ class Google_Cloud_Storage_Service(object):
 
         print("Bucket {} created.".format(bucket.name))
 
-    def upload_menu_file(self, file, destination_blob_name):
+    def upload_menu_file(self, file, destination_blob_name: str):
         """Uploads a file to the bucket."""
         # bucket_name = "your-bucket-name"
         # file = "local/path/to/file" this will be the business folder, with a folder named after the business' unique id, which will have the menu file in it
@@ -701,7 +698,7 @@ class Google_Cloud_Storage_Service(object):
         blob.upload_from_file(file)
         return True
 
-    def upload_drink_image_file(self, drink):
+    def upload_drink_image_file(self, drink: Drink_Domain):
         """Uploads a file to the bucket."""
         # bucket_name = "your-bucket-name"
         # file = "local/path/to/file" this will be the business folder, with a folder named after the business' unique id, which will have the menu file in it
@@ -715,15 +712,15 @@ class Google_Cloud_Storage_Service(object):
 
 
 class Quick_Pass_Service(object):
-    def set_business_quick_pass(self, quick_pass):
+    def set_business_quick_pass(self, quick_pass: dict):
         with session_scope() as session:
-            return Quick_Pass_Repository().set_business_quick_pass(session, quick_pass)
+            return Quick_Pass_Repository().set_business_quick_pass(session=session, quick_pass_values=quick_pass)
 
-    def create_stripe_payment_intent(self, quick_pass):
+    def create_stripe_payment_intent(self, quick_pass: dict):
         quick_pass_domain = Quick_Pass_Domain(quick_pass_json=quick_pass)
         with session_scope() as session:
             business = Business_Domain(business_object=Business_Repository().get_business(
-                session, quick_pass_domain.business_id))
+                session=session, business_id=quick_pass_domain.business_id))
             customer = Customer_Domain(customer_object=Customer_Repository().get_customer(
                 session, quick_pass_domain.customer_id))
 
@@ -753,7 +750,7 @@ class Quick_Pass_Service(object):
                         "secret": payment_intent["client_secret"]}
             return response
 
-    def add_quick_pass(self, quick_pass):
+    def add_quick_pass(self, quick_pass: dict):
         # calculate order values on backend to prevent malicious clients
         quick_pass_domain = Quick_Pass_Domain(quick_pass_json=quick_pass)
         with session_scope() as session:
@@ -780,22 +777,23 @@ class Quick_Pass_Service(object):
 
             quick_pass_domain.sales_tax_total = sales_tax_total
             quick_pass_domain.price = price
-            Quick_Pass_Repository().add_quick_pass(session, quick_pass_domain)
+            Quick_Pass_Repository().add_quick_pass(
+                session=session, quick_pass=quick_pass_domain)
             return quick_pass_domain
 
-    def update_quick_pass(self, quick_pass_to_update):
+    def update_quick_pass(self, quick_pass_to_update: dict):
         with session_scope() as session:
             quick_pass_domain = Quick_Pass_Domain(
                 js_object=quick_pass_to_update)
-            return Quick_Pass_Repository().update_quick_pass(session, quick_pass_domain)
+            return Quick_Pass_Repository().update_quick_pass(session=session, quick_pass_to_update=quick_pass_domain)
 
-    def get_bouncer_quick_passes(self, merchant_id):
+    def get_bouncer_quick_passes(self, merchant_id: str):
         with session_scope() as session:
             quick_pass_domains = [Quick_Pass_Domain(quick_pass_object=x) for x in Quick_Pass_Repository().get_bouncer_quick_passes(
                 session=session, merchant_id=merchant_id)]
             return quick_pass_domains
 
-    def get_merchant_quick_passes(self, merchant_id):
+    def get_merchant_quick_passes(self, merchant_id: str):
         with session_scope() as session:
             quick_pass_domains = [Quick_Pass_Domain(quick_pass_object=x) for x in Quick_Pass_Repository().get_merchant_quick_passes(
                 session=session, merchant_id=merchant_id)]

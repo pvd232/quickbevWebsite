@@ -725,18 +725,6 @@ const BusinessFieldset = (props) => {
             ></PayoutSetup>
           </Col>
         </Row>
-        {/* <Row style={{ justifyContent: "space-around" }}>
-          <Form.Control
-            type="button"
-            name="previous"
-            className="previous action-button"
-            value="Previous"
-            style={{ marginTop: "10%" }}
-            onClick={() => {
-              props.onClick("previous");
-            }}
-          />
-        </Row> */}
       </fieldset>
     </Form>
   );
@@ -748,13 +736,8 @@ const Signup = () => {
 
   const handleClick = (buttonType, objectType = null, objectData = null) => {
     if (objectType === "merchant") {
-      console.log("merchant data", merchant);
-      console.log("objectData", objectData);
-
       setMerchant({ ...merchant, ...objectData });
     } else if (objectType === "formDataObject") {
-      console.log("formDataObject", formDataObject);
-
       setformDataObject({ ...formDataObject, ...objectData });
     }
     if (buttonType === "previous") {
@@ -769,7 +752,6 @@ const Signup = () => {
   };
 
   const onSubmit = async (newBusiness, merchantStripeId) => {
-    console.log("merchantStripeId", merchantStripeId);
     const newForm = new FormData();
     // set values from formDataObject into business object
     newBusiness.classification = formDataObject.classification;
@@ -790,14 +772,12 @@ const Signup = () => {
 
     newMerchant.numberOfBusinesses = formDataObject.numberOfBusinesses;
     newMerchant.stripeId = merchantStripeId;
-    console.log("newMerchant", newMerchant);
 
     // set the stripe ID returned from the backend
     newForm.append("merchant", JSON.stringify(newMerchant));
 
     // set the merchant id in business to be the same as the new merchant
     newBusiness.merchantId = newMerchant.id;
-    console.log("newBusiness", newBusiness);
     newForm.append("business", JSON.stringify(newBusiness));
 
     LocalStorageManager.shared.setItem("merchant", newMerchant);
@@ -810,7 +790,6 @@ const Signup = () => {
       false,
       true
     );
-    console.log("responseBody", responseBody);
 
     const confirmed_new_business = new Business(
       responseBody.confirmed_new_business
@@ -819,8 +798,6 @@ const Signup = () => {
       "json",
       responseBody.confirmed_new_merchant
     );
-    console.log("confirmed_new_business", confirmed_new_business);
-    console.log("responseBody.token", responseBody.headers.token);
 
     LocalStorageManager.shared.setItem("business", confirmed_new_business);
     LocalStorageManager.shared.setItem("merchant", confirmed_new_merchant);

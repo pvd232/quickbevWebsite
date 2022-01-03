@@ -677,7 +677,7 @@ def instantiate_db_connection():
     create_everything()
 
 
-def inactivate_db():
+def deactivate_db():
     businesses = db.session.query(Business).all()
     drinks = db.session.query(Drink).all()
 
@@ -688,4 +688,3 @@ def inactivate_db():
         drink.is_active = False
 
     db.session.commit()
-# instantiate_db_connection()

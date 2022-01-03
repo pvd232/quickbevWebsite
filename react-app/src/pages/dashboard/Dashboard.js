@@ -13,6 +13,8 @@ import IconButton from "@material-ui/core/IconButton";
 import SmokeFreeIcon from "@material-ui/icons/SmokeFree";
 import HelpIcon from "@material-ui/icons/Help";
 import SettingsIcon from "@material-ui/icons/Settings";
+import PersonOff from "@material-ui/icons/PersonOff";
+import NoBusiness from "@material-ui/icons/NoBusiness";
 import Container from "@material-ui/core/Container";
 import Grid from "@material-ui/core/Grid";
 import { Link } from "react-router-dom";
@@ -204,12 +206,7 @@ const Dashboard = (props) => {
     prevHelpOpen.current = helpOpen;
   }, [settingsOpen, helpOpen]);
   const pages = [
-    <HomeSplash
-      // orders={props.orders}
-      // businesses={props.businesses}
-      fixedHeightPaper={fixedHeightPaper}
-      classes={classes}
-    />,
+    <HomeSplash fixedHeightPaper={fixedHeightPaper} classes={classes} />,
     <Customers
       customers={props.customers}
       fixedHeightPaper={fixedHeightPaper}
@@ -228,20 +225,9 @@ const Dashboard = (props) => {
       fixedHeightPaper={fixedHeightPaper}
       classes={classes}
     />,
-    <Orders
-      // drinks={props.drinks}
-      // orders={props.orders}
-      // businesses={props.businesses}
-      fixedHeightPaper={fixedHeightPaper}
-      classes={classes}
-    />,
-    <Menu
-      // businesses={props.businesses}
-      fixedHeightPaper={fixedHeightPaper}
-      classes={classes}
-    ></Menu>,
+    <Orders fixedHeightPaper={fixedHeightPaper} classes={classes} />,
+    <Menu fixedHeightPaper={fixedHeightPaper} classes={classes}></Menu>,
     <Businesses
-      // businesses={props.businesses}
       fixedHeightPaper={fixedHeightPaper}
       classes={classes}
       onUpdate={(newBusinesses) => props.updateBusinesses(newBusinesses)}
@@ -324,12 +310,24 @@ const Dashboard = (props) => {
           >
             Dashboard
           </Typography>
-          {LocalStorageManager.shared.currentMerchant.isAdministrator ===
-          true ? (
-            <IconButton color="inherit" href="/menubuilder">
-              <SmokeFreeIcon></SmokeFreeIcon>
-            </IconButton>
-          ) : null}
+          {LocalStorageManager.shared.currentMerchant.isAdministrator === true
+            ? ((
+                <IconButton color="inherit" href="/menubuilder">
+                  <PersonOff></PersonOff>
+                </IconButton>
+              ),
+              (
+                <IconButton color="inherit" href="/invalidate">
+                  <NoBusiness></NoBusiness>
+                </IconButton>
+              ),
+              (
+                <IconButton color="inherit" href="/invalidate">
+                  <SmokeFreeIcon></SmokeFreeIcon>
+                </IconButton>
+              ))
+            : null}
+
           <IconButton
             color="inherit"
             onClick={handleSettingsToggle}
@@ -423,8 +421,6 @@ const Dashboard = (props) => {
             }}
           />
         </List>
-        {/* <Divider />
-        <List>{secondaryListItems}</List> */}
       </Drawer>
       <main className={classes.content}>
         <div className={classes.appBarSpacer} />
@@ -437,7 +433,6 @@ const Dashboard = (props) => {
             {modalBody}
           </Modal>
           <Grid container spacing={3}>
-            {/* Chart */}
             {pages[currentPageIndex]}
           </Grid>
           <Box pt={4}>
