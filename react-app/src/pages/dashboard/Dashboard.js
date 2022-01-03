@@ -11,10 +11,11 @@ import Typography from "@material-ui/core/Typography";
 import Divider from "@material-ui/core/Divider";
 import IconButton from "@material-ui/core/IconButton";
 import SmokeFreeIcon from "@material-ui/icons/SmokeFree";
+import BusinessIcon from "@material-ui/icons/Business";
+import LocalDrinkIcon from "@material-ui/icons/LocalDrink";
+
 import HelpIcon from "@material-ui/icons/Help";
 import SettingsIcon from "@material-ui/icons/Settings";
-import PersonOff from "@material-ui/icons/PersonOff";
-import NoBusiness from "@material-ui/icons/NoBusiness";
 import Container from "@material-ui/core/Container";
 import Grid from "@material-ui/core/Grid";
 import { Link } from "react-router-dom";
@@ -206,7 +207,12 @@ const Dashboard = (props) => {
     prevHelpOpen.current = helpOpen;
   }, [settingsOpen, helpOpen]);
   const pages = [
-    <HomeSplash fixedHeightPaper={fixedHeightPaper} classes={classes} />,
+    <HomeSplash
+      // orders={props.orders}
+      // businesses={props.businesses}
+      fixedHeightPaper={fixedHeightPaper}
+      classes={classes}
+    />,
     <Customers
       customers={props.customers}
       fixedHeightPaper={fixedHeightPaper}
@@ -225,9 +231,20 @@ const Dashboard = (props) => {
       fixedHeightPaper={fixedHeightPaper}
       classes={classes}
     />,
-    <Orders fixedHeightPaper={fixedHeightPaper} classes={classes} />,
-    <Menu fixedHeightPaper={fixedHeightPaper} classes={classes}></Menu>,
+    <Orders
+      // drinks={props.drinks}
+      // orders={props.orders}
+      // businesses={props.businesses}
+      fixedHeightPaper={fixedHeightPaper}
+      classes={classes}
+    />,
+    <Menu
+      // businesses={props.businesses}
+      fixedHeightPaper={fixedHeightPaper}
+      classes={classes}
+    ></Menu>,
     <Businesses
+      // businesses={props.businesses}
       fixedHeightPaper={fixedHeightPaper}
       classes={classes}
       onUpdate={(newBusinesses) => props.updateBusinesses(newBusinesses)}
@@ -318,15 +335,14 @@ const Dashboard = (props) => {
               </IconButton>
 
               <IconButton color="inherit" href="/deactivate-business">
-                <SignalWifiBarIcon></SignalWifiBarIcon>
+                <LocalDrinkIcon></LocalDrinkIcon>
               </IconButton>
 
               <IconButton color="inherit" href="/deactivate-drink">
-                <SatelliteIcon></SatelliteIcon>
+                <BusinessIcon></BusinessIcon>
               </IconButton>
             </>
           ) : null}
-
           <IconButton
             color="inherit"
             onClick={handleSettingsToggle}
@@ -420,6 +436,8 @@ const Dashboard = (props) => {
             }}
           />
         </List>
+        {/* <Divider />
+        <List>{secondaryListItems}</List> */}
       </Drawer>
       <main className={classes.content}>
         <div className={classes.appBarSpacer} />
@@ -432,6 +450,7 @@ const Dashboard = (props) => {
             {modalBody}
           </Modal>
           <Grid container spacing={3}>
+            {/* Chart */}
             {pages[currentPageIndex]}
           </Grid>
           <Box pt={4}>
