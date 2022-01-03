@@ -852,7 +852,7 @@ def business(session_token):
             merchant = Merchant_Service().get_merchant(merchant_id=merchant_id)
             if merchant.is_administrator:
                 businesses = Business_Service().get_merchant_business(merchant_id=merchant.id)
-                response["businesses"] = businesses
+                response["businesses"] = [x.dto_serialize() for x in businesses]
                 return Response(status=200, response=json.dumps(response), headers=headers)
             
             business_e_tag = json.loads(request.headers.get("If-None-Match"))
