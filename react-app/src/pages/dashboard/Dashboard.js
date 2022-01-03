@@ -310,23 +310,22 @@ const Dashboard = (props) => {
           >
             Dashboard
           </Typography>
-          {LocalStorageManager.shared.currentMerchant.isAdministrator === true
-            ? ((
-                <IconButton color="inherit" href="/menubuilder">
-                  <PersonOff></PersonOff>
-                </IconButton>
-              ),
-              (
-                <IconButton color="inherit" href="/invalidate">
-                  <NoBusiness></NoBusiness>
-                </IconButton>
-              ),
-              (
-                <IconButton color="inherit" href="/invalidate">
-                  <SmokeFreeIcon></SmokeFreeIcon>
-                </IconButton>
-              ))
-            : null}
+          {LocalStorageManager.shared.currentMerchant.isAdministrator ===
+          true ? (
+            <>
+              <IconButton color="inherit" href="/menubuilder">
+                <SmokeFreeIcon></SmokeFreeIcon>
+              </IconButton>
+
+              <IconButton color="inherit" href="/deactivate-business">
+                <SignalWifiBarIcon></SignalWifiBarIcon>
+              </IconButton>
+
+              <IconButton color="inherit" href="/deactivate-drink">
+                <SatelliteIcon></SatelliteIcon>
+              </IconButton>
+            </>
+          ) : null}
 
           <IconButton
             color="inherit"
