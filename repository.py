@@ -23,7 +23,6 @@ class Drink_Repository(object):
 
     def add_drinks(self, session: scoped_session, drink_list: list[Drink_Domain]):
         for drink in drink_list:
-            print('drink biz id',type(drink.business_id))
             new_drink = Drink(id=drink.id, name=drink.name, description=drink.description,
                               price=drink.price, business_id=drink.business_id)
             session.add(new_drink)
@@ -95,11 +94,9 @@ class Order_Repository(object):
         return orders
 
     def get_merchant_employee_orders(self, session: scoped_session, business_id: UUID):
-        print('business_id', business_id)
         # only get active orders
         orders = session.query(Order, Customer.first_name.label('customer_first_name'), Customer.last_name.label('customer_last_name')).join(
             Customer, Order.customer_id == Customer.id).filter(Order.business_id == business_id, Order.completed == False, Order.refunded == False).all()
-        print('orders', orders)
         return orders
 
     def create_stripe_ephemeral_key(self, session: scoped_session, request: dict):

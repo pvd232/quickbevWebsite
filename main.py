@@ -17,14 +17,13 @@ stripe.api_key = "sk_test_51I0xFxFseFjpsgWvh9b1munh6nIea6f5Z8bYlIDfmKyNq6zzrgg8i
 secret = '3327aa0ee1f61998369e815c17b1dc5eaf7e728bca14f6fe557af366ee6e20f9'
 ip_address = "10.0.0.25"
 env = "production"
-apns = "production"
+apns = "debug"
 
 # theme color RGB = rgb(134,130,230), hex = #8682E6
 # nice seafoam color #19cca3
 
 
 def send_apn(device_token, action, order_id: UUID = None):
-    print('order_id', order_id)
     team_id = '6YGH9XK378'
     # converted authkey to private key that can be properly encoded as RSA key by jwt.encode method using advice here https://github.com/lcobucci/jwt/issues/244
     with open(os.getcwd()+"/private_key.pem") as f:
@@ -127,7 +126,6 @@ def d():
 @app.route('/test_token/<string:business_id>', methods=["GET"])
 def test_token(business_id):
     fcm_token = Business_Service().get_device_token(business_id)
-    print('fcm_token', fcm_token)
     customer = {"first_name": "peter", "last_name": "driscoll"}
     new_order = {"customer": customer,
                  "id": "7f1d9f95-5313-462f-880c-5d700f9f77f0"}
@@ -200,16 +198,13 @@ def inventory(session_token):
 
     drink_list = []
     client_etag = json.loads(request.headers.get("If-None-Match"))
-    print('client_etag',client_etag)
     is_merchant = request.headers.get("merchant-id")
     is_business = request.headers.get("business-id")
-    print('is_business',is_business)
 
     # swift drinks
     if client_etag and not is_merchant:
         if not ETag_Service().validate_etag(client_etag):
             drinks = Drink_Service().get_drinks()
-            print("could not validate drinkEtag")
             for drink in drinks:
                 drinkDTO = {}
                 drinkDTO['drink'] = drink.dto_serialize()
@@ -219,8 +214,6 @@ def inventory(session_token):
             etag = ETag_Service().get_etag("drink")
             headers["e-tag-id"] = str(etag.id)
             headers["e-tag-category"] = etag.category
-        else:
-            print('drink Etag exists but it was validated')
 
     # javascript drinks
     elif client_etag and is_merchant:
@@ -239,7 +232,6 @@ def inventory(session_token):
 
      # dart drinks
     elif client_etag and is_business:
-        print("dart drinks")
         if not ETag_Service().validate_business_etag(business_id=is_business, e_tag=client_etag):
             status = 200
             drinks = Drink_Service().get_business_drinks(business_id=is_business)
@@ -248,12 +240,10 @@ def inventory(session_token):
                 drinkDTO['drink'] = drink.dto_serialize()
                 drink_list.append(drinkDTO)
             response['drinks'] = drink_list
-            print('drink_list',drink_list)
 
             e_tag_id = ETag_Service().get_business_etag(
                 e_tag=client_etag, business_id=is_business)
             headers["e-tag-id"] = e_tag_id
-            print('e_tag_id',e_tag_id)
             headers["e-tag-category"] = "drink"
         else:
             status = 201
@@ -261,7 +251,6 @@ def inventory(session_token):
 
     # swift
     elif not client_etag and not is_merchant:
-        print('no client drink Etag')
         etag = ETag_Service().get_etag("drink")
         headers["e-tag-id"] = str(etag.id)
         headers["e-tag-category"] = etag.category
@@ -331,8 +320,6 @@ def orders(session_token):
             # 1. send push notification to device saying the order is ready
             device_token = Customer_Service().get_device_token(
                 order_to_update["customer_id"])
-            print("customer_id", order_to_update["customer_id"])
-            print('device_token', device_token)
             send_apn(device_token, 'order_completed', order_to_update["id"])
         return Response(status=200)
     elif request.method == 'POST':
@@ -343,7 +330,6 @@ def orders(session_token):
 
         send_fcm(business_device_token, updated_order)
         response['order'] = updated_order.dto_serialize()
-        print('response[order]', response['order'])
         return Response(status=200, response=json.dumps(response))
     elif request.method == 'OPTIONS':
         return Response(status=200, headers=headers)
@@ -492,7 +478,6 @@ def send_confirmation_email(jwt_token, email_type, user=None, business=None, str
 
         sender_address = 'confirmation@quickbev.us'
         email = bouncer_id
-        print('email staged bouncer', email)
 
         # Setup the MIME
         message = MIMEMultipart()
@@ -658,7 +643,6 @@ def customer():
         generated_new_customer = Customer_Service().register_new_customer(
             requested_new_customer)
         device_token = request.headers.get("device-token")
-        print('device_token', device_token)
 
         # generate a secure JSON token using the user's unverified email address. then i embed this token in the url for the verify account link sent in the email. i then parse this string when the user navigates to the page, securely verifying their email by using the
         if generated_new_customer:
@@ -725,7 +709,6 @@ def validate_customer():
     if status:
         response = {}
         response["customer"] = status.dto_serialize()
-        print('response["customer"]',response["customer"])
         jwt_token = jwt.encode(
             {"sub": customer_id}, key=secret, algorithm="HS256")
         headers = {"jwt-token": jwt_token}
@@ -861,11 +844,8 @@ def business(session_token):
         else:
             businesses = Business_Service().get_businesses()
             customer_etag = json.loads(request.headers.get("If-None-Match"))
-            print('customer_etag',customer_etag)
             if customer_etag:
-                print("biz etag exists")
                 if not ETag_Service().validate_etag(customer_etag):
-                    print("biz etag exists and was validated")
                     for business in businesses:
                         # turn into dictionaries
                         businessDTO = {}
@@ -876,10 +856,7 @@ def business(session_token):
                     etag = ETag_Service().get_etag("business")
                     headers["e-tag-category"] = etag.category
                     headers["e-tag-id"] = str(etag.id)
-                else:
-                    print('biz client etag exists but it was validated')
             else:
-                print('no biz client etag')
                 etag = ETag_Service().get_etag("business")
                 headers["e-tag-category"] = etag.category
                 headers["e-tag-id"] = str(etag.id)
@@ -1231,15 +1208,14 @@ def validate_pin(session_token):
 def authenticate_business(session_token):
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
-    
+
     def is_valid_uuid(val):
         try:
             uuid.UUID(str(val))
             return True
         except ValueError:
             return False
-        
-        
+
     headers = {}
     business_id = json.loads(request.data)['business_id']
     if is_valid_uuid(business_id) == True:
@@ -1339,10 +1315,8 @@ def merchant():
         new_merchant = Merchant_Service().add_merchant(requested_merchant)
         new_business = Business_Service().add_business(requested_business)
         biz_etag = ETag_Service().get_etag(category="business")
-        print('1332 biz_etag',biz_etag)
         if new_merchant and new_business:
             ETag_Service().update_etag(category="business")
-            print('1335 biz_etag',biz_etag)
             # when a merchant is created their business and drink etag ids are 0
             new_merchant.business_e_tag_id = 0
             new_merchant.drink_e_tag_id = 0

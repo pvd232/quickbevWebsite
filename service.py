@@ -186,7 +186,6 @@ class Order_Service(object):
         with session_scope() as session:
             orders = Order_Repository().get_merchant_employee_orders(
                 session, business_id)
-            print('orders in merchant employee', orders)
             for order in orders:
                 order_domain = Order_Domain(
                     order_object=order, is_merchant_employee_order=True)
