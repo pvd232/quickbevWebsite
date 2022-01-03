@@ -105,7 +105,7 @@ class Order_Repository(object):
         orders = session.query(Order, Customer.first_name.label('customer_first_name'), Customer.last_name.label('customer_last_name')).join(
             Customer, Order.customer_id == Customer.id).filter(Order.business_id == business_id, Order.completed == False, Order.refunded == False).all()
         a = type(orders[0])
-        print('a = type(orders[0])', a=type(orders[0]))
+        print('a = type(orders[0])', type(orders[0]))
         print('orders[0]', orders[0])
         return orders
 
