@@ -436,8 +436,6 @@ const Dashboard = (props) => {
             }}
           />
         </List>
-        {/* <Divider />
-        <List>{secondaryListItems}</List> */}
       </Drawer>
       <main className={classes.content}>
         <div className={classes.appBarSpacer} />
@@ -450,7 +448,6 @@ const Dashboard = (props) => {
             {modalBody}
           </Modal>
           <Grid container spacing={3}>
-            {/* Chart */}
             {pages[currentPageIndex]}
           </Grid>
           <Box pt={4}>
