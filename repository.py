@@ -35,6 +35,13 @@ class Drink_Repository(object):
             drink_to_update.image_url = drink.image_url
         return True
 
+    def inactivate_drink(self, session: scoped_session, drink_id: UUID):
+        drink_to_deativate = session.query(
+            Drink).filter(Drink.id == drink_id).first()
+        if drink_to_deativate != None:
+            drink_to_deativate.is_active = False
+        return
+
 
 class Order_Repository(object):
     def get_customer_order_status(self, session: scoped_session, customer_id: str):
@@ -311,6 +318,13 @@ class Business_Repository(object):
                     business_id=new_business.id, day=day, opening_time=business.schedule[i].opening_time, closing_time=business.schedule[i].closing_time, is_closed=business.schedule[i].is_closed)
             session.add(new_business_schedule_day)
         return business
+
+    def inactivate_business(self, session: scoped_session, business_id: UUID):
+        business_to_deativate = session.query(Business).filter(
+            Business.id == business_id).first()
+        if business_to_deativate != None:
+            business_to_deativate.is_active = False
+        return
 
     def get_merchant_businesses(self, session: scoped_session, merchant_id: str):
         businesses = session.query(Business).filter(

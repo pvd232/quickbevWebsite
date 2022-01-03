@@ -24,6 +24,7 @@ stripe_fee_percentage = 0.029
 service_fee_percentage = 0.1
 quick_pass_service_fee_percentage = 0.1
 
+
 @compiles(DropTable, "postgresql")
 def _compile_drop_table(element, compiler, **kwargs):
     return compiler.visit_drop_table(element) + " CASCADE"
@@ -643,7 +644,8 @@ def create_orders_and_customers():
         business_where_order_occured = [
             x for x in businesses if x.id == drink.business_id][0]
 
-        test_order = Order(id=order_id, customer_id=test_customer_id, business_id=drink.business_id, merchant_stripe_id=business_where_order_occured.merchant_stripe_id, total=total, stripe_charge_total=stripe_charge_total, subtotal=subtotal, sales_tax_total=sales_tax, sales_tax_percentage=sales_tax_percentage, tip_percentage=tip_percentage, tip_total=tip_total, service_fee=service_fee, payment_intent_id=uuid.uuid4().hex)
+        test_order = Order(id=order_id, customer_id=test_customer_id, business_id=drink.business_id, merchant_stripe_id=business_where_order_occured.merchant_stripe_id, total=total, stripe_charge_total=stripe_charge_total,
+                           subtotal=subtotal, sales_tax_total=sales_tax, sales_tax_percentage=sales_tax_percentage, tip_percentage=tip_percentage, tip_total=tip_total, service_fee=service_fee, payment_intent_id=uuid.uuid4().hex)
         db.session.add(test_order)
         for i in range(num_drinks):
             order_drink = Order_Drink(drink_id=drink.id, order_id=order_id)
@@ -673,4 +675,17 @@ def create_everything():
 
 def instantiate_db_connection():
     create_everything()
+
+
+def inactivate_db():
+    businesses = db.session.query(Business).all()
+    drinks = db.session.query(Drink).all()
+
+    for business in businesses:
+        business.is_active = False
+
+    for drink in drinks:
+        drink.is_active = False
+
+    db.session.commit()
 # instantiate_db_connection()

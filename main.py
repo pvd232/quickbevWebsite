@@ -1,5 +1,5 @@
 from flask import Response, request, render_template
-from models import app, instantiate_db_connection
+from models import app, instantiate_db_connection, inactivate_db
 from service import *
 import json
 import stripe
@@ -107,11 +107,34 @@ def b():
 
 @app.route("/c")
 def c():
-    order_id = request.args.get("order_id")
-    the_order = Order_Service().get_order(order_id)
-    # device_token = Customer_Service().get_device_token('peter.driscoll@pwc.com')
-    # send_apn(device_token, 'order_completed')
-    return Response(status=200, response=json.dumps({"order": the_order.dto_serialize()}))
+    inactivate_db()
+    return Response(status=200)
+
+# will need to link this to web interface and add session_token (grabbed from LocalStorage) for better security
+
+
+@app.route("/drink/inactivate/<string_session_token>")
+def inactivate_drink(session_token):
+    if not jwt.decode(session_token, secret, algorithms=["HS256"]):
+        return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
+
+    drink_id = request.args.get('drink_id')
+    drink_uuid = uuid.UUID(drink_id)
+    Drink_Service().inactivate_drink(drink_id=drink_uuid)
+    return Response(status=200)
+
+# will need to link this to web interface and add session_token (grabbed from LocalStorage) for better security
+
+
+@app.route("/business/inactivate/<string_session_token>")
+def inactivate_business(session_token):
+    if not jwt.decode(session_token, secret, algorithms=["HS256"]):
+        return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
+
+    business_id = request.args.get('business_id')
+    business_uuid = uuid.UUID(business_id)
+    Business_Service().inactivate_business(business_id=business_uuid)
+    return Response(status=200)
 
 
 @app.route("/d")
@@ -1375,7 +1398,7 @@ def validate_merchant():
 
 
 @app.route('/merchant/pin/<string:session_token>', methods=['POST'])
-def authenticate_pin_a(session_token):
+def authenticate_pin(session_token):
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
     data = json.loads(request.data)
@@ -1387,7 +1410,7 @@ def authenticate_pin_a(session_token):
 
 
 @app.route('/business/capacity/<string:session_token>', methods=['POST'])
-def business_capacity_a(session_token):
+def business_capacity(session_token):
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
     data = json.loads(request.data)
@@ -1464,8 +1487,11 @@ def validate_merchant_stripe_account():
         return response
 
 
-@app.route('/menu', methods=['POST', 'GET'])
-def add_menu():
+@app.route('/menu/<string:session_token>', methods=['POST', 'GET'])
+def add_menu(session_token):
+    if not jwt.decode(session_token, secret, algorithms=["HS256"]):
+        return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
+
     headers = {}
     response = {}
     if request.method == 'OPTIONS':
@@ -1536,7 +1562,7 @@ def add_menu():
 
 
 @app.route('/quick_pass/<string:session_token>', methods=['POST', 'PUT', 'GET', 'OPTIONS'])
-def quick_pass_a(session_token):
+def quick_pass(session_token):
     response = {}
     headers = {}
     headers["Access-Control-Allow-Origin"] = request.origin
@@ -1607,7 +1633,7 @@ def verify_bouncer_jwt():
 
 
 @app.route('/quick_pass/payment_intent/<string:session_token>', methods=['POST', 'PUT', 'GET'])
-def quick_pass_payment_intent_a(session_token):
+def quick_pass_payment_intent(session_token):
     response = {}
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))

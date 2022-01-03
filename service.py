@@ -80,6 +80,10 @@ class Drink_Service(object):
         with session_scope() as session:
             return Drink_Repository().update_drinks(session, drinks)
 
+    def inactivate_drink(self, drink_id):
+        with session_scope() as session:
+            return Drink_Repository().inactivate_drink(session=session, drink_id=drink_id)
+
 
 class Order_Service(object):
     def get_customer_order_status(self, customer_id: str):
@@ -593,6 +597,10 @@ class Business_Service(object):
         with session_scope() as session:
             return Business_Repository().update_capactiy_status(session, business_id, capacity_status)
 
+    def inactivate_business(self, business_id):
+        with session_scope() as session:
+            return Business_Repository().inactivate_business(session=session, business_id=business_id)
+
 
 class Tab_Service(object):
     def post_tab(self, tab: dict):
@@ -813,13 +821,13 @@ class Quick_Pass_Service(object):
                 closing_day = datetime.now().day + 1
             else:
                 closing_day = datetime.now().day
-            
+
             closing_year = datetime.today().year
             closing_month = datetime.today().month
             if datetime.today().month in [9, 4, 6, 11]:
                 if closing_day >= 31:
                     closing_day = 1
-                    closing_month = datetime.today().month + 1   
+                    closing_month = datetime.today().month + 1
             else:
                 if closing_day > 31:
                     closing_day = 1
@@ -827,8 +835,7 @@ class Quick_Pass_Service(object):
             if closing_month > 12:
                 closing_month = 1
                 closing_year = datetime.today().year + 1
-            
-                
+
             expiration_hour = datetime.now().hour + 2
             expiration_day = datetime.now().day
             expiration_year = datetime.today().year
@@ -840,7 +847,7 @@ class Quick_Pass_Service(object):
             if datetime.today().month in [9, 4, 6, 11]:
                 if expiration_day >= 31:
                     expiration_day = 1
-                    expiration_month = datetime.today().month + 1   
+                    expiration_month = datetime.today().month + 1
             else:
                 if expiration_day > 31:
                     expiration_day = 1
@@ -848,15 +855,12 @@ class Quick_Pass_Service(object):
             if expiration_month > 12:
                 expiration_month = 1
                 expiration_year = datetime.today().year + 1
-                
-            
-                    
-            
-            
+
             closing_date_time = datetime(closing_year, closing_month, closing_day, business.schedule[datetime.today(
             ).weekday()].closing_time.hour, business.schedule[datetime.today().weekday()].closing_time.minute)
-            
-            expiration_date_time = datetime(expiration_year, expiration_month, expiration_day, expiration_hour, datetime.now().minute)
+
+            expiration_date_time = datetime(
+                expiration_year, expiration_month, expiration_day, expiration_hour, datetime.now().minute)
 
             if expiration_date_time > closing_date_time or should_diplay_expiration_time == False:
                 expiration_date_time = closing_date_time
