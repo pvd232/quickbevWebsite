@@ -1398,7 +1398,7 @@ def validate_merchant():
 
 
 @app.route('/merchant/pin/<string:session_token>', methods=['POST'])
-def authenticate_pin(session_token):
+def authenticate_merchant_pin(session_token):
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
     data = json.loads(request.data)
