@@ -18,7 +18,6 @@ async function handlePlaceSelect(updateQuery, props) {
   const query = addressObject.formatted_address;
   updateQuery(query);
   props.onUpdate(query);
-  console.log(addressObject);
 }
 
 function SearchLocationInput(props) {
@@ -39,7 +38,7 @@ function SearchLocationInput(props) {
       placeholder="1234 Main St"
       required
       value={query}
-      autocomplete="off"
+      autoComplete="off"
       style={{ marginBottom: "2%" }}
     />
   );

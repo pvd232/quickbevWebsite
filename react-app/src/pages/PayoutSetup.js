@@ -16,7 +16,6 @@ const PayoutSetup = (props) => {
 
   const getRedirectInfo = async () => {
     if (!props.callback) {
-      console.log("not callback");
       return API.makeRequest("GET", `/merchant/stripe`);
     } else {
       return API.makeRequest(
@@ -28,7 +27,6 @@ const PayoutSetup = (props) => {
   const handleConnect = async () => {
     let responseContent = await getRedirectInfo();
     const merchantStripeId = responseContent.headers.stripe;
-    console.log("merchantStripeId", merchantStripeId);
 
     let url = responseContent.url;
     if (url && merchantStripeId) {
@@ -96,10 +94,7 @@ const PayoutSetup = (props) => {
               const eventTarget = event.target;
               handleConnect().then((merchantStripeId) =>
                 props.onSubmit(eventTarget, merchantStripeId).then(() => {
-                  LocalStorageManager.shared.setItem(
-                    "first_login",
-                    true
-                  );
+                  LocalStorageManager.shared.setItem("first_login", true);
                   setRedirect(redirectUrl);
                 })
               );

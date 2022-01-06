@@ -93,8 +93,6 @@ const CreateYourAccountFieldset = (props) => {
         const headers = { email: newMerchant.id };
         API.makeRequest("GET", "/merchant/validate", false, headers).then(
           (response) => {
-            console.log("response", response);
-            console.log("response.status", response.status);
             if (response.status === 200) {
               // if the username is available the response from the API will be true
               props.onClick("next", "merchant", newMerchant);
@@ -251,10 +249,7 @@ const PromoteYourMenuFieldset = (props) => {
   const [selectedFileName, setSelectedFileName] = useState("");
 
   const onFileChange = (event) => {
-    console.log("event", event);
     // Update the state
-    console.log("event.target.files[0]", event.target.files[0].name);
-    console.log("event.target.files", event.target.files);
     setSelectedFile(event.target.files[0]);
     setSelectedFileName(event.target.files[0].name);
   };
@@ -585,7 +580,7 @@ const BusinessFieldset = (props) => {
       // set all the values for the business
       // if the user comes back to this page before submitting to change stuff it will reset the values
       const copyOfFormValue = {
-        name: formValue["name"],
+        name: formValue["name"].lowerCase(),
         phone_number: formValue["phoneNumber"],
         address: formValue["address"],
         street: formValue["street"],
@@ -617,9 +612,8 @@ const BusinessFieldset = (props) => {
     "saturday",
     "sunday",
   ];
-  console.log("schedule", schedule);
   return (
-    <Form autocomplete="off">
+    <Form autoComplete="off">
       <fieldset>
         <h2 className="fs-title">Your Business</h2>
         <Form.Label>Name</Form.Label>
@@ -710,7 +704,7 @@ const BusinessFieldset = (props) => {
             />
           </>
         ))}
-        ,<Form.Label>Address</Form.Label>
+        <Form.Label>Address</Form.Label>
         <SearchLocationInput onUpdate={(address) => setAddress(address)} />
         <Row>
           <Col
@@ -790,7 +784,6 @@ const Signup = () => {
       false,
       true
     );
-
     const confirmed_new_business = new Business(
       responseBody.confirmed_new_business
     );
@@ -798,7 +791,6 @@ const Signup = () => {
       "json",
       responseBody.confirmed_new_merchant
     );
-
     LocalStorageManager.shared.setItem("business", confirmed_new_business);
     LocalStorageManager.shared.setItem("merchant", confirmed_new_merchant);
     LocalStorageManager.shared.setItem(

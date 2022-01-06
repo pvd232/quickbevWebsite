@@ -50,8 +50,8 @@ db = SQLAlchemy(app)
 class Drink(db.Model):
     id = db.Column(UUID(as_uuid=True), primary_key=True,
                    unique=True, nullable=False)
-    name = db.Column(db.String(80), nullable=False)
-    description = db.Column(db.String(80), nullable=False)
+    name = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.String(500), nullable=False)
     price = db.Column(db.Float(), nullable=False)
     image_url = db.Column(db.String(200), nullable=True)
     is_active = db.Column(db.Boolean(), default=True, nullable=False)
@@ -99,8 +99,8 @@ class Business(db.Model):
         'merchant_stripe_account.id'), nullable=False)
     merchant_id = db.Column(db.String(80), db.ForeignKey(
         'merchant.id'), nullable=False)
-    merchant_pin = db.Column(db.String(200), nullable=True)
-    name = db.Column(db.String(80), nullable=False)
+    merchant_pin = db.Column(db.String(80), nullable=True)
+    name = db.Column(db.String(200), nullable=False)
     classification = db.Column(db.String(80), nullable=False)
     date_joined = db.Column(
         db.DateTime(), default=datetime.now, nullable=False)
@@ -110,13 +110,13 @@ class Business(db.Model):
     phone_number = db.Column(db.BigInteger(), nullable=False)
     drink_e_tag_id = db.Column(db.BigInteger(), nullable=True)
     # not all businesses will have a menu URL or file upload, but they could be specific to each business
-    menu_url = db.Column(db.String(80), nullable=True)
-    street = db.Column(db.String(80), nullable=False)
-    city = db.Column(db.String(80), nullable=False)
+    menu_url = db.Column(db.String(200), nullable=True)
+    street = db.Column(db.String(200), nullable=False)
+    city = db.Column(db.String(100), nullable=False)
     state = db.Column(db.String(80), nullable=False)
     zipcode = db.Column(db.Integer(), nullable=True)
     suite = db.Column(db.String(80), nullable=True)
-    address = db.Column(db.String(80), nullable=False)
+    address = db.Column(db.String(500), nullable=False)
     at_capacity = db.Column(db.Boolean(), default=True, nullable=False)
     quick_pass_price = db.Column(db.Float(), default=20.0, nullable=False)
     quick_passes_per_hour = db.Column(db.Integer(), default=30, nullable=False)
@@ -207,10 +207,9 @@ class Merchant_Employee(db.Model):
     __tablename__ = 'merchant_employee'
     id = db.Column(db.String(80), primary_key=True,
                    unique=True, nullable=False)
-    pin = db.Column(db.String(200), nullable=False)
+    pin = db.Column(db.String(80), nullable=False)
     first_name = db.Column(db.String(80), nullable=False)
     last_name = db.Column(db.String(80), nullable=False)
-    phone_number = db.Column(db.BigInteger(), nullable=False)
     is_active = db.Column(db.Boolean(), default=True, nullable=False)
     logged_in = db.Column(db.Boolean(), default=False, nullable=False)
     business_id = db.Column(UUID(as_uuid=True), db.ForeignKey(
@@ -352,7 +351,6 @@ class Quick_Pass(db.Model):
     payment_intent_id = db.Column(db.String(80), unique=True, nullable=False)
     # the time the pass was actually used to get into the bar
     time_checked_in = db.Column(db.DateTime(), nullable=True)
-    is_active = db.Column(db.Boolean(), default=False, nullable=False)
     # the time the pass will become active and the user is able to enter the bar with it
     activation_time = db.Column(db.DateTime(), nullable=True)
     expiration_time = db.Column(db.DateTime(), nullable=False)
@@ -403,18 +401,18 @@ class Order_Drink(db.Model):
 class Tab (db.Model):
     id = db.Column(UUID(as_uuid=True), primary_key=True,
                    unique=True, nullable=False)
-    name = db.Column(db.String(80), nullable=False)
+    name = db.Column(db.String(200), nullable=False)
     business_id = db.Column(UUID(as_uuid=True), db.ForeignKey(
         'business.id'), nullable=False)
     customer_id = db.Column(db.String(80), db.ForeignKey(
         'customer.id'), nullable=False)
-    street = db.Column(db.String(80), nullable=False)
-    city = db.Column(db.String(80), nullable=False)
+    street = db.Column(db.String(200), nullable=False)
+    city = db.Column(db.String(100), nullable=False)
     state = db.Column(db.String(80),  nullable=False)
     zipcode = db.Column(db.Integer(), nullable=False)
-    address = db.Column(db.String(80), nullable=False)
+    address = db.Column(db.String(500), nullable=False)
     date_time = db.Column(db.DateTime(), default=datetime.now, nullable=False)
-    description = db.Column(db.String(280), nullable=False)
+    description = db.Column(db.String(500), nullable=False)
     minimum_contribution = db.Column(db.Integer(), nullable=False)
     fundraising_goal = db.Column(db.Integer(), nullable=False)
 

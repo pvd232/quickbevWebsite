@@ -80,11 +80,10 @@ class Drink_Domain(object):
 
 
 class Order_Domain(object):
-    def __init__(self, order_object: Order = None, order_result=None, order_json: dict = None):
+    def __init__(self, order_object: Order = None, order_result=None, order_json: dict = None, is_customer_order=True):
         self.id = ''
         self.customer_id = ''
         # this property does not exist in the database, it is used for stripe_payment_intent and is captured in iOS during the order process
-        self.customer_stripe_id = ''
         self.business_id = ''
         self.merchant_stripe_id = ''
 
@@ -112,7 +111,7 @@ class Order_Domain(object):
         self.formatted_date_time = datetime.now().strftime(
             "%m/%d/%Y")
 
-        if order_object:
+        if order_object and is_customer_order == True:
             self.id = order_object.id
             self.customer_id = order_object.customer_id
             self.business_id = order_object.business_id
@@ -138,7 +137,7 @@ class Order_Domain(object):
                 if order_drink.drink_id not in unique_drinks_ids:
                     unique_drinks_ids.append(order_drink.drink_id)
                     new_order_drink = Order_Drink_Domain(
-                        order_drink_object=order_drink, is_merchant_order=True)
+                        order_drink_object=order_drink)
                     self.order_drink.append(new_order_drink)
                 else:
                     for previous_order_drink in self.order_drink:
@@ -195,12 +194,7 @@ class Order_Domain(object):
             # an order received as order_json will be an order sent from an iOS device, thus service fee is not included as a value because it is calculated in the backend
             self.id = uuid.UUID(order_json["id"])
             # these props will only be send from iOS
-            if "customer" in order_json.keys():
-                self.customer = Customer_Domain(
-                    customer_json=order_json['customer'])
-                self.customer_first_name = self.customer.first_name
-                self.customer_last_name = self.customer.last_name
-                self.customer_stripe_id = self.customer.stripe_id
+
             self.customer_id = order_json["customer_id"]
             self.merchant_stripe_id = order_json["merchant_stripe_id"]
             self.total = order_json["total"]
@@ -209,15 +203,36 @@ class Order_Domain(object):
             self.sales_tax_percentage = order_json["sales_tax_percentage"]
             self.business_id = order_json["business_id"]
             for order_drink in order_json['order_drink']:
-                print('order_drink', order_drink)
                 new_order_drink = Order_Drink_Domain(
-                    order_drink_json=order_drink, is_customer_order=True)
+                    order_drink_json=order_drink, is_customer_order=is_customer_order)
                 self.order_drink.append(new_order_drink)
-            self.date_time = datetime.fromtimestamp(order_json["date_time"])
+            self.date_time = datetime.fromtimestamp(
+                int(order_json["date_time"]))
             self.completed = order_json["completed"]
             self.refunded = order_json["refunded"]
             self.payment_intent_id = order_json["payment_intent_id"]
             self.card_information = order_json["card_information"]
+
+    def dto_serialize(self):
+        serialized_attributes = {}
+        attribute_names = list(self.__dict__.keys())
+        attributes = list(self.__dict__.values())
+        serialized_attributes = {}
+        for i in range(len(attributes)):
+            if attribute_names[i] == "id" or attribute_names[i] == "business_id":
+                serialized_attributes[attribute_names[i]] = str(attributes[i])
+            elif attribute_names[i] == 'date_time':
+                serialized_attributes[attribute_names[i]
+                                      ] = attributes[i].timestamp()
+            elif attribute_names[i] == "order_drink":
+                order_drink_list = []
+                for order_drink in attributes[i]:
+                    order_drink_list.append(order_drink.dto_serialize())
+                serialized_attributes[attribute_names[i]
+                                      ] = order_drink_list
+            else:
+                serialized_attributes[attribute_names[i]] = attributes[i]
+        return serialized_attributes
 
 
 class Order_Drink_Domain(object):
@@ -237,23 +252,16 @@ class Order_Drink_Domain(object):
 
     def dto_serialize(self):
         serialized_attributes = {}
-
-        if self.is_customer_order == True or self.is_merchant_order == True:
-            attribute_names = list(self.__dict__.keys())
-            attributes = list(self.__dict__.values())
-            serialized_attributes = {}
-            for i in range(len(attributes)):
-                if attribute_names[i] in ['id', 'drink_id', 'order_id']:
-                    serialized_attributes[attribute_names[i]] = str(
-                        attributes[i])
-                else:
-                    serialized_attributes[attribute_names[i]] = attributes[i]
-            return serialized_attributes
-        else:
-            serialized_attributes['order_id'] = str(self.order_id)
-            serialized_attributes["order_drink"] = [
-                x.dto_serialize() for x in self.order_drink]
-            return serialized_attributes
+        attribute_names = list(self.__dict__.keys())
+        attributes = list(self.__dict__.values())
+        serialized_attributes = {}
+        for i in range(len(attributes)):
+            if attribute_names[i] in ['id', 'drink_id', 'order_id']:
+                serialized_attributes[attribute_names[i]] = str(
+                    attributes[i])
+            else:
+                serialized_attributes[attribute_names[i]] = attributes[i]
+        return serialized_attributes
 
 
 class Customer_Domain(object):
@@ -291,7 +299,8 @@ class Customer_Domain(object):
             self.last_name = customer_json["last_name"]
             self.stripe_id = customer_json["stripe_id"]
             # convert swift timestamp to python datetime
-            self.date_time = datetime.fromtimestamp(customer_json["date_time"])
+            self.date_time = datetime.fromtimestamp(
+                int(customer_json["date_time"]))
             if "apple_id" in customer_json:
                 self.apple_id = customer_json["apple_id"]
             else:
@@ -416,7 +425,6 @@ class Merchant_Employee_Domain(object):
         self.pin = ''
         self.first_name = ''
         self.last_name = ''
-        self.phone_number = ''
         self.pin = ''
         self.business_id = ''
         self.merchant_id = ''
@@ -430,7 +438,6 @@ class Merchant_Employee_Domain(object):
             self.pin = merchant_employee_object.pin
             self.first_name = merchant_employee_object.first_name
             self.last_name = merchant_employee_object.last_name
-            self.phone_number = merchant_employee_object.phone_number
             self.logged_in = merchant_employee_object.logged_in
             # stripe ID is in an associative table now so if a vanilla merchant_employee object is returned then it wont have the stripe id
             if 'stripe_id' in merchant_employee_object.__dict__:
@@ -443,7 +450,6 @@ class Merchant_Employee_Domain(object):
             self.last_name = merchant_employee_json["last_name"]
             self.business_id = uuid.UUID(merchant_employee_json['business_id'])
             self.merchant_id = merchant_employee_json['merchant_id']
-            self.phone_number = merchant_employee_json["phone_number"]
             self.logged_in = merchant_employee_json['logged_in']
             # when the merchant_employee object is validated it wont be present initially
             if "stripe_id" in merchant_employee_json:
@@ -557,6 +563,7 @@ class Business_Domain(object):
             self.is_active = business_object.is_active
             self.quick_pass_price = business_object.quick_pass_price
             self.quick_pass_queue = business_object.quick_pass_queue
+            self.quick_pass_queue_hour = business_object.quick_pass_queue_hour
 
         if business_json:
             self.id = uuid.uuid4()
@@ -709,7 +716,7 @@ class Quick_Pass_Domain(object):
             self.price = quick_pass_object.price
             self.total = quick_pass_object.total
             self.service_fee_total = quick_pass_object.service_fee_total
-            self.sales_tax_total = quick_pass_object.sales_tax
+            self.sales_tax_total = quick_pass_object.sales_tax_total
             self.merchant_stripe_id = quick_pass_object.merchant_stripe_id
             self.activation_time = quick_pass_object.activation_time
             self.expiration_time = quick_pass_object.expiration_time
@@ -719,9 +726,9 @@ class Quick_Pass_Domain(object):
             self.id = uuid.UUID(quick_pass_json["id"])
             self.customer_id = quick_pass_json["customer_id"]
             self.activation_time = datetime.fromtimestamp(
-                quick_pass_json['activation_time'])
+                int(quick_pass_json['activation_time']))
             self.date_time = datetime.fromtimestamp(
-                quick_pass_json['date_time'])
+                int(quick_pass_json['date_time']))
             # will only need this property when receiving a new business queue order from a customer
             self.business_id = uuid.UUID(quick_pass_json["business_id"])
             self.merchant_stripe_id = quick_pass_json["merchant_stripe_id"]
@@ -731,20 +738,20 @@ class Quick_Pass_Domain(object):
             self.sales_tax_percentage = quick_pass_json["sales_tax_percentage"]
             self.sales_tax_total = quick_pass_json["sales_tax_total"]
             self.expiration_time = datetime.fromtimestamp(
-                quick_pass_json["expiration_time"])
+                int(quick_pass_json["expiration_time"]))
             self.card_information = quick_pass_json["card_information"]
             # optional values
             if quick_pass_json.__contains__('time_checked_in'):
                 self.time_checked_in = datetime.fromtimestamp(
-                    quick_pass_json["time_checked_in"])
+                    int(quick_pass_json["time_checked_in"]))
         elif js_object:
             self.id = js_object["id"]
             self.customer_id = js_object["customer_id"]
             self.activation_time = datetime.fromtimestamp(
-                js_object['activation_time'])
+                int(js_object['activation_time']))
             self.business_id = uuid.UUID(js_object["business_id"])
             self.time_checked_in = datetime.fromtimestamp(
-                js_object["time_checked_in"])
+                int(js_object["time_checked_in"]))
 
         # this is dummy data if there at no quick passes created yet
         elif quick_pass_json == None and quick_pass_object == None and js_object == None:

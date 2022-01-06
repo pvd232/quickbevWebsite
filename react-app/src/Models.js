@@ -1,3 +1,28 @@
+const formatName = (name) => {
+  const nameWords = name.split(" ");
+  if (nameWords.length > 1) {
+    var newName = [];
+    for (const name of nameWords) {
+      const nameCharacters = Array.from(name);
+      if (nameCharacters.length > 2) {
+        if (nameCharacters[0].toUpperCase() !== nameCharacters[0]) {
+          const capitalizedWord = capitalizeFirstLetter(name);
+          newName.push(capitalizedWord);
+        } else {
+          newName.push(name);
+        }
+      } else {
+        newName.push(name);
+      }
+    }
+    return newName.join(" ");
+  } else {
+    return capitalizeFirstLetter(name);
+  }
+};
+function capitalizeFirstLetter(string) {
+  return string[0].toUpperCase() + string.slice(1);
+}
 export class LocalStorageManager {
   static shared = new LocalStorageManager();
   constructor() {
@@ -11,7 +36,6 @@ export class LocalStorageManager {
   }
   getItem(key) {
     const itemJSON = this.storage.getItem(key);
-    // console.log("itemJSON in getItem", itemJSON);
     if (itemJSON !== "undefined") {
       return JSON.parse(this.storage.getItem(key));
     } else {
@@ -27,22 +51,32 @@ export class LocalStorageManager {
     const drinks = [];
     if (this.getItem("drinks")) {
       for (const drink of this.getItem("drinks")) {
-        drinks.push(drink["drink"]);
+        drinks.push(new Drink(drink["drink"]));
       }
       return drinks;
-    } else {
-      // this should never happen, either drinks are not set in localStorage because the merchant is logging in for the first time, thus drinks will be set before they are requested, or drinks will already exist in local storage
-      return [new Drink()];
     }
+    // this should never happen, either drinks are not set in localStorage because the merchant is logging in for the first time, thus drinks will be set before they are requested, or drinks will already exist in local storage
+    return [];
   }
   set drinks(newDrinkArray) {
     // if drinks are being set then they have been received from the backend
     this.setItem("drinks", newDrinkArray);
+
+    for (const business of this.getItem("businesses")) {
+      const businessModel = new Business(business);
+      const newMenu = [];
+      for (const drink of newDrinkArray) {
+        const drinkModel = new Drink(drink);
+        if (drinkModel.businessId === businessModel.id) {
+          newMenu.push(drinkModel);
+        }
+      }
+      businessModel.menu = newMenu;
+    }
+    this.setItem("businesses", this.businesses);
   }
   getDrink(drinkId) {
-    console.log("drinkId", drinkId);
     for (const drink of this.drinks) {
-      console.log("drink", drink);
       if (drink.id === drinkId) {
         return drink;
       }
@@ -97,13 +131,12 @@ export class LocalStorageManager {
     }
   }
   set drinkETag(newDrinkETagId) {
-    console.log("newDrinkETagId", newDrinkETagId);
     this.setItem("drink_etag", newDrinkETagId);
   }
   get businessETag() {
     return this.getItem("business_etag");
   }
-  set businessETag(newETagId) {
+  set businessEtag(newETagId) {
     this.setItem("business_etag", newETagId);
   }
 }
@@ -143,16 +176,15 @@ export class Drink {
       this.price = drinkObject.price;
       this.quantity = drinkObject.quantity;
       this.description = drinkObject.description;
-      this.orderDrinkId = drinkObject.order_drink_id;
       this.businessId = drinkObject.business_id;
       this.imageUrl = drinkObject.image_url;
+      this.isActive = drinkObject.is_active;
     } else {
       this.id = "";
       this.name = "";
       this.price = "";
       this.quantity = "";
       this.description = "";
-      this.orderDrinkId = "";
       this.businessId = "";
       this.imageUrl = "";
     }
@@ -164,17 +196,47 @@ export class Drink {
       price: this.price,
       quantity: this.quantity,
       description: this.description,
-      order_drink_id: this.orderDrinkId,
       business_id: this.businessId,
       image_url: this.imageUrl,
     };
     return data;
   }
 }
-
+export class DrinkItem {
+  constructor(drinkObject = null) {
+    if (drinkObject) {
+      this.id = drinkObject.id;
+      this.name = drinkObject.name;
+      this.price = drinkObject.price;
+      this.quantity = drinkObject.quantity;
+      this.description = drinkObject.description;
+      this.businessId = drinkObject.business_id;
+      this.imageUrl = drinkObject.image_url;
+    } else {
+      this.id = "";
+      this.name = "";
+      this.price = "";
+      this.quantity = "";
+      this.description = "";
+      this.businessId = "";
+      this.imageUrl = "";
+    }
+  }
+  toJSON() {
+    const data = {
+      id: this.id,
+      name: this.name,
+      price: this.price,
+      quantity: this.quantity,
+      description: this.description,
+      business_id: this.businessId,
+      image_url: this.imageUrl,
+    };
+    return data;
+  }
+}
 export class OrderDrinkItem {
   constructor(orderDrinkObject) {
-    console.log("orderDrinkObject", orderDrinkObject);
     this.drinkId = orderDrinkObject.drinkId;
     this.quantity = orderDrinkObject.quantity;
     this.drinkName = LocalStorageManager.shared.getDrink(this.drinkId).name;
@@ -192,7 +254,6 @@ export class OrderDrink {
 // new order structure
 export class Order {
   constructor(orderObject) {
-    console.log("orderObject", orderObject);
     this.id = orderObject.id;
     this.customerId = orderObject.customer_id;
     this.total = Math.round(orderObject.total);
@@ -207,7 +268,6 @@ export class Order {
     this.orderDrink = [];
     if (orderObject.order_drink.length > 0) {
       for (const orderDrink of orderObject.order_drink) {
-        console.log("orderDrink", orderDrink);
         const newOrderDrink = new OrderDrink(orderDrink);
         this.orderDrink.push(newOrderDrink);
       }
@@ -256,7 +316,6 @@ export class OrderItem {
       this.orderDrinks = [];
       if (orderObject.orderDrink.length > 0) {
         for (const orderDrink of orderObject.orderDrink) {
-          console.log("orderDrink in orderItem", orderDrink);
           const newOrderDrink = new OrderDrinkItem(orderDrink);
           this.orderDrinks.push(newOrderDrink);
         }
@@ -350,6 +409,10 @@ export class Business {
     this.menu = businessObject.menu;
     this.atCapacity = businessObject.at_capacity;
     this.schedule = businessObject.schedule;
+    this.isActive = businessObject.is_active;
+  }
+  get formattedName() {
+    return formatName(this.name);
   }
   toJSON() {
     const data = {
@@ -378,10 +441,12 @@ export class BusinessItem {
   constructor(businessObject) {
     if (businessObject) {
       this.id = businessObject.id;
-      this.name = businessObject.name;
+      this.name = formatName(businessObject.name);
       this.address = businessObject.address;
       this.phoneNumber = businessObject.phoneNumber;
-      this.classification = businessObject.classification;
+      this.classification = capitalizeFirstLetter(
+        businessObject.classification
+      );
       this.salesTaxRate = businessObject.salesTaxRate;
     } else {
       this.id = "";
@@ -430,18 +495,6 @@ export class QuickPass {
     // multiplied by 1000 so that the argument is in milliseconds, not seconds.
     const unixTimestamp = this.activationTime;
     const date = new Date(unixTimestamp * 1000);
-    // console.log("date", date);
-    // // Hours part from the timestamp
-    // const hours = date.getHours();
-    // console.log("hours", hours);
-    // // Minutes part from the timestamp
-    // const minutes = "0" + date.getMinutes();
-    // // Seconds part from the timestamp
-    // const seconds = "0" + date.getSeconds();
-
-    // Will display time in 10:30:23 format
-    // const formattedTime =
-    //   hours + ":" + minutes.substr(-2) + ":" + seconds.substr(-2);
     return date.toLocaleString("en-US", {
       hour: "numeric",
       minute: "numeric",
@@ -455,7 +508,6 @@ export class MerchantEmployee {
       this.id = merchantEmployeeObject.id;
       this.firstName = merchantEmployeeObject.first_name;
       this.lastName = merchantEmployeeObject.last_name;
-      this.phoneNumber = merchantEmployeeObject.phone_number;
       this.loggedIn = merchantEmployeeObject.logged_in;
       this.businessId = merchantEmployeeObject.business_id;
       this.status = merchantEmployeeObject.status;
@@ -463,7 +515,6 @@ export class MerchantEmployee {
       this.id = "";
       this.firstName = "";
       this.lastName = "";
-      this.phoneNumber = "";
       this.loggedIn = "";
       this.businessId = "";
       this.status = "pending";
@@ -474,7 +525,6 @@ export class MerchantEmployee {
       id: this.id,
       first_name: this.firstName,
       last_name: this.lastName,
-      phone_number: this.phoneNumber,
       logged_in: this.loggedIn,
       business_id: this.businessId,
     };

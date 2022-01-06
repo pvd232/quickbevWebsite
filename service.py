@@ -95,17 +95,18 @@ class Order_Service(object):
             ) for x in Order_Repository().get_customer_order_status(session=session, customer_id=customer_id)]
             return customer_order_status
 
-    def get_order(self, order_id: uuid.UUID):
+    def get_merchant_employee_order(self, order_id: uuid.UUID):
         with session_scope() as session:
-            order = Order_Repository().get_order(session=session, order_id=order_id)
+            order = Order_Repository().get_merchant_employee_order(
+                session=session, order_id=order_id)
             new_order_domain = Order_Domain(
-                order_object=order, is_merchant_employee_order=True)
+                order_result=order)
             return new_order_domain
 
     def update_order(self, order: dict):
         with session_scope() as session:
             new_order_domain = Order_Domain(
-                order_json=order, is_merchant_employee_order=True)
+                order_json=order, is_customer_order=False)
             Order_Repository().update_order(session=session, order=new_order_domain)
 
     def create_order(self, order: dict):
@@ -192,10 +193,9 @@ class Order_Service(object):
         with session_scope() as session:
             orders = Order_Repository().get_merchant_employee_orders(
                 session=session, business_id=business_id)
-            print('orders in merchant employee', orders)
             for order in orders:
                 order_domain = Order_Domain(
-                    order_object=order, is_merchant_employee_order=True)
+                    order_result=order)
                 response.append(order_domain)
             return response
 
@@ -241,9 +241,15 @@ class Order_Service(object):
         stripe_units_total = int(round(100 * total, 2))
 
         merchant_stripe_id = new_order_domain.merchant_stripe_id
+        print()
+        print('new_order_domain', new_order_domain.dto_serialize())
+        print()
+
+        customer_stripe_id = Customer_Service().get_customer(
+            customer_id=new_order_domain.customer_id).stripe_id
         payment_intent = stripe.PaymentIntent.create(
             amount=stripe_units_total,
-            customer=new_order_domain.customer_stripe_id,
+            customer=customer_stripe_id,
             setup_future_usage='on_session',
             currency='usd',
             application_fee_amount=stripe_units_application_fee_total,
@@ -256,7 +262,9 @@ class Order_Service(object):
             servers = Merchant_Employee_Repository().get_servers(
                 session=session, business_id=new_order_domain.business_id)
             for server in servers:
+                print('server.first_name', server.first_name)
                 tip_per_server = int(round(tip_total/len(servers), 2) * 100)
+                print('tip_per_server', tip_per_server)
                 stripe.Transfer.create(
                     amount=tip_per_server,
                     currency='usd',
@@ -268,7 +276,8 @@ class Order_Service(object):
             return response
 
     def refund_stripe_order(self, order: dict):
-        new_order_domain = Order_Domain(order_json=order)
+        new_order_domain = Order_Domain(
+            order_json=order, is_customer_order=False)
         return Order_Repository().refund_stripe_order(new_order_domain)
 
 
@@ -758,13 +767,12 @@ class Quick_Pass_Service(object):
         # calculate order values on backend to prevent malicious clients
         quick_pass_domain = Quick_Pass_Domain(quick_pass_json=quick_pass)
         with session_scope() as session:
-            business = Business_Domain(business_object=Business_Repository().get_business(
-                session, quick_pass_domain.business_id))
-
-            if business.quick_pass_queue >= 1:
-                new_queue = business.quick_pass_queue + 1
-                Business_Repository().update_quick_pass_queue(
-                    session=session, business_id=business.id, queue=new_queue)
+            business = Business_Repository().get_business(
+                session, quick_pass_domain.business_id)
+            print('business.quick_pass_queue', business.quick_pass_queue)
+            new_queue = business.quick_pass_queue + 1
+            Business_Repository().update_quick_pass_queue(
+                session=session, business_id=business.id, queue=new_queue)
             price = business.quick_pass_price
             service_fee_total = round(.1 * price, 2)
 
@@ -791,10 +799,10 @@ class Quick_Pass_Service(object):
                 js_object=quick_pass_to_update)
             return Quick_Pass_Repository().update_quick_pass(session=session, quick_pass_to_update=quick_pass_domain)
 
-    def get_bouncer_quick_passes(self, merchant_id: str):
+    def get_bouncer_quick_passes(self, business_id: uuid.UUID):
         with session_scope() as session:
             quick_pass_domains = [Quick_Pass_Domain(quick_pass_object=x) for x in Quick_Pass_Repository().get_bouncer_quick_passes(
-                session=session, merchant_id=merchant_id)]
+                session=session, business_id=business_id)]
             return quick_pass_domains
 
     def get_merchant_quick_passes(self, merchant_id: str):
@@ -805,21 +813,32 @@ class Quick_Pass_Service(object):
 
     def get_business_quick_pass(self, business_id: uuid.UUID, customer_id: str):
         with session_scope() as session:
-            sold_out = False
             business = Business_Domain(
                 business_object=Business_Repository().get_business(session, business_id))
             merchant = Merchant_Domain(merchant_object=Merchant_Repository(
             ).get_merchant(session, business.merchant_id))
 
+            current_hour = datetime.now().hour
+            if current_hour != business.quick_pass_queue_hour:
+                Business_Repository().update_quick_pass_queue(
+                    session=session, business_id=business_id, queue=0)
+                Business_Repository().update_quick_pass_queue_hour(session=session,
+                                                                   business_id=business_id, queue_hour=current_hour)
+
+            sold_out = Quick_Pass_Repository().quick_pass_sold_out(
+                session=session, business_id=business_id)
+
             new_quick_pass = Quick_Pass_Domain(
                 should_display_expiration_time=should_diplay_expiration_time)
+
             new_quick_pass.activation_time = datetime.now()
+
             new_quick_pass.sold_out = sold_out
 
             # if the closing time is less than the opening time the day of closing time is 1 greater than the day of opening
             if business.schedule[datetime.today().weekday()].is_closed == True:
                 return False
-            if business.schedule[datetime.today().weekday()].closing_time.hour < business.schedule[datetime.today().weekday()].opening_time.hour:
+            if business.schedule[datetime.today().weekday()].closing_time.hour <= business.schedule[datetime.today().weekday()].opening_time.hour:
                 closing_day = datetime.now().day + 1
             else:
                 closing_day = datetime.now().day

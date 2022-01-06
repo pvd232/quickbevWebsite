@@ -12,7 +12,6 @@ const MerchantEmployeePayoutSetup = (props) => {
   if (!merchantEmployeeId) {
     merchantEmployeeId = props.merchantEmployeeId;
   }
-  console.log("merchantEmployeeId", merchantEmployeeId);
   const [redirect, setRedirect] = useState(null);
   var redirectUrl = null;
   const getRedirectInfo = async () => {

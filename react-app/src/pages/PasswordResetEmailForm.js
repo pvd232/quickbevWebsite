@@ -30,7 +30,6 @@ const Signin = () => {
     const form = event.target;
     if (validate(form)) {
       const entityHeader = { entity: "merchant" };
-      console.log("authorization.email", authorization.email);
       API.makeRequest(
         "GET",
         `/password/reset/${authorization.email}`,

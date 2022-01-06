@@ -1,5 +1,5 @@
 import React from "react";
-import { Switch, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 
 import Home from "./pages/Home.js";
 import Signup from "./pages/Signup.js";
@@ -20,63 +20,57 @@ import BouncerQuickPass from "./pages/BouncerQuickPass.js";
 
 const Main = () => {
   return (
-    <Switch>
-      {/* The Switch decides which component to show based on the current URL.*/}
-      <Route exact path="/privacy" component={Privacy}></Route>
-      <Route exact path="/home" component={Home}></Route>
-      <Route exact path="/signup" component={Signup}></Route>
-      <Route
-        exact
-        path="/password-reset-email-form"
-        component={PasswordResetEmailForm}
-      ></Route>
-      <Route exact path="/signin" component={Signin}></Route>
-      <Route
-        exact
-        path="/merchant-employee-payout-setup-complete"
-        component={MerchantEmployeePayoutSetupComplete}
-      ></Route>
+    <>
+      <Routes>
+        {/* The Routes decides which element to show based on the current URL.*/}
+        <Route path="/privacy" element={<Privacy />}></Route>
+        <Route path="/home" element={<Home />}></Route>
+        <Route path="/signup" element={<Signup />}></Route>
+        <Route
+          exact
+          path="/password-reset-email-form"
+          element={<PasswordResetEmailForm />}
+        ></Route>
+        <Route path="/signin" element={<Signin />}></Route>
+        <Route
+          path="/merchant-employee-payout-setup-complete"
+          element={<MerchantEmployeePayoutSetupComplete />}
+        ></Route>
 
-      <Route
-        exact
-        path="/payout-setup-callback"
-        component={PayoutSetupCallback}
-      ></Route>
-      <Route exact path="/menu-builder" component={MenuBuilder}></Route>
-      <Route
-        exact
-        path="/deactivate-business"
-        component={DeactivateBusiness}
-      ></Route>
-<Route
-        exact
-        path="/deactivate-drink"
-        component={DeactivateDrink}
-      ></Route>
-      <Route exact path="/" component={Splash}></Route>
-      <Switch>
+        <Route
+          path="/payout-setup-callback"
+          element={<PayoutSetupCallback />}
+        ></Route>
+        <Route path="/menu-builder" element={<MenuBuilder />}></Route>
+        <Route
+          exact
+          path="/deactivate-business"
+          element={<DeactivateBusiness />}
+        ></Route>
+        <Route path="/deactivate-drink" element={<DeactivateDrink />}></Route>
+        <Route path="/" element={<Splash />}></Route>
         <Route
           path="/bouncer-quick-pass/:sessionToken/:businessId"
-          children={<BouncerQuickPass />}
+          element={<BouncerQuickPass />}
         />
         <Route
           path="/reset-password/:sessionToken"
-          children={<ResetPassword />}
+          element={<ResetPassword />}
         />
         <Route
           path="/bouncer-email-confirmed/:sessionToken"
-          children={<BouncerEmailConfirmed />}
+          element={<BouncerEmailConfirmed />}
         />
         <Route
           path="/merchant-employee-payout-setup/:merchantEmployeeId"
-          children={<MerchantEmployeePayoutSetup />}
+          element={<MerchantEmployeePayoutSetup />}
         />
         <Route
           path="/merchant-employee-payout-setup-callback/:merchantEmployeeId"
-          children={<MerchantEmployeePayoutSetupCallback />}
+          element={<MerchantEmployeePayoutSetupCallback />}
         />
-      </Switch>
-    </Switch>
+      </Routes>
+    </>
   );
 };
 

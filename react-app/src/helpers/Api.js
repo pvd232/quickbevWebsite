@@ -3,7 +3,6 @@ import { Merchant, LocalStorageManager } from "../Models.js";
 class Client {
   constructor() {
     this.baseUrl = "https://quickbev.us";
-    this.mode = "cors";
   }
   async makeRequest(
     method,
@@ -18,7 +17,6 @@ class Client {
       const request = new Request(this.url);
       var requestHeaders = false;
       if (headersParam) {
-        console.log("headersParam", headersParam);
         requestHeaders = new Headers();
         for (const [key, value] of Object.entries(headersParam)) {
           requestHeaders.set(key, value);
@@ -40,10 +38,6 @@ class Client {
 
       if (response) {
         if (response.status === 500) {
-          console.log(
-            "APIclient.makeRequest.response.notOkay",
-            response.statusText
-          );
           return response.status;
         }
 

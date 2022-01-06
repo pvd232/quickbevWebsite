@@ -10,7 +10,6 @@ import { Link } from "react-router-dom";
 import "../css/Signup.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
-import { LocalStorageManager } from "../Models";
 const Signin = () => {
   const [redirect, setRedirect] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
@@ -59,10 +58,6 @@ const Signin = () => {
     if (validate(form)) {
       API.getMerchant(authorization).then((response) => {
         if (response) {
-          console.log(
-            "LocalStorageManager.shared.currentMerchant",
-            LocalStorageManager.shared.currentMerchant
-          );
           setRedirect("/home");
         } else {
           const newErrorMsgState = {};

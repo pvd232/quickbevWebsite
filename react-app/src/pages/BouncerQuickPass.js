@@ -42,10 +42,7 @@ const BouncerQuickPass = () => {
   let { sessionToken, businessId } = useParams();
   useEffect(() => {
     let mounted = true;
-    console.log("businessId", businessId);
-    console.log("hi");
     API.checkTokenStatus(sessionToken).then((value) => {
-      console.log("value", value);
       if (mounted && !value) {
         setValidated(false);
         window.location.assign("/");
@@ -55,9 +52,6 @@ const BouncerQuickPass = () => {
     });
     API.getQuickPasses(businessId).then((items) => {
       if (mounted && items) {
-        console.log("items", items);
-        console.log("items.quick_passes b4", items.quick_passes);
-        console.log("items.quick_passes after", items.quick_passes);
         setQuickPasses(
           items.quick_passes.map(
             (quickPassJSON) => new QuickPass(quickPassJSON)
@@ -78,19 +72,15 @@ const BouncerQuickPass = () => {
       searchBarText.split(" ")[0] === undefined
         ? ""
         : searchBarText.split(" ")[0];
-    console.log("firstNameFilter", firstNameFilter);
     const lastNameFilter =
       searchBarText.split(" ")[1] === undefined
         ? ""
         : searchBarText.split(" ")[1];
-    console.log("lastNameFilter", lastNameFilter);
-
     if (searchBarText === "") {
       setFilteredQuickPasses(quickPasses);
     } else {
       for (var i = 0; i < quickPasses.length; i++) {
         const quickPass = quickPasses[i];
-        console.log("quickPass", quickPass);
         var nameBool = true;
         const customerFirstName = quickPass.customerFirstName.toLowerCase();
         const customerLastName = quickPass.customerLastName.toLowerCase();
@@ -130,10 +120,8 @@ const BouncerQuickPass = () => {
     }
   };
   const handleAdmitPass = (index) => {
-    console.log("index", index);
     const quickPass = filteredQuickPasses[index];
     quickPass.timeCheckedIn = Date.now() / 1000;
-    console.log("stagedQuickPassToRemove", quickPass);
     const data = { quick_pass: quickPass };
     const headers = { entity: "bouncer" };
     API.makeRequest("PUT", `/quick_pass/${sessionToken}`, data, headers).then(
@@ -202,11 +190,6 @@ const BouncerQuickPass = () => {
                         <span style={{ color: "white" }}>"</span>
                         <p style={{ marginBottom: "0" }}>
                           {mappedQuickPass.customerLastName}
-                        </p>
-                        <span style={{ color: "white" }}>"""""</span>
-
-                        <p style={{ marginRight: "1rem", marginBottom: "0" }}>
-                          {mappedQuickPass.formatTimestamp()}
                         </p>
                       </div>
                       <IconButton

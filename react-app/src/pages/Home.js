@@ -12,7 +12,6 @@ const Home = () => {
   const [validated, setValidated] = useState(null);
 
   const handleBusinessUpdate = (newBusinesses) => {
-    console.log("newBusinesses", newBusinesses);
     setBusinesses(newBusinesses);
   };
   const handleMerchantEmployeeUpdate = (newMerchantEmployeees) => {
@@ -48,9 +47,7 @@ const Home = () => {
     });
     API.getCustomers().then((items) => {
       if (mounted && items) {
-        // console.log("items", items);
         LocalStorageManager.shared.setItem("customers", items.customers);
-
         setCustomers(items.customers);
       }
     });
@@ -101,21 +98,11 @@ const Home = () => {
     drinks &&
     validated
   ) {
-    // console.log("validated", validated);
-    // console.log("merchantEmployees", merchantEmployees);
-    // console.log("bouncers", bouncers);
-    // console.log("businesses", businesses);
-    // console.log("customers", customers);
-    // console.log("orders", orders);
-    // console.log("drinks", drinks);
     return (
       <Dashboard
-        // orders={orders}
         customers={customers}
-        // businesses={businesses}
         merchantEmployees={merchantEmployees}
         bouncers={bouncers}
-        // drinks={drinks}
         updateBusinesses={(newBusinesses) =>
           handleBusinessUpdate(newBusinesses)
         }
@@ -125,13 +112,6 @@ const Home = () => {
       ></Dashboard>
     );
   } else {
-    // console.log("validated", validated);
-    // console.log("merchantEmployees", merchantEmployees);
-    // console.log("bouncers", bouncers);
-    // console.log("businesses", businesses);
-    // console.log("customers", customers);
-    // console.log("orders", orders);
-    console.log("drinks", drinks);
     console.log("not orders && others");
     return <></>;
   }

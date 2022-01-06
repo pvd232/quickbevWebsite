@@ -10,7 +10,6 @@ const MerchantEmployeePayoutSetupComplete = () => {
   useEffect(() => {
     let mounted = true;
     API.checkTokenStatus(sessionToken).then((value) => {
-      console.log("value", value);
       if (mounted && !value) {
         window.location.assign("/");
       } else if (mounted && value) {
@@ -81,8 +80,8 @@ const MerchantEmployeePayoutSetupComplete = () => {
               }}
             >
               <p>
-                Check your inbox for another email with a button/link to sign
-                in! If you don't see it, make sure to check your spam.
+                Check your inbox for another email with a button to sign in! If
+                you don't see it, make sure to check your spam.
               </p>
             </Col>
           </Row>

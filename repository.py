@@ -1,3 +1,4 @@
+from sqlalchemy.orm import query
 from sqlalchemy.orm.scoping import scoped_session
 from models import *
 from domain import Bouncer_Domain, Business_Domain, Customer_Domain, Drink_Domain, ETag_Domain, Merchant_Domain, Merchant_Employee_Domain, Order_Domain, Quick_Pass_Domain, Tab_Domain
@@ -23,6 +24,7 @@ class Drink_Repository(object):
 
     def add_drinks(self, session: scoped_session, drink_list: list[Drink_Domain]):
         for drink in drink_list:
+            print('drink biz id', type(drink.business_id))
             new_drink = Drink(id=drink.id, name=drink.name, description=drink.description,
                               price=drink.price, business_id=drink.business_id)
             session.add(new_drink)
@@ -35,11 +37,19 @@ class Drink_Repository(object):
             drink_to_update.image_url = drink.image_url
         return True
 
-    def deactivate_drink(self, session: scoped_session, drink_id: UUID):
+    def deactivate_drink(self, session: scoped_session, drink_id: uuid.UUID):
         drink_to_deativate = session.query(
             Drink).filter(Drink.id == drink_id).first()
         if drink_to_deativate != None:
             drink_to_deativate.is_active = False
+        return
+
+    def deactivate_drinks(self, session: scoped_session, business_id: uuid.UUID):
+        drinks_to_deactivate = session.query(
+            Drink).filter(Drink.business_id == business_id).all()
+        if drinks_to_deactivate != None:
+            for drink in drinks_to_deactivate:
+                drink.is_active = False
         return
 
 
@@ -49,7 +59,7 @@ class Order_Repository(object):
             Order.customer_id == customer_id).all()
         return customer_orders
 
-    def get_order(self, session: scoped_session, order_id: UUID):
+    def get_merchant_employee_order(self, session: scoped_session, order_id: uuid.UUID):
         order = session.query(Order, Customer.first_name.label('customer_first_name'), Customer.last_name.label(
             'customer_last_name')).join(Customer, Order.customer_id == Customer.id).filter(Order.id == order_id).first()
         return order
@@ -67,7 +77,7 @@ class Order_Repository(object):
                           business_id=order.business_id, tip_percentage=order.tip_percentage, sales_tax_percentage=order.sales_tax_percentage, service_fee_percentage=order.service_fee_percentage, stripe_fee_percentage=order.stripe_fee_percentage, subtotal=order.subtotal, tip_total=order.tip_total, sales_tax_total=order.sales_tax_total, stripe_application_fee_total=order.stripe_application_fee_total, service_fee_total=order.service_fee_total,  total=order.total, stripe_fee_total=order.stripe_fee_total, net_stripe_application_fee_total=order.net_stripe_application_fee_total, net_service_fee_total=order.net_service_fee_total, payment_intent_id=order.payment_intent_id, card_information=order.card_information, refunded=order.refunded, completed=order.completed)
         session.add(new_order)
         for each_order_drink in order.order_drink:
-            # create a unique instance of Order_Drink for the number of each type of drink that were ordered. the UUID for the Order_Drink is generated in the database
+            # create a unique instance of Order_Drink for the number of each type of drink that were ordered. the uuid for the Order_Drink is generated in the database
             for _ in range(each_order_drink.quantity):
                 new_order_drink = Order_Drink(
                     order_id=each_order_drink.order_id, drink_id=each_order_drink.drink_id)
@@ -100,13 +110,13 @@ class Order_Repository(object):
                 orders.append(order)
         return orders
 
-    def get_merchant_employee_orders(self, session: scoped_session, business_id: UUID):
+    def get_merchant_employee_orders(self, session: scoped_session, business_id: uuid.UUID):
         # only get active orders
         orders = session.query(Order, Customer.first_name.label('customer_first_name'), Customer.last_name.label('customer_last_name')).join(
             Customer, Order.customer_id == Customer.id).filter(Order.business_id == business_id, Order.completed == False, Order.refunded == False).all()
-        a = type(orders[0])
-        print('a = type(orders[0])', type(orders[0]))
-        print('orders[0]', orders[0])
+        # a = type(orders[0])
+        # print('a = type(orders[0])', type(orders[0]))
+        # print('orders[0]', orders[0])
         return orders
 
     def create_stripe_ephemeral_key(self, session: scoped_session, request: dict):
@@ -271,7 +281,7 @@ class Customer_Repository(object):
 
 
 class Business_Repository(object):
-    def authenticate_business(self, session: scoped_session, business_id: UUID):
+    def authenticate_business(self, session: scoped_session, business_id: uuid.UUID):
         business_status = session.query(Business).filter(
             Business.id == business_id).first()
         if business_status:
@@ -279,7 +289,7 @@ class Business_Repository(object):
         else:
             return False
 
-    def get_businesses(self, session: scoped_session):
+    def get_businesses(self, session: scoped_session) -> Business:
         businesses = session.query(Business).all()
         return businesses
 
@@ -288,7 +298,7 @@ class Business_Repository(object):
             Business.merchant_id == merchant_id).all()
         return businesses
 
-    def get_business(self, session: scoped_session, business_id: UUID):
+    def get_business(self, session: scoped_session, business_id: uuid.UUID):
         business = session.query(Business).filter(
             Business.id == business_id).first()
         if business:
@@ -322,19 +332,12 @@ class Business_Repository(object):
             session.add(new_business_schedule_day)
         return business
 
-    def deactivate_business(self, session: scoped_session, business_id: UUID):
-        business_to_deativate = session.query(Business).filter(
-            Business.id == business_id).first()
-        if business_to_deativate != None:
-            business_to_deativate.is_active = False
-        return
-
     def get_merchant_businesses(self, session: scoped_session, merchant_id: str):
         businesses = session.query(Business).filter(
             Business.merchant_id == merchant_id).all()
         return businesses
 
-    def get_menu(self, session: scoped_session, business_id: UUID):
+    def get_menu(self, session: scoped_session, business_id: uuid.UUID):
         business = session.query(Business).filter(
             Business.id == business_id).first()
         if business:
@@ -351,7 +354,7 @@ class Business_Repository(object):
         else:
             return False
 
-    def update_device_token(self, session: scoped_session, device_token: str, business_id: UUID):
+    def update_device_token(self, session: scoped_session, device_token: str, business_id: uuid.UUID):
         business_to_update = session.query(Business).filter(
             Business.id == business_id).first()
         if business_to_update:
@@ -360,7 +363,7 @@ class Business_Repository(object):
         else:
             return False
 
-    def get_device_token(self, session: scoped_session, business_id: UUID):
+    def get_device_token(self, session: scoped_session, business_id: uuid.UUID):
         requested_business = session.query(Business).filter(
             Business.id == business_id).first()
         if requested_business:
@@ -376,7 +379,7 @@ class Business_Repository(object):
             pin)
         return
 
-    def authenticate_merchant_pin(self, session: scoped_session, business_id: UUID, pin: str):
+    def authenticate_merchant_pin(self, session: scoped_session, business_id: uuid.UUID, pin: str):
         requested_business = session.query(Business).filter(
             Business.id == business_id).first()
         if requested_business:
@@ -387,22 +390,29 @@ class Business_Repository(object):
             else:
                 return False
 
-    def update_capacity_status(self, session: scoped_session, business_id: UUID, capacity: bool):
+    def update_capacity_status(self, session: scoped_session, business_id: uuid.UUID, capacity: bool):
         business_to_update = session.query(Business).filter(
             Business.id == business_id).first()
         business_to_update.at_capacity = capacity
         return
 
-    def update_quick_pass_queue(self, session: scoped_session, business_id: UUID, queue):
+    def update_quick_pass_queue(self, session: scoped_session, business_id: uuid.UUID, queue):
         business_to_update = session.query(Business).filter(
             Business.id == business_id).first()
         business_to_update.quick_pass_queue = queue
         return
 
-    def update_quick_pass_queue_hour(self, session: scoped_session, business_id: UUID, queue_hour: int):
+    def update_quick_pass_queue_hour(self, session: scoped_session, business_id: uuid.UUID, queue_hour: int):
         business_to_update = session.query(Business).filter(
             Business.id == business_id).first()
         business_to_update.quick_pass_queue_hour = queue_hour
+        return
+
+    def deactivate_business(self, session: scoped_session, business_id: uuid.UUID):
+        business_to_deativate = session.query(Business).filter(
+            Business.id == business_id).first()
+        if business_to_deativate != None:
+            business_to_deativate.is_active = False
         return
 
 
@@ -604,7 +614,7 @@ class Merchant_Employee_Repository(object):
             Staged_Merchant_Employee.id == merchant_employee_id).delete()
         return
 
-    def get_servers(self, session: scoped_session, business_id: UUID):
+    def get_servers(self, session: scoped_session, business_id: uuid.UUID):
         servers = session.query(Merchant_Employee).filter(
             Merchant_Employee.business_id == business_id, Merchant_Employee.logged_in == True).all()
         return servers
@@ -704,7 +714,16 @@ class Quick_Pass_Repository(object):
         business.quick_passes_per_hour = quick_pass_values['quick_passes_per_hour']
         return
 
-    def get_bouncer_quick_passes(self, session: scoped_session, business_id: UUID):
-        active_quick_passes = len(session.query(Quick_Pass).filter(
-            Quick_Pass.business_id == business_id, Quick_Pass.expiration_time >= datetime.now()).all())
+    def get_bouncer_quick_passes(self, session: scoped_session, business_id: uuid.UUID):
+        active_quick_passes = session.query(Quick_Pass).filter(
+            Quick_Pass.business_id == business_id, Quick_Pass.expiration_time >= datetime.now(), Quick_Pass.time_checked_in == None).all()
         return active_quick_passes
+
+    def quick_pass_sold_out(self, session: scoped_session, business_id: uuid.UUID):
+        business_to_check = Business_Repository().get_business(
+            session=session, business_id=business_id)
+        quick_pass_queue = business_to_check.quick_pass_queue
+        if quick_pass_queue >= business_to_check.quick_passes_per_hour:
+            return True
+        else:
+            return False
