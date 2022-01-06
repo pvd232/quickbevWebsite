@@ -123,6 +123,8 @@ const SplashBody = () => {
               style={{
                 alignItems: "flex-start",
                 justifySelf: "center",
+                paddingLeft: "3vw",
+                paddingRight: "3vw",
               }}
             >
               <Col>

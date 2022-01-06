@@ -16,9 +16,8 @@ import Select from "@material-ui/core/Select";
 import { FormGroup } from "@material-ui/core";
 import InputLabel from "@material-ui/core/InputLabel";
 import { useState } from "react";
-import { Business, Drink, LocalStorageManager } from "../../Models";
+import { BusinessItem, DrinkItem, LocalStorageManager } from "../../Models";
 import Grid from "@material-ui/core/Grid";
-import { toCapitalizedWords } from "../../Models";
 
 const Menu = (props) => {
   const useStyles = makeStyles((theme) => ({
@@ -34,8 +33,9 @@ const Menu = (props) => {
     },
   }));
   const businesses = LocalStorageManager.shared.businesses;
-  console.log("businesses", businesses);
-  console.log("businesses.length", businesses.length);
+  const businessItems = businesses.map(
+    (business) => new BusinessItem(business)
+  );
 
   const classes = useStyles();
   const [businessIndex, setBusinessIndex] = useState(0);
@@ -61,11 +61,11 @@ const Menu = (props) => {
                     label="Business"
                     name="business"
                   >
-                    {businesses.map((business, i) => (
+                    {businessItems.map((businessItem, i) => (
                       <MenuItem key={i} value={i}>
-                        {business.name}
+                        {businessItem.name}
                         <br />
-                        {business.address}
+                        {businessItem.address}
                       </MenuItem>
                     ))}
                   </Select>
@@ -74,10 +74,16 @@ const Menu = (props) => {
             </Form.Row>
           </FormGroup>
         </Form>
-        <Grid container className={classes.gridRoot} spacing={2} xs={12}>
+        <Grid
+          container
+          className={classes.gridRoot}
+          spacing={2}
+          xs={12}
+          item={true}
+        >
           {businesses.length > 0 ? (
             businesses[businessIndex].menu.map((drink, i) => {
-              const menuDrink = new Drink(drink);
+              const menuDrink = new DrinkItem(drink);
               return (
                 <Grid
                   container
@@ -86,21 +92,34 @@ const Menu = (props) => {
                   xs={3}
                   key={i}
                   alignItems="stretch"
+                  item={true}
                 >
                   <Grid item xs={12} key={i}>
                     <Card
                       key={i}
                       className={classes.root}
-                      style={{ maxHeight: "40vh" }}
+                      // style={{ maxHeight: "40vh" }}
                     >
-                      <CardActionArea>
+                      <CardActionArea
+                        style={{ height: "100%" }}
+                        onClick={() => {
+                          if (
+                            LocalStorageManager.shared.currentMerchant
+                              .isAdministrator === true
+                          ) {
+                            window.location.assign(
+                              `/deactivate-drink?drink_id=${menuDrink.id}`
+                            );
+                          }
+                        }}
+                      >
                         <div
                           style={{ display: "flex", justifyContent: "center" }}
                         >
                           <CardMedia
                             style={{
                               width: "auto",
-                              maxHeight: "22vh",
+                              maxHeight: "16vh",
                               marginTop: "2vh",
                             }}
                             component="img"
@@ -110,7 +129,7 @@ const Menu = (props) => {
                         </div>
                         <CardContent>
                           <Typography gutterBottom variant="h5" component="h2">
-                            {toCapitalizedWords(menuDrink.name)}
+                            {menuDrink.formattedName}
                           </Typography>
                           <Typography
                             variant="body2"

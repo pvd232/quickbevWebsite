@@ -78,7 +78,6 @@ const Bouncers = (props) => {
   );
   function makeCSVData() {
     const csvData = mappedBouncers.map((bouncer) => {
-      console.log("bouncer", bouncer);
       const bouncerData = [
         bouncer.id,
         bouncer.firstName,
@@ -107,17 +106,11 @@ const Bouncers = (props) => {
     setFormValue({ [name]: value.trim().toLowerCase() });
   };
   const validate = (form) => {
-    console.log(
-      "LocalStorageManager.shared.currentBusiness.id",
-      LocalStorageManager.shared.currentBusiness.id
-    );
     form.classList.add("was-validated");
     return form.checkValidity();
   };
   const handleRemovePerson = (index) => {
-    console.log("index", index);
     const stagedBouncerToRemove = mappedBouncers[index];
-    console.log("stagedBouncerToRemove", stagedBouncerToRemove);
     const data = { bouncer_id: stagedBouncerToRemove.id };
     API.makeRequest(
       "PUT",
@@ -150,7 +143,6 @@ const Bouncers = (props) => {
         "GET",
         `/bouncer/validate?bouncer_id=${formValue.id}`
       ).then((response) => {
-        console.log("response", response);
         // the merchant bouncer username is not taken by either a real or staged merchant bouncer
         if (response.status === 200) {
           // create the merchant bouncer with a null parameter assigns pending to the status property of the staged merchant bouncer
@@ -290,7 +282,6 @@ const Bouncers = (props) => {
     </div>
   );
   if (mappedBouncers) {
-    console.log("mappedBouncers", mappedBouncers);
     return (
       <TableContainer>
         <Paper className={props.classes.paper}>

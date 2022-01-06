@@ -57,13 +57,13 @@ const useStyles = makeStyles((theme) => ({
 
 const Businesses = (props) => {
   const classes = useStyles();
-  const [mappedBusinesses, setMappedBusinesses] = useState(
+  const [mappedBusinessItems, setMappedBusinessItems] = useState(
     LocalStorageManager.shared.businesses.map((business) => {
       return new BusinessItem(business);
     })
   );
-  if (mappedBusinesses.length === 0) {
-    mappedBusinesses.push(new BusinessItem(false));
+  if (mappedBusinessItems.length === 0) {
+    mappedBusinessItems.push(new BusinessItem(false));
   }
 
   const [csvData, setCsvData] = useState(() => makeCSVData());
@@ -104,6 +104,32 @@ const Businesses = (props) => {
       menuSubmittedErrorMsgDisplay: "none",
     }
   );
+  const resetFormState = () => {
+    setSelectedFile(null);
+    setSelectedFileName("");
+    setFormValue({
+      name: "",
+      phoneNumber: "",
+      address: "",
+      street: "",
+      suite: "",
+      city: "",
+      state: "",
+      zipcode: "",
+      menuUrl: "",
+      classification: "bar",
+      schedule: [],
+    });
+    setSchedule([
+      { day: "monday", openingTime: "", closingTime: "", isClosed: false },
+      { day: "tuesday", openingTime: "", closingTime: "", isClosed: false },
+      { day: "wednesday", openingTime: "", closingTime: "", isClosed: false },
+      { day: "thursday", openingTime: "", closingTime: "", isClosed: false },
+      { day: "friday", openingTime: "", closingTime: "", isClosed: false },
+      { day: "saturday", openingTime: "", closingTime: "", isClosed: false },
+      { day: "sunday", openingTime: "", closingTime: "", isClosed: false },
+    ]);
+  };
   const handleScheduleChange = (event) => {
     const name = event.target.name;
     const dayIndex = parseInt(name.split("-")[0]);
@@ -146,10 +172,6 @@ const Businesses = (props) => {
   };
 
   const onFileChange = (event) => {
-    console.log("event", event);
-    // Update the state
-    console.log("event.target.files[0]", event.target.files[0].name);
-    console.log("event.target.files", event.target.files);
     setSelectedFile(event.target.files[0]);
     setSelectedFileName(event.target.files[0].name);
   };
@@ -158,6 +180,8 @@ const Businesses = (props) => {
     let value = event.target.value;
     if (typeof value === "string" && name !== "name") {
       setFormValue({ [name]: value.trim().toLowerCase() });
+    } else if (typeof value === "string" && name === "name") {
+      setFormValue({ [name]: value.toLowerCase() });
     } else {
       setFormValue({ [name]: value });
     }
@@ -170,7 +194,6 @@ const Businesses = (props) => {
     // api call here
     event.preventDefault();
     const form = event.target.closest("form");
-    console.log("form", form);
     if (validate(form)) {
       if (!(formValue.menuUrl || selectedFile)) {
         const newErrorMsgState = {};
@@ -216,37 +239,22 @@ const Businesses = (props) => {
           const confirmedNewBusiness = new Business(
             response.confirmed_new_business
           );
-          const newMappedBusinesses = [];
-          setMappedBusinesses((prevMapppedBusinesses) => {
+          const newMappedBusinessItems = [];
+          setMappedBusinessItems((prevMapppedBusinesses) => {
             // if the merchant had 0 employees then the mappedEmployees array will have 1 single dummy merchant employee. so we want to remove this once a real merchant emplyee is added
-            // if (prevMapppedBusinesses[0].id === "") {
-            //   newMappedBusinesses.unshift(confirmedNewBusiness);
-            // } else {
             for (const business of prevMapppedBusinesses) {
-              console.log("business", business);
-              newMappedBusinesses.push(business);
+              newMappedBusinessItems.push(business);
             }
-            newMappedBusinesses.unshift(new BusinessItem(confirmedNewBusiness));
-            console.log("newMappedBusinesses", newMappedBusinesses);
-            return newMappedBusinesses;
-            // }
+            newMappedBusinessItems.unshift(
+              new BusinessItem(confirmedNewBusiness)
+            );
+            return newMappedBusinessItems;
           });
           setCsvData(makeCSVData());
-          props.onUpdate(newMappedBusinesses);
+          props.onUpdate(newMappedBusinessItems);
           setModalOpen((prevModalOpen) => !prevModalOpen);
-          setFormValue({
-            name: "",
-            phoneNumber: "",
-            address: "",
-            street: "",
-            suite: "",
-            city: "",
-            state: "",
-            zipcode: "",
-            menuUrl: "",
-            classification: "bar",
-            schedule: [],
-          });
+          resetFormState();
+          form.reset();
           setIsSpinning(false);
           return true;
         } else {
@@ -258,7 +266,7 @@ const Businesses = (props) => {
     }
   };
   function makeCSVData() {
-    const csvData = mappedBusinesses.map((business) => {
+    const csvData = mappedBusinessItems.map((business) => {
       const businessData = [];
       Object.values(business).forEach((value) => {
         switch (value) {
@@ -275,7 +283,7 @@ const Businesses = (props) => {
 
     // add row headers
     csvData.unshift(
-      Object.keys(mappedBusinesses[0]).map((key) =>
+      Object.keys(mappedBusinessItems[0]).map((key) =>
         toCapitalizedWords(
           // the object keys are the objects private properties so we have to remove the underscores
           key.replace("_", "")
@@ -469,8 +477,8 @@ const Businesses = (props) => {
                     </Col>
                   </Row>
                   <Row>
-                    <Col style={{ display: "flex" }} xs={12}>
-                      <Col xs={6} style={{ padding: "0" }}>
+                    <Col style={{ display: "flex" }} xs={12} key={"col-2" + i}>
+                      <Col xs={6} style={{ padding: "0" }} key={"col-3" + i}>
                         <Form.Label>Opening time</Form.Label>
 
                         <Form.Control
@@ -488,7 +496,7 @@ const Businesses = (props) => {
                           }}
                         />
                       </Col>
-                      <Col xs={6}>
+                      <Col xs={6} key={"col-4" + i}>
                         <Form.Label>Closing time</Form.Label>
 
                         <Form.Control
@@ -535,7 +543,7 @@ const Businesses = (props) => {
       </Form>
     </div>
   );
-  if (mappedBusinesses) {
+  if (mappedBusinessItems) {
     return (
       <TableContainer>
         <Paper className={props.classes.paper}>
@@ -560,7 +568,7 @@ const Businesses = (props) => {
           </Row>
           <Modal
             open={modalOpen}
-            scrollable={true}
+            scrollable={1}
             aria-labelledby="simple-modal-title"
             aria-describedby="simple-modal-description"
           >
@@ -578,32 +586,40 @@ const Businesses = (props) => {
                     <AddIcon style={{ color: "#007bff" }} />
                   </IconButton>
                 </TableCell>
-                {Object.keys(mappedBusinesses[0]).map((key, i) => (
-                  <TableCell align="left" key={i}>
-                    {toCapitalizedWords(
-                      key
-                      // the object keys are the objects private properties so we have to remove the underscores
-                      // key.replace("_", "")
-                    )}
-                  </TableCell>
-                ))}
+                <>
+                  {Object.keys(mappedBusinessItems[0]).map((key, i) => (
+                    <TableCell align="left" key={"object-key-" + i}>
+                      {toCapitalizedWords(key)}
+                    </TableCell>
+                  ))}
+                </>
               </TableRow>
             </TableHead>
             <TableBody>
-              {mappedBusinesses.map((business, i) => (
-                <TableRow key={business.id}>
-                  <TableCell>{i}</TableCell>
-                  {Object.values(business).map((value, i) => (
-                    <TableCell align="left" key={i}>
-                      {typeof value === "string"
-                        ? value.replace("_", "")
-                        : value === true
-                        ? "yes"
-                        : value}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
+              <>
+                {mappedBusinessItems.map((businessItem, i) => (
+                  <TableRow
+                    key={businessItem.id}
+                    onClick={() => {
+                      if (
+                        LocalStorageManager.shared.currentMerchant
+                          .isAdministrator === true
+                      ) {
+                        window.location.assign(
+                          `/menu-builder?business_id=${businessItem.id}`
+                        );
+                      }
+                    }}
+                  >
+                    <TableCell>{i}</TableCell>
+                    {Object.values(businessItem).map((value, i) => (
+                      <TableCell align="left" key={"object-value-" + i}>
+                        {value}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </>
             </TableBody>
           </Table>
         </Paper>

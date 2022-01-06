@@ -81,7 +81,6 @@ const MerchantEmployees = (props) => {
   );
   function makeCSVData() {
     const csvData = mappedMerchantEmployees.map((merchantEmployee) => {
-      console.log("merchantEmployee", merchantEmployee);
       const merchantEmployeeData = [
         merchantEmployee.id,
         merchantEmployee.firstName,
@@ -122,15 +121,11 @@ const MerchantEmployees = (props) => {
       `/merchant_employee/staging/${LocalStorageManager.shared.sessionToken}`,
       data
     ).then(() => {
-      console.log("mappedMerchantEmployees", mappedMerchantEmployees);
-      mappedMerchantEmployees.splice(index, 1);
       if (mappedMerchantEmployees.length === 0) {
-        console.log("<1");
         // add a dummy merchantemployee to populate the row values if there are 0 merchantemployee objects left in the list
         const dummyMerchantEmployee = new MerchantEmployee();
         mappedMerchantEmployees.push(dummyMerchantEmployee);
       }
-      console.log("mappedMerchantEmployees", mappedMerchantEmployees);
       props.onUpdate(mappedMerchantEmployees);
       setIsSpinning(false);
       return true;

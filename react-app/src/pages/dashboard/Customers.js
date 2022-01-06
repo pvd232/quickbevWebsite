@@ -12,7 +12,7 @@ import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import { Customer } from "../../Models";
 import { CSVLink } from "react-csv";
-import {toCapitalizedWords} from '../../Models'
+import { toCapitalizedWords } from "../../Models";
 
 const useStyles = makeStyles({
   table: {
@@ -81,19 +81,20 @@ const Customers = (props) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {
-              mappedCustomers[0].id !== '' ?
-              mappedCustomers.map((row, i) => (
-                <TableRow key={i}>
-                  <TableCell>{i}</TableCell>
-                  {Object.values(row).map((key, i) => (
-                    <TableCell align="left" key={i}>
-                      {key}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              )) : <></>
-            }
+              {mappedCustomers[0].id !== "" ? (
+                mappedCustomers.map((row, i) => (
+                  <TableRow key={i}>
+                    <TableCell>{i}</TableCell>
+                    {Object.values(row).map((key, i) => (
+                      <TableCell align="left" key={i}>
+                        {key}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <></>
+              )}
             </TableBody>
           </Table>
         </Paper>

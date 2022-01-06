@@ -20,7 +20,7 @@ import { FormGroup } from "@material-ui/core";
 import Sales from "./Sales";
 import Divider from "@material-ui/core/Divider";
 import { CSVLink } from "react-csv";
-
+var numnum = 0;
 const useStyles = makeStyles((theme) => ({
   formControl: {
     margin: theme.spacing(1),
@@ -30,7 +30,7 @@ const useStyles = makeStyles((theme) => ({
     height: "fit-content",
   },
 }));
-export default function Chart(props) {
+export default function Chart() {
   const theme = useTheme();
   const [orderState, setOrderState] = useReducer(
     (state, newState) => ({ ...state, ...newState }),
@@ -40,6 +40,13 @@ export default function Chart(props) {
       months: [],
     }
   );
+  const resetOrderData = () => {
+    setOrderState({
+      data: [],
+      sales: 0,
+      months: [],
+    });
+  };
   // Generate Sales Data
   const orders = LocalStorageManager.shared.orders;
   const businesses = LocalStorageManager.shared.businesses;
@@ -87,23 +94,20 @@ export default function Chart(props) {
     });
   };
   const createData = (order, dataGroupedByDate, month = false) => {
-    console.log("order", order);
     const dateWithYear = order.formattedDateTime.split("/");
     const orderDay = dateWithYear[1];
     const orderMonth = dateWithYear[0];
     const date = orderMonth + "/" + orderDay;
     const amount = order.total;
     const orderDateTime = order.dateTime;
-    console.log("orderDateTime", orderDateTime);
     const monthIndex = monthsLookup.indexOf(month);
     const monthPresentIndex = intermediaryMonths.indexOf(
       monthsLookup[orderDateTime.getMonth()]
     );
-    const orderBusinessId = order.businessId;
-    const orderBusiness = businesses.filter(
-      (business) => business.id === orderBusinessId
-    )[0];
 
+    const orderBusiness = businesses.filter(
+      (business) => business.id === order.businessId
+    )[0];
     if (monthPresentIndex === -1) {
       intermediaryMonths.push(monthsLookup[orderDateTime.getMonth()]);
       intermediaryMonths.sort(function (a, b) {
@@ -114,7 +118,9 @@ export default function Chart(props) {
     // the first filtration will be done by business, because this will affect the normalization of the order dates
     if (formValue.business !== "all") {
       filterBusiness = new Business(JSON.parse(formValue.business));
-      if (orderBusinessId !== filterBusiness.id) {
+
+      if (order.businessId !== filterBusiness.id) {
+        numnum += 1;
         return;
       }
     }
@@ -170,7 +176,7 @@ export default function Chart(props) {
   const classes = useStyles();
 
   const addMissingDates = (dateArray) => {
-    var copyOfDateArray = [...dateArray];
+    const copyOfDateArray = [...dateArray];
     const lastday = (y, m) => {
       return new Date(y, m + 1, 0).getDate();
     };
@@ -264,12 +270,10 @@ export default function Chart(props) {
     return newWeekDateArray;
   };
   const summateSales = (dateArray) => {
-    console.log("dateArray", dateArray);
     var sum = 0;
     for (var i = 0; i < dateArray.length; i++) {
       sum += dateArray[i].amount;
     }
-    console.log("sum", sum);
     return sum;
   };
   const getTimeIntervalAndBusiness = () => {
@@ -300,7 +304,6 @@ export default function Chart(props) {
     }
   };
   const prepareData = () => {
-    console.log("orders", orders);
     // if the user has no orders then we bypass the chart analytics algorithims
     if (orders.length === 0) {
       return;
@@ -314,6 +317,10 @@ export default function Chart(props) {
       dataGroupedByDate.sort((a, b) => {
         return a.dateTime.getTime() - b.dateTime.getTime();
       });
+      if (dataGroupedByDate.length === 0) {
+        resetOrderData();
+        return;
+      }
       const fullDateArray = addMissingDates(dataGroupedByDate);
       if (formValue.week === "all") {
         const salesSum = summateSales(fullDateArray);
@@ -340,7 +347,11 @@ export default function Chart(props) {
       dataGroupedByDate.sort((a, b) => {
         return a.dateTime.getTime() - b.dateTime.getTime();
       });
+      if (dataGroupedByDate.length === 0) {
+        resetOrderData();
 
+        return;
+      }
       const fullDateArray = addMissingDates(dataGroupedByDate);
       const salesSum = summateSales(fullDateArray);
       const orderInformation = {
@@ -377,7 +388,7 @@ export default function Chart(props) {
                   <MenuItem value={"all"}>All Businesses</MenuItem>
                   {businesses.map((business, i) => (
                     <MenuItem key={i} value={JSON.stringify(business)}>
-                      {business.name}
+                      {business.formattedName}
                       <br />
                       {business.address}
                     </MenuItem>

@@ -47,7 +47,6 @@ const Orders = (props) => {
     }
     return orderItem;
   });
-  
 
   const sortedFormattedOrders = formattedOrders.sort((a, b) => {
     const aDate = new Date(a.dateTime);
@@ -55,7 +54,7 @@ const Orders = (props) => {
     return bDate.getTime() - aDate.getTime();
   });
   if (sortedFormattedOrders.length === 0) {
-    formattedOrders.push(new OrderItem(false))
+    formattedOrders.push(new OrderItem(false));
   }
   const csvData = sortedFormattedOrders.map((order) => {
     const orderData = [];
@@ -91,8 +90,8 @@ const Orders = (props) => {
     return (
       <TableContainer>
         <Paper className={props.classes.paper}>
-          <Row style={{ width: "100%", height: "fit-content" }}>
-            <Col xs={9}>
+          <Row style={{ width: "100%", height: "fit-content" }} key={"row-1"}>
+            <Col xs={9} key={"col-1"}>
               <Title style={{ marginLeft: "auto", maxWidth: "15%" }}>
                 Orders
               </Title>
@@ -104,6 +103,7 @@ const Orders = (props) => {
                 justifyContent: "right",
                 marginBottom: "0.35em",
               }}
+              key={"col-1-1"}
             >
               <CSVLink data={csvData} style={{ marginLeft: "auto" }}>
                 Export Data
@@ -113,11 +113,11 @@ const Orders = (props) => {
           <Table className={classes.table} aria-label="simple table">
             <TableHead>
               <TableRow>
-                <TableCell align="left" key={"row #"}>
+                <TableCell align="left" key={"row-1-1"}>
                   Row
                 </TableCell>
                 {Object.keys(sortedFormattedOrders[0]).map((key, i) => (
-                  <TableCell align="left" key={i}>
+                  <TableCell align="left" key={"row-1-1-" + i}>
                     {key === "tipPercentage"
                       ? "Tip %"
                       : toCapitalizedWords(
@@ -131,19 +131,19 @@ const Orders = (props) => {
             <TableBody>
               {sortedFormattedOrders[0].id !== "" ? (
                 sortedFormattedOrders.map((row, i) => (
-                  <TableRow key={row.id}>
-                    <TableCell>{i}</TableCell>
+                  <TableRow key={"row-1-1-1-" + i}>
+                    <TableCell key={"row-1-1-1-1-" + i}>{i}</TableCell>
                     {Object.values(row).map((key, i) => {
-                      console.log("key", key);
                       if (key instanceof Array) {
-                        console.log("orderDrink key", key);
                         return (
-                          <TableCell align="left" key={i}>
+                          <TableCell align="left" key={"row-1-1-1-1-1" + i}>
                             {Object.values(key).map((orderDrink) => {
                               return (
-                                String(orderDrink.quantity) +
-                                "x " +
-                                orderDrink.drinkName
+                                <div key={"div-" + i}>
+                                  {String(orderDrink.quantity) +
+                                    " " +
+                                    orderDrink.drinkName}
+                                </div>
                               );
                             })}
                           </TableCell>
@@ -152,8 +152,8 @@ const Orders = (props) => {
                         return (
                           <TableCell
                             align="left"
-                            key={i}
-                            style={{ maxWidth: "14vw" }}
+                            key={"row-1-1-1-1-1-1-" + i}
+                            style={{ maxWidth: "12vw" }}
                           >
                             {key}
                           </TableCell>
