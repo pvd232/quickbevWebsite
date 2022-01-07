@@ -9,6 +9,8 @@ import Paper from "@material-ui/core/Paper";
 import Grid from "@material-ui/core/Grid";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { LocalStorageManager } from "../../Models.js";
+import { useSearchParams } from "react-router-dom";
 
 const MenuBuilder = () => {
   const useStyles = makeStyles((theme) => ({
@@ -29,12 +31,13 @@ const MenuBuilder = () => {
 
   const classes = useStyles();
 
+  const [searchParams, setSearchParams] = useSearchParams();
+  var businessId = searchParams.get("business_id") ?? "";
   const [isSpinning, setIsSpinning] = useState(null);
   const Spinner = () => (
     <FontAwesomeIcon icon={faSpinner} className="fa-spin" />
   );
 
-  var businessId = "";
   const updateBusinessId = (newBusinessId) => {
     businessId = newBusinessId;
   };
@@ -43,19 +46,15 @@ const MenuBuilder = () => {
     return form.checkValidity();
   };
   const handleSubmit = async (event, formValues) => {
-    // for (var pair of formValues.entries()) {
-    //   console.log(pair[0] + ", " + pair[1]);
-    // }
-
     const form = event.target.closest("form");
     validate(form);
     if (validate(form)) {
       formValues.append("businessId", JSON.stringify(businessId));
       // set all the values for the business
       // if the user comes back to this page before submitting to change stuff it will reset the values
-      let response = await API.makeRequest(
+      const response = await API.makeRequest(
         "POST",
-        "/menu",
+        `/drink/${LocalStorageManager.shared.sessionToken}`,
         formValues,
         false,
         true
@@ -73,7 +72,7 @@ const MenuBuilder = () => {
     window.location.reload();
   };
   const BusinessIdInput = (props) => {
-    const [businessId, setbusinessId] = useState("");
+    const [businessId, setbusinessId] = useState(props.businessId);
     return (
       <Grid
         item
@@ -84,6 +83,7 @@ const MenuBuilder = () => {
           marginTop: "20px",
           paddingLeft: "4vw",
         }}
+        key={"grid-3"}
       >
         <TextField
           fullWidth
@@ -92,6 +92,7 @@ const MenuBuilder = () => {
           multiline
           value={businessId}
           required
+          key={"grid-4"}
           onChange={(event) => {
             const businessId = event.target.value.trimStart().trimEnd();
             setbusinessId(businessId);
@@ -129,11 +130,9 @@ const MenuBuilder = () => {
         let name = event.target.name;
 
         const drinkNameArray = event.target.value.split(" ");
-        console.log("drinkNameArray", drinkNameArray);
         if (drinkNameArray.length > 0) {
           const newDrinkNameArray = [];
           for (const drinkNameFragment of drinkNameArray) {
-            console.log("drinkNameFragment", drinkNameFragment);
             const lowerCaseName = drinkNameFragment.toLowerCase();
             newDrinkNameArray.push(lowerCaseName);
           }
@@ -158,10 +157,17 @@ const MenuBuilder = () => {
       }
     };
     return (
-      <Grid container item xs={11} spacing={0} justify="center" key={props.k}>
-        <div className={classes.root}>
+      <Grid
+        container
+        item
+        xs={11}
+        spacing={0}
+        justifyContent="center"
+        key={"grid-1-" + props.k}
+      >
+        <div className={classes.root} key={"asdf-" + props.k}>
           <Grid
-            key={props.k}
+            key={"grid-1-1-" + props.k}
             item
             xs={12}
             style={{
@@ -170,9 +176,9 @@ const MenuBuilder = () => {
               marginTop: "20px",
             }}
           ></Grid>
-          <Grid container key={props.k + 2} item xs={12}>
+          <Grid container key={"grid-2-" + props.k} item xs={12}>
             <Grid
-              key={props.k}
+              key={"grid-1-1-1-" + props.k}
               item
               xs={2}
               style={{ textAlign: "left", marginRight: "20px" }}
@@ -180,7 +186,7 @@ const MenuBuilder = () => {
               <TextField
                 fullWidth
                 required
-                key={props.k}
+                key={"textField-1-" + props.k}
                 name="drinkName"
                 label="Name"
                 multiline
@@ -188,11 +194,16 @@ const MenuBuilder = () => {
                 onChange={(event) => formChangeHandler(event)}
               />
             </Grid>
-            <Grid key={props.k + 3} item xs={4} style={{ textAlign: "right" }}>
+            <Grid
+              key={"grid-1-1-1-1-" + props.k}
+              item
+              xs={4}
+              style={{ textAlign: "right" }}
+            >
               <TextField
                 fullWidth
                 required
-                key={props.k + 2}
+                key={"textField-1-1-" + props.k}
                 name="drinkDescription"
                 label="Description"
                 multiline
@@ -200,10 +211,10 @@ const MenuBuilder = () => {
                 onChange={(event) => formChangeHandler(event)}
               />
             </Grid>
-            <Grid key={props.k + 3} item xs={1}>
+            <Grid key={"grid-1-1-1-1-1-" + props.k} item xs={1}>
               <TextField
                 required
-                key={props.k + 3}
+                key={"textField-1-1-1-" + props.k}
                 style={{ textAlign: "left", marginLeft: "20px" }}
                 name="drinkPrice"
                 label="Price"
@@ -215,10 +226,10 @@ const MenuBuilder = () => {
             <Grid
               item
               xs={1}
-              key={props.k + 4}
+              key={"grid-1-1-1-1-1-1-" + props.k}
               container
               direction="row"
-              justify="center"
+              justifyContent="center"
               alignItems="flex-end"
               style={{ marginLeft: "20px" }}
             >
@@ -228,24 +239,25 @@ const MenuBuilder = () => {
                   marginRight: "5px",
                   fontWeight: "500",
                 }}
+                key={"p-1-" + props.k}
               >
                 Drink image
               </p>
             </Grid>
             <Grid
               item
-              key={props.k + 5}
+              key={"grid-1-1-1-1-1-1-1-" + props.k}
               xs={3}
               container
               direction="row"
-              justify="flex-end"
+              justifyContent="flex-end"
               alignItems="flex-end"
             >
               <Form.File
                 name="selectedFile"
                 type="file"
                 custom
-                key={props.k + 6}
+                key={"grid-1-1-1-1-1-1-1-1-" + props.k}
                 style={{
                   fontFamily: "montserrat",
                   fontSize: "12px",
@@ -313,7 +325,11 @@ const MenuBuilder = () => {
     const formRowArray = [];
     for (let k = 0; k < numRows; k++) {
       formRowArray.push(
-        <FormRow k={k} updateValue={(e) => formChangeHandler(e)}></FormRow>
+        <FormRow
+          k={k}
+          updateValue={(e) => formChangeHandler(e)}
+          key={"formRow-" + k}
+        ></FormRow>
       );
     }
     const handleSubmit = (event) => {
@@ -344,6 +360,7 @@ const MenuBuilder = () => {
     const RowNumTextField = () => {
       return (
         <Grid
+          key={"grid-3-3"}
           container
           item
           xs={1}
@@ -355,6 +372,7 @@ const MenuBuilder = () => {
           }}
         >
           <TextField
+            key={"textField-3-4"}
             name="numRows"
             label="Rows"
             type="number"
@@ -376,9 +394,10 @@ const MenuBuilder = () => {
         <Grid
           container
           item
+          key={"1-11-1"}
           xs={12}
           spacing={0}
-          justify="center"
+          justifyContent="center"
           style={{ marginTop: "3vh" }}
         >
           <Button
@@ -391,6 +410,7 @@ const MenuBuilder = () => {
               fontSize: "1rem",
               marginBottom: "5vh",
             }}
+            key={"buttonasdf"}
           >
             {isSpinning ? <Spinner></Spinner> : "Submit"}
           </Button>
@@ -398,31 +418,44 @@ const MenuBuilder = () => {
       );
     };
     formRowArray.push(
-      <SubmitButton onClick={(e) => handleSubmit(e)}></SubmitButton>
+      <SubmitButton
+        onClick={(e) => handleSubmit(e)}
+        key={"asdfzzz"}
+      ></SubmitButton>
     );
-    formRowArray.unshift(<RowNumTextField></RowNumTextField>);
+    formRowArray.unshift(<RowNumTextField key={"ccc"}></RowNumTextField>);
     return formRowArray;
   };
   return (
-    <Paper className={classes.content}>
-      <form autoComplete="off">
-        <Grid container spacing={2} direction="row" justify="center">
+    <Paper className={classes.content} key={"getthtpaper"}>
+      <form autoComplete="off" key={"bbbb"}>
+        <Grid
+          container
+          spacing={2}
+          direction="row"
+          justifyContent="center"
+          key={"asdf"}
+        >
           <BusinessIdInput
+            businessId={businessId}
             updateBusinessId={(newBusinessId) =>
               updateBusinessId(newBusinessId)
             }
+            key={"asdfz"}
           ></BusinessIdInput>
           <Grid
+            key={"asdf12"}
             container
             item
             xs={8}
             spacing={0}
-            justify="center"
+            justifyContent="center"
             style={{ marginTop: "3vh" }}
           >
             <Title>Menu Builder</Title>
           </Grid>
           <BuildPage
+            key={"asd3434f"}
             onSubmit={(e, formValues) => handleSubmit(e, formValues)}
           ></BuildPage>
         </Grid>

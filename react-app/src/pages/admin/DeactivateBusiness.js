@@ -42,25 +42,25 @@ const DeactivateBusiness = () => {
     return form.checkValidity();
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     setIsSpinning(true);
     setIsDisabled(true);
     event.preventDefault();
     const form = event.target.closest("form");
     if (validate(form)) {
-      const response = API.makeRequest(
+      const response = await API.makeRequest(
         "POST",
-        `/deactivate/business/${LocalStorageManager.shared.sessionToken}?business_id=${businessId}`,
+        `/business/deactivate/${LocalStorageManager.shared.sessionToken}?business_id=${businessId}`,
         false,
         false,
-        true
+        false
       );
       if (response.status !== 200) {
         alert("A server error occured. Tell Peter.");
         setIsSpinning(false);
         setIsDisabled(false);
       } else {
-        alert("Menu successfully uploaded!");
+        alert("Business sucessfully updated!");
         setIsSpinning(false);
         setIsDisabled(false);
       }
@@ -96,6 +96,7 @@ const DeactivateBusiness = () => {
           onChange={(event) => {
             const businessId = event.target.value.trimStart().trimEnd();
             setbusinessId(businessId);
+            props.updateBusinessId(businessId);
           }}
         />
       </Grid>
@@ -122,7 +123,7 @@ const DeactivateBusiness = () => {
               maxHeight: "5vh",
               marginTop: "21.7vh",
             }}
-            isDisabled={isDisabled}
+            disabled={isDisabled}
           >
             {isSpinning ? <Spinner></Spinner> : "Submit"}
           </Button>

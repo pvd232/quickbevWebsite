@@ -8,8 +8,13 @@ import Paper from "@material-ui/core/Paper";
 import Grid from "@material-ui/core/Grid";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useSearchParams } from "react-router-dom";
 
 const DeactivateDrink = () => {
+  // eslint-disable-next-line no-unused-vars
+  const [searchParams, setSearchParams] = useSearchParams();
+  var drinkId = searchParams.get("drink_id") ?? "";
+
   const useStyles = makeStyles((theme) => ({
     root: {
       width: "100vw",
@@ -33,7 +38,6 @@ const DeactivateDrink = () => {
     <FontAwesomeIcon icon={faSpinner} className="fa-spin" />
   );
 
-  var drinkId = "";
   const updateDrinkId = (newDrinkId) => {
     drinkId = newDrinkId;
   };
@@ -42,25 +46,25 @@ const DeactivateDrink = () => {
     return form.checkValidity();
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     setIsSpinning(true);
     setIsDisabled(true);
     event.preventDefault();
     const form = event.target.closest("form");
     if (validate(form)) {
-      const response = API.makeRequest(
+      const response = await API.makeRequest(
         "POST",
-        `/deactivate/drink/${LocalStorageManager.shared.sessionToken}?drink_id=${drinkId}`,
+        `/drink/deactivate/${LocalStorageManager.shared.sessionToken}?drink_id=${drinkId}`,
         false,
         false,
-        true
+        false
       );
       if (response.status !== 200) {
         alert("A server error occured. Tell Peter.");
         setIsSpinning(false);
         setIsDisabled(false);
       } else {
-        alert("Menu successfully uploaded!");
+        alert("Drink sucessfully updated!");
         setIsSpinning(false);
         setIsDisabled(false);
       }
@@ -74,16 +78,14 @@ const DeactivateDrink = () => {
   };
 
   const DrinkIdInput = (props) => {
-    const [drinkId, setdrinkId] = useState("");
+    const [drinkId, setdrinkId] = useState(props.drinkId);
     return (
       <Grid
         item
         xs={2}
         style={{
           textAlign: "center",
-          //   marginBottom: "20px",
           marginTop: "20vh",
-          //   paddingLeft: "4vw",
         }}
       >
         <TextField
@@ -96,6 +98,7 @@ const DeactivateDrink = () => {
           onChange={(event) => {
             const drinkId = event.target.value.trimStart().trimEnd();
             setdrinkId(drinkId);
+            props.updateDrinkId(drinkId);
           }}
         />
       </Grid>
@@ -107,6 +110,7 @@ const DeactivateDrink = () => {
       <form autoComplete="off">
         <Grid container spacing={2} direction="row" justify="center">
           <DrinkIdInput
+            drinkId={drinkId}
             updateDrinkId={(newDrinkId) => updateDrinkId(newDrinkId)}
           ></DrinkIdInput>
           <Button
@@ -120,7 +124,7 @@ const DeactivateDrink = () => {
               maxHeight: "5vh",
               marginTop: "21.7vh",
             }}
-            isDisabled={isDisabled}
+            disabled={isDisabled}
           >
             {isSpinning ? <Spinner></Spinner> : "Submit"}
           </Button>
