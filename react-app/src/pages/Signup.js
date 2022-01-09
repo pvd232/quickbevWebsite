@@ -580,7 +580,7 @@ const BusinessFieldset = (props) => {
       // set all the values for the business
       // if the user comes back to this page before submitting to change stuff it will reset the values
       const copyOfFormValue = {
-        name: formValue["name"].lowerCase(),
+        name: formValue["name"],
         phone_number: formValue["phoneNumber"],
         address: formValue["address"],
         street: formValue["street"],
