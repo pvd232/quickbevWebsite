@@ -249,7 +249,6 @@ const PromoteYourMenuFieldset = (props) => {
   const [selectedFileName, setSelectedFileName] = useState("");
 
   const onFileChange = (event) => {
-    // Update the state
     setSelectedFile(event.target.files[0]);
     setSelectedFileName(event.target.files[0].name);
   };
@@ -316,7 +315,7 @@ const PromoteYourMenuFieldset = (props) => {
         <h2 className="fs-title">Promote your menu</h2>
         <h5 className="fs-subtitle">
           Show off your business by uploading a link, image, PDF, or any other
-          file with your menu!
+          file type with your menu!
         </h5>
         <Row>
           <Form.Group
@@ -329,7 +328,7 @@ const PromoteYourMenuFieldset = (props) => {
             >
               {errorMsg.menuSubmittedErrorMsg}
             </div>
-            <Form.Label>Website link</Form.Label>
+            <Form.Label>Menu link</Form.Label>
             <Form.Control
               type="url"
               name="menuUrl"
@@ -359,7 +358,7 @@ const PromoteYourMenuFieldset = (props) => {
         </Row>
         <Row>
           <Form.Group as={Col} style={{ paddingLeft: "5px" }} id="fileInputCol">
-            <Form.Label>PDF or Image</Form.Label>
+            <Form.Label>Menu file</Form.Label>
             <Form.File
               id="fileInput"
               name="menuImg"
@@ -376,8 +375,6 @@ const PromoteYourMenuFieldset = (props) => {
               onChange={(event) => onFileChange(event)}
               label={selectedFileName}
               noValidate
-
-              // value={selectedFile}
             />
           </Form.Group>
         </Row>
@@ -481,7 +478,7 @@ const PromoteYourMenuFieldset = (props) => {
             </Card.Body>
           </Card>
         </Row>
-        <Button
+        {/* <Button
           name="previous"
           className="previous action-button"
           required
@@ -490,7 +487,7 @@ const PromoteYourMenuFieldset = (props) => {
           }}
         >
           Previous
-        </Button>
+        </Button> */}
         <Button type="submit" name="next" className="next action-button">
           Next
         </Button>
@@ -572,10 +569,19 @@ const BusinessFieldset = (props) => {
       setFormValue({ [name]: value });
     }
   };
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedFileName, setSelectedFileName] = useState("");
+
+  const onFileChange = (event) => {
+    // Update the state
+    setSelectedFile(event.target.files[0]);
+    setSelectedFileName(event.target.files[0].name);
+  };
 
   const handleSubmit = async (eventTarget, merchantStripeId) => {
     // the event target is the button that was clicked inside the payout setup component inside the business fieldset
     const form = eventTarget.closest("form");
+    validate(form);
     if (validate(form)) {
       // set all the values for the business
       // if the user comes back to this page before submitting to change stuff it will reset the values
@@ -592,8 +598,18 @@ const BusinessFieldset = (props) => {
       };
 
       copyOfFormValue.schedule = schedule;
+
+      const logoDataObject = {
+        logoFile: selectedFile,
+        logoFileName: selectedFileName,
+      };
+
       const newBusiness = new Business(copyOfFormValue);
-      const result = await props.onSubmit(newBusiness, merchantStripeId);
+      const result = await props.onSubmit(
+        newBusiness,
+        merchantStripeId,
+        logoDataObject
+      );
       return result;
     } else {
       return false;
@@ -613,7 +629,7 @@ const BusinessFieldset = (props) => {
     "sunday",
   ];
   return (
-    <Form autoComplete="off">
+    <Form autoComplete="new-password">
       <fieldset>
         <h2 className="fs-title">Your Business</h2>
         <Form.Label>Name</Form.Label>
@@ -641,12 +657,42 @@ const BusinessFieldset = (props) => {
             formChangeHandler(e);
           }}
         />
-        ,
+        <Form.Group as={Col} style={{ paddingLeft: "5px" }} id="fileInputCol">
+          <Form.Label>Business Logo</Form.Label>
+          <h5
+            className="fs-subtitle"
+            style={{
+              paddingLeft: "15px",
+              paddingRight: "5px",
+            }}
+          >
+            Your logo will be displayed as a square image with rounded corners
+            in the app. If you do not have a logo, we will display the QuickBev
+            logo in its place.
+          </h5>
+          <Form.File
+            id="fileInput"
+            name="logoFile"
+            type="file"
+            custom
+            style={{
+              border: "none",
+              borderRadius: "3px",
+              fontFamily: "montserrat",
+              fontSize: "12px",
+              height: "4vh",
+              padding: "0",
+            }}
+            onChange={(event) => onFileChange(event)}
+            label={selectedFileName}
+            noValidate
+          />
+        </Form.Group>
         {daysOfWeek.map((day, i) => (
           <>
-            <Form.Label>Closed on {day}</Form.Label>
+            <Form.Label key={"row-label-" + i}>Closed on {day}</Form.Label>
             <Row
-              key={i}
+              key={"row" + i}
               style={{
                 display: "flex",
                 height: "1vh",
@@ -696,7 +742,7 @@ const BusinessFieldset = (props) => {
               key={i + "-closing"}
               name={i + "-closing"}
               className="mb-3"
-              required={schedule[i].isClosed}
+              required={!schedule[i].isClosed}
               placeholder="04:00 AM"
               disabled={schedule[i].isClosed}
               value={schedule[i].closingTime}
@@ -745,7 +791,7 @@ const Signup = () => {
     }
   };
 
-  const onSubmit = async (newBusiness, merchantStripeId) => {
+  const onSubmit = async (newBusiness, merchantStripeId, logoDataObject) => {
     const newForm = new FormData();
     // set values from formDataObject into business object
     newBusiness.classification = formDataObject.classification;
@@ -753,11 +799,19 @@ const Signup = () => {
     if (formDataObject.menuUrl) {
       newBusiness.menuUrl = formDataObject.menuUrl;
     }
+
     if (formDataObject.menuFile) {
       newForm.append(
-        "file",
+        "menu_file",
         formDataObject.menuFile,
         formDataObject.menuFileName
+      );
+    }
+    if (logoDataObject.logoFile) {
+      newForm.append(
+        "logo_file",
+        logoDataObject.logoFile,
+        logoDataObject.logoFileName
       );
     }
 
@@ -811,8 +865,8 @@ const Signup = () => {
       }
     ></PromoteYourMenuFieldset>,
     <BusinessFieldset
-      onSubmit={(newBusiness, merchantStripeId) =>
-        onSubmit(newBusiness, merchantStripeId)
+      onSubmit={(newBusiness, merchantStripeId, logoDataObject) =>
+        onSubmit(newBusiness, merchantStripeId, logoDataObject)
       }
       onClick={(buttonType) => handleClick(buttonType)}
     ></BusinessFieldset>,

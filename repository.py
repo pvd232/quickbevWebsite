@@ -24,7 +24,6 @@ class Drink_Repository(object):
 
     def add_drinks(self, session: scoped_session, drink_list: list[Drink_Domain]):
         for drink in drink_list:
-            print('drink biz id', type(drink.business_id))
             new_drink = Drink(id=drink.id, name=drink.name, description=drink.description,
                               price=drink.price, business_id=drink.business_id)
             session.add(new_drink)
@@ -114,9 +113,6 @@ class Order_Repository(object):
         # only get active orders
         orders = session.query(Order, Customer.first_name.label('customer_first_name'), Customer.last_name.label('customer_last_name')).join(
             Customer, Order.customer_id == Customer.id).filter(Order.business_id == business_id, Order.completed == False, Order.refunded == False).all()
-        # a = type(orders[0])
-        # print('a = type(orders[0])', type(orders[0]))
-        # print('orders[0]', orders[0])
         return orders
 
     def create_stripe_ephemeral_key(self, session: scoped_session, request: dict):
@@ -310,7 +306,7 @@ class Business_Repository(object):
         # will have to plug in an API here to dynamically pull information (avalara probs if i can get the freaking credentials to work)
 
         new_business = Business(id=business.id, name=business.name, classification=business.classification, sales_tax_rate=business.sales_tax_rate, merchant_id=business.merchant_id, street=business.street, city=business.city,
-                                state=business.state, zipcode=business.zipcode, address=business.address, phone_number=business.phone_number, merchant_stripe_id=business.merchant_stripe_id)
+                                state=business.state, zipcode=business.zipcode, address=business.address, phone_number=business.phone_number, merchant_stripe_id=business.merchant_stripe_id, image_url=business.image_url)
         session.add(new_business)
         days_of_week = [
             "monday",
@@ -413,6 +409,13 @@ class Business_Repository(object):
             Business.id == business_id).first()
         if business_to_deativate != None:
             business_to_deativate.is_active = False
+        return
+
+    def update_business_image_url(self, session: scoped_session, business_id: uuid.UUID, image_url: str):
+        business = session.query(Business).filter(
+            Business.id == business_id).first()
+        if business != None:
+            business.image_url = image_url
         return
 
 
@@ -642,6 +645,7 @@ class ETag_Repository(object):
     def validate_etag(self, session: scoped_session, etag: ETag_Domain):
         validation = session.query(ETag).filter(
             ETag.category == etag.category, ETag.id == etag.id).first()
+        print('validation', validation)
         if validation:
             return True
         else:

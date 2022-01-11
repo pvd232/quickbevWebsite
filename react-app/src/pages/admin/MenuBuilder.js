@@ -66,7 +66,7 @@ const MenuBuilder = () => {
       }
     } else {
       alert(
-        "Menu upload failed. Make sure you filled out the form correctly and your internet is working."
+        "Upload failed due to missing menu data. Please fill out all the required form values."
       );
     }
     window.location.reload();
@@ -428,7 +428,13 @@ const MenuBuilder = () => {
   };
   return (
     <Paper className={classes.content} key={"getthtpaper"}>
-      <form autoComplete="off" key={"bbbb"}>
+      <form
+        autoComplete="off"
+        key={"bbbb"}
+        onSubmit={() => {
+          handleSubmit();
+        }}
+      >
         <Grid
           container
           spacing={2}

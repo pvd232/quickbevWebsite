@@ -122,6 +122,7 @@ class Business(db.Model):
     quick_passes_per_hour = db.Column(db.Integer(), default=30, nullable=False)
     quick_pass_queue = db.Column(db.Integer(), default=0, nullable=True)
     quick_pass_queue_hour = db.Column(db.Integer(), default=0, nullable=True)
+    image_url = db.Column(db.String(200), nullable=True)
     schedule = relationship(
         "Business_Schedule_Day", lazy=True,  uselist=True)
     merchant_employee = relationship(
@@ -602,7 +603,6 @@ def create_orders_and_customers():
         new_my_table_stripe_customer = Stripe_Customer(
             id=new_stripe_customer.id)
         db.session.add(new_my_table_stripe_customer)
-        print('customer_id_list[i]', customer_id_list[i])
         new_customer = Customer(id=customer_id_list[i], stripe_id=new_my_table_stripe_customer.id, password=generate_password_hash(
             customer_password_list[i]), first_name=customer_first_name_list[i], last_name=customer_last_name_list[i], email_verified=True, has_registered=False)
         db.session.add(new_customer)

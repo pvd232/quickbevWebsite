@@ -8,7 +8,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 const PayoutSetup = (props) => {
   const [redirect, setRedirect] = useState(null);
-  const [isPlacingOrder, setIsPlacingOrder] = useState(null);
+  const [isSpinning, setIsSpinning] = useState(null);
   const Spinner = () => (
     <FontAwesomeIcon icon={faSpinner} className="fa-spin" />
   );
@@ -49,7 +49,7 @@ const PayoutSetup = (props) => {
       <>
         <div className="text-center box">
           <img src={bankIcon} alt="" className="icon" />
-          <h5 style={{ marginTop: "5%", marginBottom: "5%" }}>
+          <h5 style={{ marginTop: "3vh", marginBottom: "3vh" }}>
             Stripe account onboarding incomplete
           </h5>
           <p>
@@ -59,14 +59,14 @@ const PayoutSetup = (props) => {
 
           <Button
             className="btn btn-primary text-center"
-            disabled={isPlacingOrder}
+            disabled={isSpinning}
             onClick={(event) => {
               // if this is the payout redirect then all values for business and merchant have been set in the backend and we dont need to propogate back upwards
               event.preventDefault();
               handleConnect().then(() => setRedirect(redirectUrl));
             }}
           >
-            {isPlacingOrder ? <Spinner></Spinner> : "Set up payouts"}
+            {isSpinning ? <Spinner></Spinner> : "Set up payouts"}
           </Button>
         </div>
       </>
@@ -74,7 +74,7 @@ const PayoutSetup = (props) => {
   } else {
     return (
       <>
-        <div className="text-center box">
+        <div>
           <div className="fs-title">
             Input your bank account to recieve payouts
           </div>
@@ -87,22 +87,30 @@ const PayoutSetup = (props) => {
           <Button
             className="btn btn-primary text-center"
             style={{ display: "inline-block" }}
-            disabled={isPlacingOrder}
+            disabled={isSpinning}
             onClick={(event) => {
-              setIsPlacingOrder(true);
-              event.preventDefault();
+              // setIsSpinning(true);
+              // event.preventDefault();
               const eventTarget = event.target;
               handleConnect().then((merchantStripeId) =>
-                props.onSubmit(eventTarget, merchantStripeId).then(() => {
+                props.onSubmit(eventTarget, merchantStripeId).then((result) => {
+                  console.log("result", result);
+                  if (!result) {
+                    return;
+                  }
+                  // setIsSpinning(false);
                   LocalStorageManager.shared.setItem("first_login", true);
-                  setRedirect(redirectUrl);
+                  // setRedirect(redirectUrl);
                 })
               );
             }}
           >
-            {isPlacingOrder ? <Spinner></Spinner> : "Set up payouts"}
+            {isSpinning ? <Spinner></Spinner> : "Set up payouts"}
           </Button>
-          <p className="text-center notice">
+          <p
+            className="text-center"
+            style={{ marginTop: "3vh", marginBottom: "1vh" }}
+          >
             You'll be redirected to Stripe to complete the onboarding proces.
           </p>
         </div>

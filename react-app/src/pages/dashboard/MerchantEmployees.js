@@ -121,10 +121,13 @@ const MerchantEmployees = (props) => {
       `/merchant_employee/staging/${LocalStorageManager.shared.sessionToken}`,
       data
     ).then(() => {
+      mappedMerchantEmployees.splice(index, 1);
+
       if (mappedMerchantEmployees.length === 0) {
-        // add a dummy merchantemployee to populate the row values if there are 0 merchantemployee objects left in the list
+        // add a dummy merchant employee to populate the row values if there are 0 merchantemployee objects left in the list
         const dummyMerchantEmployee = new MerchantEmployee();
         mappedMerchantEmployees.push(dummyMerchantEmployee);
+        console.log("mappedMerchantEmployees", mappedMerchantEmployees);
       }
       props.onUpdate(mappedMerchantEmployees);
       setIsSpinning(false);
@@ -153,7 +156,14 @@ const MerchantEmployees = (props) => {
             `/merchant_employee/staging/${LocalStorageManager.shared.sessionToken}`,
             formValue
           ).then(() => {
+            // setMappedMerchantEmployees((prevMappedMerchantEmployees) => {
+            // console.log(
+            // "prevMappedMerchantEmployees",
+            // prevMappedMerchantEmployees
+            // );
+
             mappedMerchantEmployees.push(newMerchantEmployee);
+
             props.onUpdate(mappedMerchantEmployees);
             setCsvData(makeCSVData());
             setModalOpen((prevModalOpen) => !prevModalOpen);
@@ -161,6 +171,7 @@ const MerchantEmployees = (props) => {
             setFormValue({ email: "" });
             setIsSpinning(false);
             return true;
+            // });
           });
 
           // the requested username is already assigned to a staged merchant employee
@@ -185,6 +196,7 @@ const MerchantEmployees = (props) => {
         }
       });
     } else {
+      setIsSpinning(false);
       setErrorMsg(newErrorMsgState);
     }
   };
@@ -208,7 +220,12 @@ const MerchantEmployees = (props) => {
         Add new employee
       </h4>
 
-      <Form autoComplete="off">
+      <Form
+        autoComplete="off"
+        onSubmit={(e) => {
+          handleAddPerson(e);
+        }}
+      >
         <fieldset>
           <Form.Label>Employee email</Form.Label>
           <div className="invalid-feedback" style={emailErrorMsgStyle}>
@@ -227,6 +244,7 @@ const MerchantEmployees = (props) => {
           />
         </fieldset>
         <Button
+          type="submit"
           variant="contained"
           disabled={isSpinning}
           color="primary"
@@ -234,10 +252,6 @@ const MerchantEmployees = (props) => {
             textAlign: "center",
             marginLeft: "47%",
             transform: "translateX(-47%)",
-          }}
-          onClick={(e) => {
-            setIsSpinning(true);
-            handleAddPerson(e);
           }}
         >
           {isSpinning ? <Spinner></Spinner> : "Submit"}

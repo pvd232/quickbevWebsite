@@ -410,6 +410,7 @@ export class Business {
     this.atCapacity = businessObject.at_capacity;
     this.schedule = businessObject.schedule;
     this.isActive = businessObject.is_active;
+    this.imageUrl = businessObject.image_url;
   }
   get formattedName() {
     return formatName(this.name);
@@ -432,7 +433,7 @@ export class Business {
       sales_tax: this.salesTaxRate,
       at_capacity: this.atCapacity,
       schedule: this.schedule,
-      time_zone: this.timeZone,
+      logo_file: this.logoFile,
     };
     return data;
   }

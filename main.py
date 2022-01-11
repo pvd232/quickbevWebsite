@@ -15,7 +15,7 @@ from pushjack_http2_mod import GCMClient
 
 stripe.api_key = "sk_test_51I0xFxFseFjpsgWvh9b1munh6nIea6f5Z8bYlIDfmKyNq6zzrgg8iqeKEHwmRi5PqIelVkx4XWcYHAYc1omtD7wz00JiwbEKzj"
 secret = '3327aa0ee1f61998369e815c17b1dc5eaf7e728bca14f6fe557af366ee6e20f9'
-ip_address = "192.168.1.192"
+ip_address = "192.168.1.71"
 env = "production"
 apns = "production"
 
@@ -546,7 +546,7 @@ def send_confirmation_email(jwt_token, email_type, user=None, business=None, str
             button_url = f"http://localhost:3000/bouncer-email-confirmed/{jwt_token}"
 
         verify_button = f'<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="margin-right: auto; margin-top:5vh; margin-left:auto; margin-bottom:2vh;   border-collapse:separate;line-height:100%;"><tr><td><div><!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="http://www.activecampaign.com" style="height:40px;v-text-anchor:middle;width:130px;" arcsize="5%" strokecolor="#8682E6" fillcolor="#8682E6;width: 130;"><w:anchorlock/></v:roundrect><![endif]--><a href={button_url} style="display: inline-block; mso-hide:all; background-color: #8682E6; color: #FFFFFF; border:1px solid #8682E6; border-radius: 6px; line-height: 220%; width: 200px; font-family: Helvetica, sans-serif; font-size:18px; font-weight:600; text-align: center; text-decoration: none; -webkit-text-size-adjust:none;" target="_blank">Verify email</a></a></div></td></tr></table>'
-        mail_body_text = f'<p style="margin-top: 3vh;margin-bottom: 15px;">Hello,</p><p style="margin-top: 15px;margin-bottom: 15px;">Welcome to QuickBev!</p><p style="margin-top: 15px;margin-bottom: 15px;">This email has been registered with QuickBev as a Doorman. The Merchant who registered you is listed below.</p><p>Merchant Name: {user.first_name} {user.last_name}</p> <p> Please click the button below to confirm your email. You will then receive another email with a link to the QuickPass Page.<p style="margin-top: 15px;margin-bottom: 15px;">Let the good times begin,</p><p style="margin-top: 15px;margin-bottom: 15px;">—The QuickBev Team</p></div><div style="width:100%; height:3vh;">{verify_button}</div>'
+        mail_body_text = f"<p style='margin-top: 3vh;margin-bottom: 15px;'>Hello,</p><p style='margin-top: 15px;margin-bottom: 15px;'>Welcome to QuickBev!</p><p style='margin-top: 15px;margin-bottom: 15px;'>This email has been registered with QuickBev as a Doorman. The Merchant who registered you is listed below.</p><p>Merchant Name: {user.first_name} {user.last_name}</p> <p> Click the button below to confirm your email. You will then receive another email with a link to the QuickPass Page (check your spam if you don't see it).<p style='margin-top: 15px;margin-bottom: 15px;'>Let the good times begin,</p><p style='margin-top: 15px;margin-bottom: 15px;'>—The QuickBev Team</p></div><div style='width:100%; height:3vh;'>{verify_button}</div>"
         mail_body = f'<div style="height: 100%;"><div style="width: 100%;height: 100%;background-color: #e8e8e8;"><div style="width: 100%;max-width: 500px;height: 80vh; margin-top: 0%;margin-bottom: 10%; margin-right:auto; margin-left:auto; background-color: #e8e8e8;"><tr style="width:100%;height:5vh;"></tr><div style="width:calc(100% - 30px); height:50vh; padding:30px 30px 30px 30px; background-color:white; margin-top:auto; margin-bottom:auto"><div style="width:100%; text-align:center; justify-content:center"><img src="{logo}" style="width:50%; height:12%; margin-right:auto; margin-left:auto" alt="img" /></div><div  style="margin-top: 30px;">{mail_body_text}</div><tr style="width:100%;height:5vh;"></tr></div></div></div>'
 
         sender_address = 'confirmation@quickbev.us'
@@ -899,32 +899,36 @@ def business(session_token):
 
         # javascript businesses
         if merchant_id:
-            merchant = Merchant_Service().get_merchant(merchant_id=merchant_id)
-            if merchant.is_administrator:
-                businesses = Business_Service().get_merchant_business(merchant_id=merchant.id)
-                response["businesses"] = [x.dto_serialize()
-                                          for x in businesses]
-                return Response(status=200, response=json.dumps(response), headers=headers)
-
             business_e_tag = json.loads(request.headers.get("If-None-Match"))
             status = ETag_Service().validate_merchant_etag(
                 merchant_id=merchant_id, e_tag=business_e_tag)
-
-            # this means a business has been added since the merchant last logged on, or a drink has been added thus updating the menu property of the business
             if not status:
                 new_business_e_tag_id = ETag_Service().get_merchant_etag(
                     e_tag=business_e_tag, merchant_id=merchant_id)
                 headers["e-tag-id"] = new_business_e_tag_id
-                merchant_businesses = [x.dto_serialize(
-                ) for x in Business_Service().get_merchant_business(merchant_id)]
-                response["businesses"] = merchant_businesses
+
+            merchant = Merchant_Service().get_merchant(merchant_id=merchant_id)
+            if merchant.is_administrator:
+                businesses = Business_Service().get_businesses()
+            else:
+                businesses = Business_Service().get_merchant_businesses(merchant_id=merchant_id)
+
+            response["businesses"] = [x.dto_serialize()
+                                      for x in businesses]
+
+            # this means a business has been added since the merchant last logged on, or a drink has been added thus updating the menu property of the business
+
             return Response(status=200, response=json.dumps(response), headers=headers)
 
         # swift businesses
         else:
             businesses = Business_Service().get_businesses()
             customer_etag = json.loads(request.headers.get("If-None-Match"))
+            print('927 customer_etag', customer_etag)
             if customer_etag:
+                print('929 customer_etag', customer_etag)
+                print('ETag_Service().validate_etag(customer_etag)',
+                      ETag_Service().validate_etag(customer_etag))
                 if not ETag_Service().validate_etag(customer_etag):
                     for business in businesses:
                         # turn into dictionaries
@@ -932,6 +936,8 @@ def business(session_token):
                         businessDTO['business'] = business.dto_serialize()
                         business_list.append(businessDTO)
                     response['businesses'] = business_list
+                    for businesss in business_list:
+                        print('businesss', businesss)
 
                     etag = ETag_Service().get_etag("business")
                     headers["e-tag-category"] = etag.category
@@ -944,36 +950,37 @@ def business(session_token):
 
     elif request.method == 'POST':
         requested_business = json.loads(request.form.get("business"))
+        requested_business["id"] = uuid.uuid4()
         new_business = Business_Service().add_business(requested_business)
         merchant = Merchant_Service().get_merchant(new_business.merchant_id)
         if new_business:
             new_e_tag = ETag_Service().update_etag("business")
             ETag_Service().update_merchant_etag(business_id=new_business.id, e_tag=new_e_tag)
+
             headers["jwt-token"] = jwt.encode(
                 {"sub": new_business.merchant_id}, key=secret, algorithm="HS256")
+
             send_confirmation_email(
                 jwt_token=headers["jwt-token"], email_type="business_confirmation", user=merchant, business=new_business)
+
             stripe_account_status = Merchant_Service(
             ).authenticate_merchant_stripe(merchant.stripe_id)
+
             send_confirmation_email(
                 jwt_token=headers["jwt-token"], email_type="add_business_notification", user=merchant, business=new_business, stripe_account_status=stripe_account_status)
             response['confirmed_new_business'] = new_business.dto_serialize()
-            if 'file' not in request.files:
-                response["msg"] = "No file part in request"
-                return Response(status=200, response=json.dumps(response), headers=headers)
 
-            file = request.files['file']
-            # merchant does not select file
-            if file.filename == '':
-                response["msg"] = "No file file uploaded"
-                return Response(status=200, response=json.dumps(response), headers=headers)
+            if 'menu_file' in request.files:
+                menu_file = request.files['menu_file']
+                if menu_file.filename != '':
+                    Google_Cloud_Storage_Service().upload_menu_file(menu_file, new_business.id)
 
-            if file:
-                Google_Cloud_Storage_Service().upload_menu_file(file, new_business.id)
-                response["msg"] = "File successfully uploaded!"
-                return Response(status=200, response=json.dumps(response), headers=headers)
-        response["msg"] = "An unknown internal server error occured"
-        return Response(status=500, response=json.dumps(response), headers=headers)
+            if 'logo_file' in request.files:
+                logo_file = request.files['logo_file']
+                if logo_file.filename != '':
+                    Google_Cloud_Storage_Service().upload_business_logo_file(
+                        file=logo_file, business_id=new_business.id)
+        return Response(status=200, response=json.dumps(response), headers=headers)
 
 
 @app.route('/tabs', methods=['POST', 'GET'])
@@ -1389,10 +1396,11 @@ def merchant():
         # check if the post request has the file part
         requested_merchant = json.loads(request.form.get("merchant"))
         requested_business = json.loads(request.form.get("business"))
-
+        requested_business["id"] = uuid.uuid4()
+        requested_merchant["id"] = uuid.uuid4()
+        requested_business["merchant_id"] = requested_merchant["id"]
         new_merchant = Merchant_Service().add_merchant(requested_merchant)
         new_business = Business_Service().add_business(requested_business)
-        biz_etag = ETag_Service().get_etag(category="business")
         if new_merchant and new_business:
             ETag_Service().update_etag(category="business")
             # when a merchant is created their business and drink etag ids are 0
@@ -1400,33 +1408,27 @@ def merchant():
             new_merchant.drink_e_tag_id = 0
             # this is a quick fix because for some reason front end cannot read dict key jwt-token
             headers["token"] = jwt.encode(
-                {"sub": new_merchant.id}, key=secret, algorithm="HS256")
+                {"sub": str(new_merchant.id)}, key=secret, algorithm="HS256")
 
-            send_confirmation_email(
-                jwt_token=headers["token"], email_type="merchant_confirmation", user=new_merchant, business=new_business)
+            # send_confirmation_email(
+            #     jwt_token=headers["token"], email_type="merchant_confirmation", user=new_merchant, business=new_business)
             stripe_account_status = Merchant_Service(
             ).authenticate_merchant_stripe(new_merchant.stripe_id)
             send_confirmation_email(
                 jwt_token=headers["token"], email_type="merchant_sign_up_notification", user=new_merchant, business=new_business, stripe_account_status=stripe_account_status)
             response['confirmed_new_business'] = new_business.dto_serialize()
             response['confirmed_new_merchant'] = new_merchant.dto_serialize()
-            if 'file' not in request.files:
-                response["msg"] = "No file part in request"
-                return Response(status=200, response=json.dumps(response), headers=headers)
 
-            file = request.files['file']
-            # merchant does not select file
-            if file.filename == '':
-                response["msg"] = "No file file uploaded"
-                return Response(status=200, response=json.dumps(response), headers=headers)
+            if 'logo_file' in request.files:
+                logo_file = request.files['logo_file']
+                if logo_file.filename != '':
+                    Google_Cloud_Storage_Service().upload_business_logo_file(logo_file, new_business.id)
+            if 'menu_file' in request.files:
+                menu_file = request.files['menu_file']
+                if menu_file.filename != '':
+                    Google_Cloud_Storage_Service().upload_menu_file(menu_file, new_business.id)
 
-            if file:
-                Google_Cloud_Storage_Service().upload_menu_file(file, new_business.id)
-                response["msg"] = "File successfully uploaded!"
-                return Response(status=200, response=json.dumps(response), headers=headers)
-
-        response["msg"] = "An unknown internal server error occured"
-        return Response(status=500, response=json.dumps(response), headers=headers)
+        return Response(status=200, response=json.dumps(response), headers=headers)
 
 
 @app.route('/merchant/validate', methods=['GET', 'OPTIONS'])
@@ -1540,80 +1542,6 @@ def validate_merchant_stripe_account():
         else:
             response = Response(status=400)
         return response
-
-
-# @app.route('/menu/<string:session_token>', methods=['OPTIONS', 'GET'])
-# def add_menu(session_token):
-#     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
-#         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
-
-#     headers = {}
-#     response = {}
-#     if request.method == 'OPTIONS':
-#         headers["Access-Control-Allow-Origin"] = request.origin
-#         headers["Access-Control-Allow-Headers"] = request.headers.get(
-#             'Access-Control-Request-Headers')
-#         headers["Access-Control-Expose-Headers"] = "*"
-
-#         return Response(status=200, headers=headers)
-
-    # if request.method == 'POST':
-    #     headers["Access-Control-Allow-Origin"] = request.origin
-    #     headers["Access-Control-Expose-Headers"] = "*"
-
-    #     drink_names = json.loads(request.form.get("drinkName"))
-    #     drink_descriptions = json.loads(request.form.get("drinkDescription"))
-    #     drink_prices = json.loads(request.form.get("drinkPrice"))
-    #     drink_image_file_exists = json.loads(request.form.get("selectedFile"))
-    #     business_id = json.loads(request.form.get("businessId"))
-
-    #     new_drinks = [{"name": x} for x in drink_names]
-    #     for i in range(len(new_drinks)):
-    #         drink = new_drinks[i]
-    #         drink["description"] = drink_descriptions[i]
-    #         drink["price"] = float(drink_prices[i])
-    #         drink["has_image"] = drink_image_file_exists[i]
-
-    #     added_drinks = Drink_Service().add_drinks(business_id, new_drinks)
-    #     new_drink_e_tag = ETag_Service().update_etag("drink")
-    #     ETag_Service().update_merchant_etag(
-    #         business_id=business_id, e_tag=new_drink_e_tag)
-
-    #     # must update both because when drinks are updated it updates the drink relationship of the business which is where menu drinks are derived in website
-    #     new_business_e_tag = ETag_Service().update_etag("business")
-    #     ETag_Service().update_merchant_etag(
-    #         business_id=business_id, e_tag=new_business_e_tag)
-
-    #     files = request.files
-    #     drinks_with_images = [
-    #         x for x in added_drinks if x.has_image == True]
-    #     if 'selectedFile' in files:
-    #         multi_dict_files = MultiDict(files).getlist('selectedFile')
-    #         for i in range(len(multi_dict_files)):
-    #             file = multi_dict_files[i]
-    #             drink = drinks_with_images[i]
-
-    #             # update the drink image url for each drink, keeping the proper index intact by extracting only drinks with an image
-    #             drink.set_image_url(file.filename)
-    #             drink.file = file
-    #             Google_Cloud_Storage_Service().upload_drink_image_file(drink)
-    #             response["msg"] = "File successfully uploaded!"
-    #         Drink_Service().update_drinks(drinks_with_images)
-    #         return Response(status=200, response=json.dumps(response), headers=headers)
-    #     drink_descriptions = json.loads(request.form.get("drinkDescription"))
-    #     drink_descriptions = json.loads(request.form.get("drinkDescription"))
-
-    #     response = Response(status=200, headers=headers)
-    #     return response
-    # else:
-    # business_id = request.args.get('businessId')
-    # menu = Business_Service().get_menu(business_id)
-    # if menu:
-    #     menu = [x.dto_serialize() for x in menu]
-    #     response = Response(status=200, response=json.dumps(menu))
-    # else:
-    #     response = Response(status=404)
-    # return response
 
 
 @app.route('/quick_pass/<string:session_token>', methods=['POST', 'PUT', 'GET', 'OPTIONS'])

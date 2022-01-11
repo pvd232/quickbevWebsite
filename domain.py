@@ -564,6 +564,8 @@ class Business_Domain(object):
             self.quick_pass_price = business_object.quick_pass_price
             self.quick_pass_queue = business_object.quick_pass_queue
             self.quick_pass_queue_hour = business_object.quick_pass_queue_hour
+            if business_object.image_url != None:
+                self.image_url = business_object.image_url
 
         if business_json:
             self.id = uuid.uuid4()
@@ -601,15 +603,17 @@ class Business_Domain(object):
                 print('address exception', e)
             if "menu_url" in business_json:
                 self.menu_url = business_json["menu_url"]
+            if "image_url" in business_json:
+                self.image_url = business_json["image_url"]
             else:
-                self.menu_url = None
+                self.image_url = None
 
     def dto_serialize(self):
         attribute_names = list(self.__dict__.keys())
         attributes = list(self.__dict__.values())
         serialized_attributes = {}
         for i in range(len(attributes)):
-            if attribute_names[i] == 'id':
+            if attribute_names[i] == 'id' or attribute_names[i] == 'merchant_id':
                 serialized_attributes['id'] = str(attributes[i])
             elif attribute_names[i] == 'menu':
                 serialized_attributes['menu'] = [
@@ -676,7 +680,7 @@ class ETag_Domain(object):
             self.id = etag_json["id"]
             self.category = etag_json["category"]
 
-    def serialize(self):
+    def dto_serialize(self):
         attribute_names = list(self.__dict__.keys())
         attributes = list(self.__dict__.values())
         serialized_attributes = {}

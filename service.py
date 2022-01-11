@@ -9,6 +9,7 @@ from contextlib import contextmanager
 from models import instantiate_db_connection, stripe_fee_percentage, service_fee_percentage, quick_pass_service_fee_percentage
 from repository import *
 import inspect
+from werkzeug.datastructures import FileStorage
 should_diplay_expiration_time = True
 
 
@@ -29,12 +30,6 @@ session_factory = sessionmaker(bind=drink_engine)
 
 # create a Session
 Session = scoped_session(session_factory)
-
-# TODO add error message to tell user if they tried to upload a word doc or another doc to either convert it to a pdf or email the docuement to quickbev
-# local_time_zone = datetime.utcnow().astimezone().tzinfo
-# print('local_time_zone',local_time_zone)
-# os.environ['TZ'] = str(local_time_zone)
-# time.tzset()
 
 
 @contextmanager
@@ -241,9 +236,6 @@ class Order_Service(object):
         stripe_units_total = int(round(100 * total, 2))
 
         merchant_stripe_id = new_order_domain.merchant_stripe_id
-        print()
-        print('new_order_domain', new_order_domain.dto_serialize())
-        print()
 
         customer_stripe_id = Customer_Service().get_customer(
             customer_id=new_order_domain.customer_id).stripe_id
@@ -262,9 +254,7 @@ class Order_Service(object):
             servers = Merchant_Employee_Repository().get_servers(
                 session=session, business_id=new_order_domain.business_id)
             for server in servers:
-                print('server.first_name', server.first_name)
                 tip_per_server = int(round(tip_total/len(servers), 2) * 100)
-                print('tip_per_server', tip_per_server)
                 stripe.Transfer.create(
                     amount=tip_per_server,
                     currency='usd',
@@ -567,7 +557,7 @@ class Business_Service(object):
             else:
                 return False
 
-    def get_merchant_business(self, merchant_id: str):
+    def get_merchant_businesses(self, merchant_id: str):
         with session_scope() as session:
             response = []
             for business in Business_Repository().get_merchant_businesses(session=session, merchant_id=merchant_id):
@@ -632,6 +622,7 @@ class ETag_Service(object):
     def validate_etag(self, etag: dict):
         with session_scope() as session:
             etag_domain = ETag_Domain(etag_json=etag)
+            print('etag_domain', etag_domain.dto_serialize())
             return ETag_Repository().validate_etag(session=session, etag=etag_domain)
 
     def update_etag(self, category: str):
@@ -698,7 +689,7 @@ class Google_Cloud_Storage_Service(object):
 
         print("Bucket {} created.".format(bucket.name))
 
-    def upload_menu_file(self, file, destination_blob_name: str):
+    def upload_menu_file(self, file: FileStorage, destination_blob_name: str):
         """Uploads a file to the bucket."""
         # bucket_name = "your-bucket-name"
         # file = "local/path/to/file" this will be the business folder, with a folder named after the business' unique id, which will have the menu file in it
@@ -722,6 +713,31 @@ class Google_Cloud_Storage_Service(object):
         blob.upload_from_file(file)
         blob.make_public()
         return True
+
+    def upload_business_logo_file(self, file: FileStorage, business_id: uuid.UUID):
+        """Uploads a file to the bucket."""
+        # bucket_name = "your-bucket-name"
+        # file = "local/path/to/file" this will be the business folder, with a folder named after the business' unique id, which will have the menu file in it
+        # destination_blob_name = "storage-object-name" this will be the business uuid
+        file_type = file.filename.rsplit('.', 1)[1].lower()
+        destination_blob_name = "business/" + \
+            str(business_id) + "/logo" + "." + file_type
+
+        blob = self.bucket.blob(destination_blob_name)
+        blob.upload_from_file(file)
+        blob.make_public()
+        print('destination_blob_name', destination_blob_name)
+        image_url_pre_fix = "https://storage.googleapis.com/my-new-quickbev-bucket/"
+        image_url = image_url_pre_fix + destination_blob_name
+        self.update_business_image_url(
+            business_id=business_id, image_url=image_url)
+        return True
+
+    def update_business_image_url(self, business_id: uuid.UUID, image_url: str):
+        with session_scope() as session:
+            Business_Repository().update_business_image_url(
+                session=session, business_id=business_id, image_url=image_url)
+            return
 
 
 class Quick_Pass_Service(object):
@@ -769,7 +785,6 @@ class Quick_Pass_Service(object):
         with session_scope() as session:
             business = Business_Repository().get_business(
                 session, quick_pass_domain.business_id)
-            print('business.quick_pass_queue', business.quick_pass_queue)
             new_queue = business.quick_pass_queue + 1
             Business_Repository().update_quick_pass_queue(
                 session=session, business_id=business.id, queue=new_queue)

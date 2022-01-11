@@ -15,15 +15,7 @@ const Home = () => {
     setBusinesses(newBusinesses);
   };
   const handleMerchantEmployeeUpdate = (newMerchantEmployeees) => {
-    if (newMerchantEmployeees.length === 1) {
-      setMerchantEmployees(newMerchantEmployeees);
-      return;
-    } else {
-      if (newMerchantEmployeees[0].id === "") {
-        newMerchantEmployeees.shift();
-      }
-      setMerchantEmployees(newMerchantEmployeees);
-    }
+    setMerchantEmployees(newMerchantEmployeees);
   };
   useEffect(() => {
     let mounted = true;

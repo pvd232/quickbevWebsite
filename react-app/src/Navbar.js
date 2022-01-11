@@ -32,7 +32,7 @@ const Navbar = (props) => {
         aria-controls="navbarTogglerDemo02"
         aria-expanded="false"
         aria-label="Toggle navigation"
-        style={{ color: "black", marginTop: "20px" }}
+        style={{ color: "black", marginTop: "20px", marginLeft: "20px" }}
       >
         <span className="navbar-toggler-icon"></span>
       </button>
