@@ -2,7 +2,7 @@ import { Merchant, LocalStorageManager } from "../Models.js";
 
 class Client {
   constructor() {
-    this.baseUrl = "http://quickbev.us";
+    this.baseUrl = "https://quickbev.us";
     this.mode = "cors";
   }
   async makeRequest(
