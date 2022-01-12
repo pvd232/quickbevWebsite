@@ -63,6 +63,8 @@ const Bouncers = (props) => {
       status: "pending",
     }
   );
+  const rowHeaders = new Bouncer();
+
   const [mappedBouncers, setMappedBouncers] = useState(
     props.bouncers.map((bouncerJSON) => {
       return new Bouncer(bouncerJSON, false);
@@ -76,6 +78,7 @@ const Bouncers = (props) => {
       emailDisplay: "",
     }
   );
+
   function makeCSVData() {
     const csvData = mappedBouncers.map((bouncer) => {
       const bouncerData = [
@@ -89,7 +92,7 @@ const Bouncers = (props) => {
     });
     // add row headers
     csvData.unshift(
-      Object.keys(mappedBouncers[0]).map((key) =>
+      Object.keys(rowHeaders).map((key) =>
         // if the key is "id" than we want to display an email label
         toCapitalizedWords(
           // the object keys are the objects private properties so we have to remove the underscores
@@ -122,11 +125,6 @@ const Bouncers = (props) => {
         const newMappedBouncers = [];
         for (var i in prevMapppedBouncers) {
           newMappedBouncers.push(prevMapppedBouncers[i]);
-        }
-        if (newMappedBouncers.length < 1) {
-          // add a dummy bouncer to populate the row values if there are 0 bouncer objects left in the list
-          const dummyBouncer = new Bouncer();
-          newMappedBouncers.push(dummyBouncer);
         }
         return newMappedBouncers;
       })
@@ -323,7 +321,7 @@ const Bouncers = (props) => {
                     <PersonAddIcon style={{ color: "#007bff" }} />
                   </IconButton>
                 </TableCell>
-                {Object.keys(mappedBouncers[0]).map((key, i) => (
+                {Object.keys(rowHeaders).map((key, i) => (
                   <TableCell align="left" key={i + 1}>
                     {
                       // if the key is "id" than we want to display an email label
@@ -338,7 +336,7 @@ const Bouncers = (props) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {mappedBouncers[0].id !== "" ? (
+              {mappedBouncers.length > 0 ? (
                 mappedBouncers.map((row, i) => (
                   <TableRow key={i}>
                     <TableCell>{i}</TableCell>

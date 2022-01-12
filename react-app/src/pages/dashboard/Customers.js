@@ -24,13 +24,14 @@ const Customers = (props) => {
   const mappedCustomers = props.customers.map((customerJSON) => {
     return new Customer(customerJSON);
   });
+  const rowHeaders = new Customer();
   const csvData = mappedCustomers.map((customer) => {
     const customerData = [customer.id, customer.firstName, customer.lastName];
     return customerData;
   });
   // add row headers
   csvData.unshift(
-    Object.keys(mappedCustomers[0]).map((key) =>
+    Object.keys(rowHeaders).map((key) =>
       // if the key is "id" than we want to display an email label
       toCapitalizedWords(
         // the object keys are the objects private properties so we have to remove the underscores
@@ -67,7 +68,7 @@ const Customers = (props) => {
                 <TableCell align="left" key={"row #"}>
                   Row
                 </TableCell>
-                {Object.keys(mappedCustomers[0]).map((key, i) => (
+                {Object.keys(rowHeaders).map((key, i) => (
                   <TableCell align="left" key={i}>
                     {
                       // if the key is "id" than we want to display an email label
@@ -81,7 +82,7 @@ const Customers = (props) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {mappedCustomers[0].id !== "" ? (
+              {rowHeaders.id !== "" ? (
                 mappedCustomers.map((row, i) => (
                   <TableRow key={i}>
                     <TableCell>{i}</TableCell>

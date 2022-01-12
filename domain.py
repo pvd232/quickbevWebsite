@@ -567,8 +567,8 @@ class Business_Domain(object):
             if business_object.image_url != None:
                 self.image_url = business_object.image_url
 
-        if business_json:
-            self.id = uuid.uuid4()
+        elif business_json:
+            self.id = business_json["id"]
             self.phone_number = business_json["phone_number"]
             self.merchant_id = business_json["merchant_id"]
             self.merchant_stripe_id = business_json["merchant_stripe_id"]
@@ -613,7 +613,7 @@ class Business_Domain(object):
         attributes = list(self.__dict__.values())
         serialized_attributes = {}
         for i in range(len(attributes)):
-            if attribute_names[i] == 'id' or attribute_names[i] == 'merchant_id':
+            if attribute_names[i] == 'id':
                 serialized_attributes['id'] = str(attributes[i])
             elif attribute_names[i] == 'menu':
                 serialized_attributes['menu'] = [

@@ -48,14 +48,13 @@ const Orders = (props) => {
     return orderItem;
   });
 
+  const rowHeaders = new OrderItem();
   const sortedFormattedOrders = formattedOrders.sort((a, b) => {
     const aDate = new Date(a.dateTime);
     const bDate = new Date(b.dateTime);
     return bDate.getTime() - aDate.getTime();
   });
-  if (sortedFormattedOrders.length === 0) {
-    formattedOrders.push(new OrderItem(false));
-  }
+
   const csvData = sortedFormattedOrders.map((order) => {
     const orderData = [];
     // eslint-disable-next-line array-callback-return
@@ -76,7 +75,7 @@ const Orders = (props) => {
 
   // add row headers
   csvData.unshift(
-    Object.keys(sortedFormattedOrders[0]).map((key) =>
+    Object.keys(rowHeaders).map((key) =>
       // if the key is "id" than we want to display an email label
       key === "tipPercentage"
         ? "Tip %"
@@ -116,7 +115,7 @@ const Orders = (props) => {
                 <TableCell align="left" key={"row-1-1"}>
                   Row
                 </TableCell>
-                {Object.keys(sortedFormattedOrders[0]).map((key, i) => (
+                {Object.keys(rowHeaders).map((key, i) => (
                   <TableCell align="left" key={"row-1-1-" + i}>
                     {key === "tipPercentage"
                       ? "Tip %"
@@ -129,7 +128,7 @@ const Orders = (props) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {sortedFormattedOrders[0].id !== "" ? (
+              {sortedFormattedOrders.length > 0 ? (
                 sortedFormattedOrders.map((row, i) => (
                   <TableRow key={"row-1-1-1-" + i}>
                     <TableCell key={"row-1-1-1-1-" + i}>{i}</TableCell>

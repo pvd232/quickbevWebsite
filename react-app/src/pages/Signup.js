@@ -10,6 +10,7 @@ import Row from "react-bootstrap/Row";
 import Button from "react-bootstrap/Button";
 import Col from "react-bootstrap/Col";
 import Card from "react-bootstrap/Card";
+import {v4 as uuid} from 'uuid';
 import "../css/Signup.css";
 
 const ProgressBar = (props) => {
@@ -586,6 +587,7 @@ const BusinessFieldset = (props) => {
       // set all the values for the business
       // if the user comes back to this page before submitting to change stuff it will reset the values
       const copyOfFormValue = {
+        id: uuid(),
         name: formValue["name"],
         phone_number: formValue["phoneNumber"],
         address: formValue["address"],
@@ -605,6 +607,7 @@ const BusinessFieldset = (props) => {
       };
 
       const newBusiness = new Business(copyOfFormValue);
+
       const result = await props.onSubmit(
         newBusiness,
         merchantStripeId,

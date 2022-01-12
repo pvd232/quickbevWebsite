@@ -12,7 +12,8 @@ import jwt
 from pushjack_http2_mod import APNSHTTP2Client, APNSHTTP2SandboxClient, APNSAuthToken
 from werkzeug.datastructures import MultiDict
 from pushjack_http2_mod import GCMClient
-
+import random
+import string
 stripe.api_key = "sk_test_51I0xFxFseFjpsgWvh9b1munh6nIea6f5Z8bYlIDfmKyNq6zzrgg8iqeKEHwmRi5PqIelVkx4XWcYHAYc1omtD7wz00JiwbEKzj"
 secret = '3327aa0ee1f61998369e815c17b1dc5eaf7e728bca14f6fe557af366ee6e20f9'
 ip_address = "192.168.1.71"
@@ -67,22 +68,21 @@ def send_apn(device_token, action, order_id: UUID = None):
         )
 
 
-def send_fcm(device_token: str, new_order: Order_Domain):
+def send_fcm(device_token: str, new_order: Order_Domain = False):
     client = GCMClient(
         api_key='AAAATofs8JE:APA91bFkb9kmo-sZuDwJIs4PNAh-6oxnN4XoR5RhTAB06qWJ9VMi3vFBTtgi6kIXGLwJfTUmzph-UTnKpXmZcyQ59uFSAOY1saTLdiobNmspqIU7uSQsM0nlPCM-VRH8A8QSNJvzuCxt')
 
-    order_customer = Customer_Service().get_customer(new_order.customer_id)
-    notification = {
-        'title': order_customer.first_name, 'body': order_customer.last_name}
-    message = {"message": "new_order",
-               "notification": notification, "order": str(new_order.id)}
-
-    # Send to single device.
-    # NOTE: Keyword arguments are optional.
-    res = client.send(device_token,
-                      message,
-                      #   notification=notification,
-                      time_to_live=604800)
+    if new_order:
+        order_customer = Customer_Service().get_customer(new_order.customer_id)
+        notification = {
+            'title': order_customer.first_name, 'body': order_customer.last_name}
+        message = {"message": "new_order",
+                   "notification": notification, "order": str(new_order.id)}
+    else:
+        message = {"message": "new_drink", "notification": {}}
+        # Send to single device.
+        # NOTE: Keyword arguments are optional.
+    client.send(device_token, message, time_to_live=604800)
     return
 
     # Send to multiple devices by passing a list of ids.
@@ -243,10 +243,8 @@ def drink(session_token):
         ETag_Service().update_merchant_etag(
             business_id=business_id, e_tag=new_drink_e_tag)
 
-        # must update both because when drinks are updated it updates the drink relationship of the business which is where menu drinks are derived in website
-        # new_business_e_tag = ETag_Service().update_etag("business")
-        # ETag_Service().update_merchant_etag(
-        #     business_id=business_id, e_tag=new_business_e_tag)
+        device_token = Business_Service().get_device_token(business_id=business_id)
+        send_fcm(device_token=device_token, new_order=False)
 
         files = request.files
         drinks_with_images = [
@@ -305,7 +303,9 @@ def drink(session_token):
 
         # dart drinks
         elif client_etag and is_business:
+            print("dart drinks")
             if not ETag_Service().validate_business_etag(business_id=is_business, e_tag=client_etag):
+                print("not validated")
                 status = 200
                 drinks = Drink_Service().get_business_drinks(business_id=is_business)
                 for drink in drinks:
@@ -751,15 +751,9 @@ def customer():
 
         headers["Access-Control-Expose-Headers"] = "*"
 
-        merchant_id = base64.b64decode(
-            request.headers.get(
-                "Authorization").split(" ")[1]).decode("utf-8")
+        merchant_id = request.headers.get("merchant_id")
         customers = [x.dto_serialize() for x in Customer_Service(
         ).get_customers(merchant_id=merchant_id)]
-
-        if len(customers) < 1:
-            dummy_customer = Customer_Domain()
-            customers.append(dummy_customer.dto_serialize())
         response = {"customers": customers}
         return Response(status=200, response=json.dumps(response), headers=headers)
 
@@ -909,7 +903,7 @@ def business(session_token):
 
             merchant = Merchant_Service().get_merchant(merchant_id=merchant_id)
             if merchant.is_administrator:
-                businesses = Business_Service().get_businesses()
+                businesses = Business_Service().get_administrator_businesses()
             else:
                 businesses = Business_Service().get_merchant_businesses(merchant_id=merchant_id)
 
@@ -933,6 +927,8 @@ def business(session_token):
                     for business in businesses:
                         # turn into dictionaries
                         businessDTO = {}
+                        print('business.dto_serialize()',
+                              business.dto_serialize())
                         businessDTO['business'] = business.dto_serialize()
                         business_list.append(businessDTO)
                     response['businesses'] = business_list
@@ -950,7 +946,7 @@ def business(session_token):
 
     elif request.method == 'POST':
         requested_business = json.loads(request.form.get("business"))
-        requested_business["id"] = uuid.uuid4()
+        # requested_business["id"] = uuid.uuid4()
         new_business = Business_Service().add_business(requested_business)
         merchant = Merchant_Service().get_merchant(new_business.merchant_id)
         if new_business:
@@ -1104,9 +1100,6 @@ def merchant_employee(session_token):
         merchant_id = request.headers.get('merchant-id')
         merchant_employees = [x.dto_serialize(
         ) for x in Merchant_Employee_Service().get_merchant_employees(merchant_id)]
-        if len(merchant_employees) < 1:
-            dummy_merchant_employee = Merchant_Employee_Domain()
-            merchant_employees.append(dummy_merchant_employee.dto_serialize())
         response["merchant_employees"] = merchant_employees
         return Response(status=200, response=json.dumps(response))
     elif request.method == 'PUT':
@@ -1175,9 +1168,6 @@ def bouncer(session_token):
         merchant_id = request.headers.get('merchant_id')
         bouncers = [x.dto_serialize(
         ) for x in Bouncer_Service().get_bouncers(merchant_id)]
-        if len(bouncers) < 1:
-            dummy_bouncer = Bouncer_Domain()
-            bouncers.append(dummy_bouncer.dto_serialize())
         response["bouncers"] = bouncers
         return Response(status=200, response=json.dumps(response))
 
@@ -1396,11 +1386,15 @@ def merchant():
         # check if the post request has the file part
         requested_merchant = json.loads(request.form.get("merchant"))
         requested_business = json.loads(request.form.get("business"))
-        requested_business["id"] = uuid.uuid4()
-        requested_merchant["id"] = uuid.uuid4()
-        requested_business["merchant_id"] = requested_merchant["id"]
+
+        # letters = string.ascii_lowercase
+        # random_id = ''.join(random.choice(letters) for i in range(10))
+        # requested_business["id"] = uuid.uuid4()
+        # requested_merchant["id"] = random_id
+        # requested_business["merchant_id"] = requested_merchant["id"]
         new_merchant = Merchant_Service().add_merchant(requested_merchant)
         new_business = Business_Service().add_business(requested_business)
+
         if new_merchant and new_business:
             ETag_Service().update_etag(category="business")
             # when a merchant is created their business and drink etag ids are 0
@@ -1471,10 +1465,12 @@ def business_capacity(session_token):
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
     data = json.loads(request.data)
-    business_capacity_status = data['capacity']
+    capacity = data['capacity']
     business_id = data['business_id']
-    Business_Service().update_business_capacity(
-        business_id, business_capacity_status)
+    Business_Service().update_business_capacity(business_id=
+        business_id, capacity=capacity)
+    new_e_tag = ETag_Service().update_etag("business")
+    ETag_Service().update_merchant_etag(business_id=business_id, e_tag=new_e_tag)
     return Response(status=200)
 
 

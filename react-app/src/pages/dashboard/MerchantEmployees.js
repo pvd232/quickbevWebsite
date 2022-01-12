@@ -63,9 +63,11 @@ const MerchantEmployees = (props) => {
   );
   const mappedMerchantEmployees = props.merchantEmployees.map(
     (merchantEmployeeJSON) => {
+      console.log("merchantEmployeeJSON", merchantEmployeeJSON);
       return new MerchantEmployee(merchantEmployeeJSON);
     }
   );
+  const rowHeaders = new MerchantEmployee();
   const [csvData, setCsvData] = useState(() => makeCSVData());
   const [errorMsg, setErrorMsg] = useReducer(
     (state, newState) => ({ ...state, ...newState }),
@@ -93,7 +95,7 @@ const MerchantEmployees = (props) => {
     });
     // add row headers
     csvData.unshift(
-      Object.keys(mappedMerchantEmployees[0]).map((key) =>
+      Object.keys(rowHeaders).map((key) =>
         // if the key is "id" than we want to display an email label
         toCapitalizedWords(
           // the object keys are the objects private properties so we have to remove the underscores
@@ -122,13 +124,6 @@ const MerchantEmployees = (props) => {
       data
     ).then(() => {
       mappedMerchantEmployees.splice(index, 1);
-
-      if (mappedMerchantEmployees.length === 0) {
-        // add a dummy merchant employee to populate the row values if there are 0 merchantemployee objects left in the list
-        const dummyMerchantEmployee = new MerchantEmployee();
-        mappedMerchantEmployees.push(dummyMerchantEmployee);
-        console.log("mappedMerchantEmployees", mappedMerchantEmployees);
-      }
       props.onUpdate(mappedMerchantEmployees);
       setIsSpinning(false);
       return true;
@@ -156,12 +151,6 @@ const MerchantEmployees = (props) => {
             `/merchant_employee/staging/${LocalStorageManager.shared.sessionToken}`,
             formValue
           ).then(() => {
-            // setMappedMerchantEmployees((prevMappedMerchantEmployees) => {
-            // console.log(
-            // "prevMappedMerchantEmployees",
-            // prevMappedMerchantEmployees
-            // );
-
             mappedMerchantEmployees.push(newMerchantEmployee);
 
             props.onUpdate(mappedMerchantEmployees);
@@ -223,6 +212,7 @@ const MerchantEmployees = (props) => {
       <Form
         autoComplete="off"
         onSubmit={(e) => {
+          setIsSpinning(true);
           handleAddPerson(e);
         }}
       >
@@ -301,7 +291,7 @@ const MerchantEmployees = (props) => {
                     <PersonAddIcon style={{ color: "#007bff" }} />
                   </IconButton>
                 </TableCell>
-                {Object.keys(mappedMerchantEmployees[0]).map((key, i) => (
+                {Object.keys(rowHeaders).map((key, i) => (
                   <TableCell align="left" key={i + 1}>
                     {
                       // if the key is "id" than we want to display an email label
@@ -316,7 +306,7 @@ const MerchantEmployees = (props) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {mappedMerchantEmployees[0].id !== "" ? (
+              {mappedMerchantEmployees.length > 0 ? (
                 mappedMerchantEmployees.map((row, i) => (
                   <TableRow key={i}>
                     <TableCell>{i}</TableCell>

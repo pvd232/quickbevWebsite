@@ -24,6 +24,7 @@ import SearchLocationInput from "../../SearchLocationInput.js";
 import "../../css/businesses.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
+import { v4 as uuid } from "uuid";
 
 const useStyles = makeStyles((theme) => ({
   table: {
@@ -62,10 +63,7 @@ const Businesses = (props) => {
       return new BusinessItem(business);
     })
   );
-  if (mappedBusinessItems.length === 0) {
-    mappedBusinessItems.push(new BusinessItem(false));
-  }
-
+  const rowHeaders = new BusinessItem(false);
   const [csvData, setCsvData] = useState(() => makeCSVData());
   const [modalOpen, setModalOpen] = useState(false);
   const [isSpinning, setIsSpinning] = useState(null);
@@ -204,6 +202,7 @@ const Businesses = (props) => {
         return false;
       }
       const copyOfFormValue = {
+        id: uuid(),
         name: formValue["name"],
         phone_number: formValue["phoneNumber"],
         address: formValue["address"],
@@ -239,19 +238,13 @@ const Businesses = (props) => {
           const confirmedNewBusiness = new Business(
             response.confirmed_new_business
           );
-          const newMappedBusinessItems = [];
-          setMappedBusinessItems((prevMapppedBusinesses) => {
-            // if the merchant had 0 employees then the mappedEmployees array will have 1 single dummy merchant employee. so we want to remove this once a real merchant emplyee is added
-            for (const business of prevMapppedBusinesses) {
-              newMappedBusinessItems.push(business);
-            }
-            newMappedBusinessItems.unshift(
-              new BusinessItem(confirmedNewBusiness)
-            );
-            return newMappedBusinessItems;
-          });
+          LocalStorageManager.shared.addBusiness(confirmedNewBusiness);
+          setMappedBusinessItems(
+            LocalStorageManager.shared.businesses.map((business) => {
+              return new BusinessItem(business);
+            })
+          );
           setCsvData(makeCSVData());
-          props.onUpdate(newMappedBusinessItems);
           setModalOpen((prevModalOpen) => !prevModalOpen);
           resetFormState();
           form.reset();
@@ -283,12 +276,7 @@ const Businesses = (props) => {
 
     // add row headers
     csvData.unshift(
-      Object.keys(mappedBusinessItems[0]).map((key) =>
-        toCapitalizedWords(
-          // the object keys are the objects private properties so we have to remove the underscores
-          key.replace("_", "")
-        )
-      )
+      Object.keys(rowHeaders).map((key) => toCapitalizedWords(key))
     );
     return csvData;
   }
@@ -543,7 +531,7 @@ const Businesses = (props) => {
       </Form>
     </div>
   );
-  if (mappedBusinessItems) {
+  if (mappedBusinessItems.length > 0) {
     return (
       <TableContainer>
         <Paper className={props.classes.paper}>
@@ -587,7 +575,7 @@ const Businesses = (props) => {
                   </IconButton>
                 </TableCell>
                 <>
-                  {Object.keys(mappedBusinessItems[0]).map((key, i) => (
+                  {Object.keys(rowHeaders).map((key, i) => (
                     <TableCell align="left" key={"object-key-" + i}>
                       {toCapitalizedWords(key)}
                     </TableCell>
@@ -614,7 +602,11 @@ const Businesses = (props) => {
                     <TableCell>{i}</TableCell>
                     {Object.values(businessItem).map((value, i) => (
                       <TableCell align="left" key={"object-value-" + i}>
-                        {value}
+                        {value === true
+                          ? "yes"
+                          : value === false
+                          ? "no"
+                          : value}
                       </TableCell>
                     ))}
                   </TableRow>

@@ -1,3 +1,4 @@
+from sqlalchemy.sql.sqltypes import Boolean
 from domain import *
 from models import stripe_fee_percentage, service_fee_percentage, quick_pass_service_fee_percentage
 import uuid
@@ -381,7 +382,7 @@ class Merchant_Service(object):
             else:
                 return False
 
-    def authenticate_merchant_stripe(self, stripe_id: str):
+    def authenticate_merchant_stripe(self, stripe_id: str) -> bool:
         return Merchant_Repository().authenticate_merchant_stripe(stripe_id=stripe_id)
 
     def add_merchant(self, merchant: dict):
@@ -542,7 +543,15 @@ class Business_Service(object):
             response = []
             for business in Business_Repository().get_businesses(session):
                 business_domain = Business_Domain(business_object=business)
-
+                response.append(business_domain)
+            return response
+        
+    def get_administrator_businesses(self):
+        with session_scope() as session:
+            response = []
+            for business in Business_Repository().get_administrator_businesses(session):
+                business_domain = Business_Domain(business_object=business)
+                business_domain.merchant_stripe_status = Merchant_Repository().authenticate_merchant_stripe(business_domain.merchant_stripe_id)
                 response.append(business_domain)
             return response
 
@@ -593,9 +602,9 @@ class Business_Service(object):
                 return merchant_domain
             return merchant
 
-    def update_business_capacity(self, business_id: uuid.UUID, capacity_status: str):
+    def update_business_capacity(self, business_id: uuid.UUID, capacity: bool):
         with session_scope() as session:
-            return Business_Repository().update_capacity_status(session=session, business_id=business_id, capacity_status=capacity_status)
+            return Business_Repository().update_business_capacity(session=session, business_id=business_id, capacity=capacity)
 
     def deactivate_business(self, business_id: uuid.UUID):
         with session_scope() as session:

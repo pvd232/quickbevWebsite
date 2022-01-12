@@ -1,5 +1,6 @@
 from sqlalchemy.orm import query
 from sqlalchemy.orm.scoping import scoped_session
+from sqlalchemy.sql.sqltypes import Boolean
 from models import *
 from domain import Bouncer_Domain, Business_Domain, Customer_Domain, Drink_Domain, ETag_Domain, Merchant_Domain, Merchant_Employee_Domain, Order_Domain, Quick_Pass_Domain, Tab_Domain
 import stripe
@@ -285,7 +286,15 @@ class Business_Repository(object):
         else:
             return False
 
-    def get_businesses(self, session: scoped_session) -> Business:
+    def get_businesses(self, session: scoped_session) -> list[Business]:
+        businesses = session.query(Business).all()
+        businesses_to_return = []
+        for business in businesses:
+            if Merchant_Repository().authenticate_merchant_stripe(business.merchant_stripe_id) == True:
+                businesses_to_return.append(business)
+        return businesses_to_return
+
+    def get_administrator_businesses(self, session: scoped_session) -> list[Business]:
         businesses = session.query(Business).all()
         return businesses
 
@@ -306,7 +315,7 @@ class Business_Repository(object):
         # will have to plug in an API here to dynamically pull information (avalara probs if i can get the freaking credentials to work)
 
         new_business = Business(id=business.id, name=business.name, classification=business.classification, sales_tax_rate=business.sales_tax_rate, merchant_id=business.merchant_id, street=business.street, city=business.city,
-                                state=business.state, zipcode=business.zipcode, address=business.address, phone_number=business.phone_number, merchant_stripe_id=business.merchant_stripe_id, image_url=business.image_url)
+                                state=business.state, zipcode=business.zipcode, address=business.address, merchant_stripe_id=business.merchant_stripe_id, image_url=business.image_url)
         session.add(new_business)
         days_of_week = [
             "monday",
@@ -371,8 +380,7 @@ class Business_Repository(object):
     def set_merchant_pin(self, session: scoped_session, business_id, pin):
         requested_business = session.query(Business).filter(
             Business.id == business_id).first()
-        requested_business.merchant_pin = generate_password_hash(
-            pin)
+        requested_business.merchant_pin = generate_password_hash(pin)
         return
 
     def authenticate_merchant_pin(self, session: scoped_session, business_id: uuid.UUID, pin: str):
@@ -386,7 +394,7 @@ class Business_Repository(object):
             else:
                 return False
 
-    def update_capacity_status(self, session: scoped_session, business_id: uuid.UUID, capacity: bool):
+    def update_business_capacity(self, session: scoped_session, business_id: uuid.UUID, capacity: bool):
         business_to_update = session.query(Business).filter(
             Business.id == business_id).first()
         business_to_update.at_capacity = capacity
@@ -449,7 +457,7 @@ class Merchant_Repository(object):
                 return merchant
         return False
 
-    def authenticate_merchant_stripe(self, stripe_id: str):
+    def authenticate_merchant_stripe(self, stripe_id: str) -> bool:
         merchant_stripe_status = stripe.Account.retrieve(stripe_id)
         return merchant_stripe_status['charges_enabled']
 
@@ -579,7 +587,7 @@ class Merchant_Employee_Repository(object):
             id=new_account.id)
         session.add(new_stripe_account_id)
         new_merchant_employee = Merchant_Employee(id=requested_merchant_employee.id, pin=generate_password_hash(requested_merchant_employee.pin), first_name=requested_merchant_employee.first_name,
-                                                  last_name=requested_merchant_employee.last_name, phone_number=requested_merchant_employee.phone_number, merchant_id=requested_merchant_employee.merchant_id, business_id=requested_merchant_employee.business_id, stripe_id=new_account.id)
+                                                  last_name=requested_merchant_employee.last_name, merchant_id=requested_merchant_employee.merchant_id, business_id=requested_merchant_employee.business_id, stripe_id=new_account.id)
         requested_merchant_employee.stripe_id = new_account.id
         session.add(new_merchant_employee)
         staged_merchant_employee = session.query(Staged_Merchant_Employee).filter(

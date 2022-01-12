@@ -62,7 +62,7 @@ export class LocalStorageManager {
     // if drinks are being set then they have been received from the backend
     this.setItem("drinks", newDrinkArray);
 
-    for (const business of this.getItem("businesses")) {
+    for (const business of this.businesses) {
       const businessModel = new Business(business);
       const newMenu = [];
       for (const drink of newDrinkArray) {
@@ -111,6 +111,11 @@ export class LocalStorageManager {
     // if drinks are being set then they have been received from the backend
     this.setItem("businesses", newBusinessesArray);
   }
+  addBusiness(newBusiness) {
+    const copyOfBusinessArray = [...this.businesses];
+    copyOfBusinessArray.push(newBusiness);
+    this.businesses = copyOfBusinessArray;
+  }
   get firstLogin() {
     return this.getItem("first_login");
   }
@@ -155,9 +160,15 @@ export const toCapitalizedWords = (name) => {
 };
 export class Customer {
   constructor(customerObject) {
-    this.id = customerObject.id;
-    this.firstName = customerObject.first_name;
-    this.lastName = customerObject.last_name;
+    if (customerObject) {
+      this.id = customerObject.id;
+      this.firstName = customerObject.first_name;
+      this.lastName = customerObject.last_name;
+    } else {
+      this.id = "";
+      this.firstName = "";
+      this.lastName = "";
+    }
   }
   toJSON() {
     const data = {
@@ -254,22 +265,24 @@ export class OrderDrink {
 // new order structure
 export class Order {
   constructor(orderObject) {
-    this.id = orderObject.id;
-    this.customerId = orderObject.customer_id;
-    this.total = Math.round(orderObject.total);
-    this.subtotal = Math.round(orderObject.subtotal);
-    this.tipTotal = Math.round(orderObject.tip_total);
-    this.salesTaxTotal = Math.round(orderObject.sales_tax_total);
-    this.serviceFeeTotal = Math.round(orderObject.service_fee_total);
-    this.tipPercentage = orderObject.tip_percentage;
-    this.businessId = orderObject.business_id;
-    this.formattedDateTime = orderObject.formatted_date_time;
-    this.dateTime = new Date(orderObject.date_time);
-    this.orderDrink = [];
-    if (orderObject.order_drink.length > 0) {
-      for (const orderDrink of orderObject.order_drink) {
-        const newOrderDrink = new OrderDrink(orderDrink);
-        this.orderDrink.push(newOrderDrink);
+    if (orderObject) {
+      this.id = orderObject.id;
+      this.customerId = orderObject.customer_id;
+      this.total = Math.round(orderObject.total);
+      this.subtotal = Math.round(orderObject.subtotal);
+      this.tipTotal = Math.round(orderObject.tip_total);
+      this.salesTaxTotal = Math.round(orderObject.sales_tax_total);
+      this.serviceFeeTotal = Math.round(orderObject.service_fee_total);
+      this.tipPercentage = orderObject.tip_percentage;
+      this.businessId = orderObject.business_id;
+      this.formattedDateTime = orderObject.formatted_date_time;
+      this.dateTime = new Date(orderObject.date_time);
+      this.orderDrink = [];
+      if (orderObject.order_drink.length > 0) {
+        for (const orderDrink of orderObject.order_drink) {
+          const newOrderDrink = new OrderDrink(orderDrink);
+          this.orderDrink.push(newOrderDrink);
+        }
       }
     }
   }
@@ -321,13 +334,13 @@ export class OrderItem {
         }
       }
     } else {
-      this.orderId = orderObject.id;
-      this.customerId = orderObject.customerId;
-      this.total = orderObject.total;
-      this.subtotal = orderObject.subtotal;
-      this.tip = orderObject.tipTotal;
-      this.salesTax = orderObject.salesTaxTotal;
-      this.serviceFee = orderObject.serviceFeeTotal;
+      this.orderId = "";
+      this.customerId = "";
+      this.total = 0.0;
+      this.subtotal = 0.0;
+      this.tip = 0.0;
+      this.salesTax = 0.0;
+      this.serviceFee = 0.0;
       // these properties will be extracted from the business and set after the OrderItem is initialized
       this.businessName = "";
       this.address = "";
@@ -411,6 +424,9 @@ export class Business {
     this.schedule = businessObject.schedule;
     this.isActive = businessObject.is_active;
     this.imageUrl = businessObject.image_url;
+    if (LocalStorageManager.shared.currentMerchant.isAdministrator === true) {
+      this.merchantStripeStatus = businessObject.merchant_stripe_status;
+    }
   }
   get formattedName() {
     return formatName(this.name);
@@ -449,6 +465,9 @@ export class BusinessItem {
         businessObject.classification
       );
       this.salesTaxRate = businessObject.salesTaxRate;
+      if (LocalStorageManager.shared.currentMerchant.isAdministrator === true) {
+        this.merchantStripeStatus = businessObject.merchantStripeStatus;
+      }
     } else {
       this.id = "";
       this.name = "";
@@ -456,6 +475,9 @@ export class BusinessItem {
       this.phoneNumber = "";
       this.classification = "";
       this.salesTaxRate = "";
+      if (LocalStorageManager.shared.currentMerchant.isAdministrator === true) {
+        this.merchantStripeStatus = "";
+      }
     }
   }
 }
