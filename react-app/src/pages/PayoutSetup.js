@@ -38,6 +38,7 @@ const PayoutSetup = (props) => {
     //had to do this because memory leak due to component not unmounting properly
     let mount = true;
     if (mount && redirect) {
+      setIsSpinning(false);
       window.location.assign(redirect);
     }
 
@@ -61,6 +62,7 @@ const PayoutSetup = (props) => {
             className="btn btn-primary text-center"
             disabled={isSpinning}
             onClick={(event) => {
+              setIsSpinning(true);
               // if this is the payout redirect then all values for business and merchant have been set in the backend and we dont need to propogate back upwards
               event.preventDefault();
               handleConnect().then(() => setRedirect(redirectUrl));
@@ -89,8 +91,7 @@ const PayoutSetup = (props) => {
             style={{ display: "inline-block" }}
             disabled={isSpinning}
             onClick={(event) => {
-              // setIsSpinning(true);
-              // event.preventDefault();
+              setIsSpinning(true);
               const eventTarget = event.target;
               handleConnect().then((merchantStripeId) =>
                 props.onSubmit(eventTarget, merchantStripeId).then((result) => {
@@ -98,9 +99,9 @@ const PayoutSetup = (props) => {
                   if (!result) {
                     return;
                   }
-                  // setIsSpinning(false);
+                  setIsSpinning(false);
                   LocalStorageManager.shared.setItem("first_login", true);
-                  // setRedirect(redirectUrl);
+                  setRedirect(redirectUrl);
                 })
               );
             }}

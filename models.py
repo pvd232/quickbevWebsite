@@ -99,7 +99,7 @@ class Business(db.Model):
         'merchant_stripe_account.id'), nullable=False)
     merchant_id = db.Column(db.String(80), db.ForeignKey(
         'merchant.id'), nullable=False)
-    merchant_pin = db.Column(db.String(80), nullable=True)
+    merchant_pin = db.Column(db.String(200), nullable=True)
     name = db.Column(db.String(200), nullable=False)
     classification = db.Column(db.String(80), nullable=False)
     date_joined = db.Column(
@@ -117,7 +117,7 @@ class Business(db.Model):
     zipcode = db.Column(db.Integer(), nullable=True)
     suite = db.Column(db.String(80), nullable=True)
     address = db.Column(db.String(500), nullable=False)
-    at_capacity = db.Column(db.Boolean(), default=True, nullable=False)
+    at_capacity = db.Column(db.Boolean(), default=False, nullable=False)
     quick_pass_price = db.Column(db.Float(), default=20.0, nullable=False)
     quick_passes_per_hour = db.Column(db.Integer(), default=30, nullable=False)
     quick_pass_queue = db.Column(db.Integer(), default=0, nullable=True)
@@ -208,7 +208,7 @@ class Merchant_Employee(db.Model):
     __tablename__ = 'merchant_employee'
     id = db.Column(db.String(80), primary_key=True,
                    unique=True, nullable=False)
-    pin = db.Column(db.String(80), nullable=False)
+    pin = db.Column(db.String(200), nullable=False)
     first_name = db.Column(db.String(80), nullable=False)
     last_name = db.Column(db.String(80), nullable=False)
     is_active = db.Column(db.Boolean(), default=True, nullable=False)
