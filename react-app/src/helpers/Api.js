@@ -3,7 +3,7 @@ import { Merchant, LocalStorageManager } from "../Models.js";
 class Client {
   constructor() {
     this.baseUrl = "https://quickbev.us";
-    this.mode = "cors";
+    // this.mode = "cors";
   }
   async makeRequest(
     method,
@@ -112,7 +112,7 @@ class Client {
   getCustomers = async () => {
     this.url =
       this.baseUrl +
-      "/customer?session_token=" +
+      "/customer/" +
       LocalStorageManager.shared.sessionToken;
 
     const headers = new Headers();
