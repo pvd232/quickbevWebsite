@@ -95,7 +95,6 @@ const PayoutSetup = (props) => {
               const eventTarget = event.target;
               handleConnect().then((merchantStripeId) =>
                 props.onSubmit(eventTarget, merchantStripeId).then((result) => {
-                  console.log("result", result);
                   if (!result) {
                     return;
                   }

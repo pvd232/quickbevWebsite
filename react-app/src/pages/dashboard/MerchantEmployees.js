@@ -63,7 +63,6 @@ const MerchantEmployees = (props) => {
   );
   const mappedMerchantEmployees = props.merchantEmployees.map(
     (merchantEmployeeJSON) => {
-      console.log("merchantEmployeeJSON", merchantEmployeeJSON);
       return new MerchantEmployee(merchantEmployeeJSON);
     }
   );
