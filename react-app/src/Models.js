@@ -141,7 +141,7 @@ export class LocalStorageManager {
   get businessETag() {
     return this.getItem("business_etag");
   }
-  set businessEtag(newETagId) {
+  set businessETag(newETagId) {
     this.setItem("business_etag", newETagId);
   }
 }
