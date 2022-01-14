@@ -2,7 +2,7 @@ import { Merchant, LocalStorageManager } from "../Models.js";
 
 class Client {
   constructor() {
-    this.baseUrl = "https://quickbev.us";
+    this.baseUrl = "https://quickbev.com";
     // this.mode = "cors";
   }
   async makeRequest(
@@ -111,9 +111,7 @@ class Client {
   };
   getCustomers = async () => {
     this.url =
-      this.baseUrl +
-      "/customer/" +
-      LocalStorageManager.shared.sessionToken;
+      this.baseUrl + "/customer/" + LocalStorageManager.shared.sessionToken;
 
     const headers = new Headers();
     // will uncomment this when i have added menu for new businesses

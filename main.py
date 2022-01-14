@@ -729,16 +729,15 @@ def update_device_token(session_token):
 def validate_customer():
     customer_id = request.headers.get('user-id')
     status = Customer_Service().get_customer(customer_id=customer_id)
-
+    jwt_token = jwt.encode(
+            {"sub": customer_id}, key=secret, algorithm="HS256")
+    headers = {"jwt-token": jwt_token}
     if status:
         response = {}
         response["customer"] = status.dto_serialize()
-        jwt_token = jwt.encode(
-            {"sub": customer_id}, key=secret, algorithm="HS256")
-        headers = {"jwt-token": jwt_token}
         return Response(status=201, response=json.dumps(response), headers=headers)
     else:
-        return Response(status=200)
+        return Response(status=200, headers=headers)
 
 
 @app.route('/customer/validate/apple', methods=['GET'])
@@ -1283,8 +1282,9 @@ def merchant():
             headers["token"] = jwt.encode(
                 {"sub": str(new_merchant.id)}, key=secret, algorithm="HS256")
 
-            # send_confirmation_email(
-            #     jwt_token=headers["token"], email_type="merchant_confirmation", user=new_merchant, business=new_business)
+            # uncomment this line to send the confirmation email to the merchant that registered
+            send_confirmation_email(
+                jwt_token=headers["token"], email_type="merchant_confirmation", user=new_merchant, business=new_business)
             stripe_account_status = Merchant_Service(
             ).authenticate_merchant_stripe(new_merchant.stripe_id)
             send_confirmation_email(

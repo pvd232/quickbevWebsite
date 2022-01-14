@@ -98,7 +98,7 @@ const Menu = (props) => {
                     <Card
                       key={i}
                       className={classes.root}
-                      // style={{ maxHeight: "40vh" }}
+                      style={{ backgroundColor: "white" }}
                     >
                       <CardActionArea
                         style={{ height: "100%" }}
@@ -131,17 +131,19 @@ const Menu = (props) => {
                           <Typography gutterBottom variant="h5" component="h2">
                             {menuDrink.formattedName}
                           </Typography>
+
                           <Typography
                             variant="body2"
-                            color="textSecondary"
+                            color="black"
                             component="p"
                           >
                             {menuDrink.description}
                           </Typography>
                           <Typography
                             variant="body2"
-                            color="textSecondary"
+                            color="black"
                             component="p"
+                            style={{ marginTop: "1vh" }}
                           >
                             {`$${menuDrink.price}`}
                           </Typography>

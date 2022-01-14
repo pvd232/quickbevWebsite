@@ -98,9 +98,8 @@ const PayoutSetup = (props) => {
                   if (!result) {
                     return;
                   }
-                  setIsSpinning(false);
                   LocalStorageManager.shared.setItem("first_login", true);
-                  setRedirect(redirectUrl);
+                  setRedirect(redirectUrl).then(setIsSpinning(false));
                 })
               );
             }}

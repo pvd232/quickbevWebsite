@@ -132,18 +132,17 @@ class Order_Domain(object):
                 "%m/%d/%Y")
             self.date_time = order_object.date_time
             self.merchant_stripe_id = order_object.merchant_stripe_id
-            unique_drinks_ids = []
+            # unique_drinks_ids = []
             for order_drink in order_object.order_drink:
-                if order_drink.drink_id not in unique_drinks_ids:
-                    unique_drinks_ids.append(order_drink.drink_id)
-                    new_order_drink = Order_Drink_Domain(
-                        order_drink_object=order_drink)
-                    self.order_drink.append(new_order_drink)
-                else:
-                    for previous_order_drink in self.order_drink:
-                        if previous_order_drink.drink_id == order_drink.drink_id:
-                            previous_order_drink.quantity += 1
-                            break
+                # if order_drink.drink_id not in unique_drinks_ids:
+                    # unique_drinks_ids.append(order_drink.drink_id)
+                new_order_drink = Order_Drink_Domain(order_drink_object=order_drink)
+                self.order_drink.append(new_order_drink)
+                # else:
+                    # for previous_order_drink in self.order_drink:
+                        # if previous_order_drink.drink_id == order_drink.drink_id:
+                            # previous_order_drink.quantity += 1
+                            # break
             self.completed = order_object.completed
             self.refunded = order_object.refunded
             self.payment_intent_id = order_object.payment_intent_id
@@ -175,18 +174,18 @@ class Order_Domain(object):
                 "%m/%d/%Y")
             self.date_time = order_result.Order.date_time
             self.merchant_stripe_id = order_result.Order.merchant_stripe_id
-            unique_drinks_ids = []
+            # unique_drinks_ids = []
             for order_drink in order_result.Order.order_drink:
-                if order_drink.drink_id not in unique_drinks_ids:
-                    unique_drinks_ids.append(order_drink.drink_id)
+                # if order_drink.drink_id not in unique_drinks_ids:
+                #     unique_drinks_ids.append(order_drink.drink_id)
                     new_order_drink = Order_Drink_Domain(
                         order_drink_object=order_drink)
                     self.order_drink.append(new_order_drink)
-                else:
-                    for previous_order_drink in self.order_drink:
-                        if previous_order_drink.drink_id == order_drink.drink_id:
-                            previous_order_drink.quantity += 1
-                            break
+                # else:
+                    # for previous_order_drink in self.order_drink:
+                        # if previous_order_drink.drink_id == order_drink.drink_id:
+                            # previous_order_drink.quantity += 1
+                            # break
             self.completed = order_result.Order.completed
             self.refunded = order_result.Order.refunded
             self.payment_intent_id = order_result.Order.payment_intent_id
@@ -239,11 +238,13 @@ class Order_Drink_Domain(object):
     def __init__(self, order_drink_object: Order_Drink = None, order_drink_json: dict = None, is_customer_order: bool = False):
         self.is_customer_order = is_customer_order
         if order_drink_object:
+            self.id = order_drink_object.id
             self.order_id = order_drink_object.order_id
             self.drink_id = order_drink_object.drink_id
-            self.quantity = 1
+            self.quantity = order_drink_object.quantity
         # this is for a customer order coming from iOS, much simpler data structure
         elif order_drink_json:
+            self.id = uuid.UUID(order_drink_json["id"])
             self.order_id = uuid.UUID(order_drink_json["order_id"])
             self.drink_id = uuid.UUID(order_drink_json["drink_id"])
             self.quantity = order_drink_json["quantity"]

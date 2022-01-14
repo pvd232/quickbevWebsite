@@ -78,10 +78,14 @@ class Order_Repository(object):
         session.add(new_order)
         for each_order_drink in order.order_drink:
             # create a unique instance of Order_Drink for the number of each type of drink that were ordered. the uuid for the Order_Drink is generated in the database
+            new_order_drink = Order_Drink( id = each_order_drink.id,
+                order_id=each_order_drink.order_id, drink_id=each_order_drink.drink_id, quantity = each_order_drink.quantity)
+            session.add(new_order_drink)
+            
             for _ in range(each_order_drink.quantity):
-                new_order_drink = Order_Drink(
-                    order_id=each_order_drink.order_id, drink_id=each_order_drink.drink_id)
-                session.add(new_order_drink)
+                new_order_drink_instance = Order_Drink_Instance(order_drink_id = each_order_drink.id)
+                session.add(new_order_drink_instance)
+                
 
         # get the list of merchant_employees that are clocked in when the sale was made and give them each an equal part of the tip
         servers = session.query(Merchant_Employee).filter(
@@ -314,7 +318,7 @@ class Business_Repository(object):
     def add_business(self, session: scoped_session, business: Business_Domain):
         # will have to plug in an API here to dynamically pull information (avalara probs if i can get the freaking credentials to work)
 
-        new_business = Business(id=business.id, name=business.name, classification=business.classification, sales_tax_rate=business.sales_tax_rate, merchant_id=business.merchant_id, street=business.street, city=business.city,
+        new_business = Business(id=business.id, name=business.name, phone_number=business.phone_number, classification=business.classification, sales_tax_rate=business.sales_tax_rate, merchant_id=business.merchant_id, street=business.street, city=business.city,
                                 state=business.state, zipcode=business.zipcode, address=business.address, merchant_stripe_id=business.merchant_stripe_id, image_url=business.image_url)
         session.add(new_business)
         days_of_week = [

@@ -10,7 +10,7 @@ import Row from "react-bootstrap/Row";
 import Button from "react-bootstrap/Button";
 import Col from "react-bootstrap/Col";
 import Card from "react-bootstrap/Card";
-import {v4 as uuid} from 'uuid';
+import { v4 as uuid } from "uuid";
 import "../css/Signup.css";
 
 const ProgressBar = (props) => {
@@ -632,14 +632,15 @@ const BusinessFieldset = (props) => {
     "sunday",
   ];
   return (
-    <Form autoComplete="new-password">
-      <fieldset>
+    <Form autoComplete="new-password" key={"biz-fieldset"}>
+      <fieldset key={"biz-fieldset-div"}>
         <h2 className="fs-title">Your Business</h2>
-        <Form.Label>Name</Form.Label>
+        <Form.Label key={"biz-name-label"}>Name</Form.Label>
         <Form.Control
           type="text"
           className="mb-3"
           name="name"
+          key={"biz-name"}
           placeholder="Business Name"
           value={formValue.name}
           required
@@ -647,10 +648,13 @@ const BusinessFieldset = (props) => {
             formChangeHandler(e);
           }}
         />
-        <Form.Label>Phone number</Form.Label>
+        <Form.Label key={"biz-field-phone-number-label-1"}>
+          Phone number
+        </Form.Label>
         <Form.Control
           type="tel"
           name="phoneNumber"
+          key={"biz-phone"}
           className="mb-3"
           required
           pattern="[0-9]{10}"
@@ -660,14 +664,20 @@ const BusinessFieldset = (props) => {
             formChangeHandler(e);
           }}
         />
-        <Form.Group as={Col} style={{ paddingLeft: "5px" }} id="fileInputCol">
-          <Form.Label>Business Logo</Form.Label>
+        <Form.Group
+          as={Col}
+          style={{ paddingLeft: "5px" }}
+          id="fileInputCol"
+          key={"file-input-body-1"}
+        >
+          <Form.Label key={"biz-field-logo-label-1"}>Business Logo</Form.Label>
           <h5
             className="fs-subtitle"
             style={{
               paddingLeft: "15px",
               paddingRight: "5px",
             }}
+            key={"logo-biz"}
           >
             Your logo will be displayed as a square image with rounded corners
             in the app. If you do not have a logo, we will display the QuickBev
@@ -676,6 +686,7 @@ const BusinessFieldset = (props) => {
           <Form.File
             id="fileInput"
             name="logoFile"
+            key={"biz-logo"}
             type="file"
             custom
             style={{
@@ -692,10 +703,10 @@ const BusinessFieldset = (props) => {
           />
         </Form.Group>
         {daysOfWeek.map((day, i) => (
-          <>
+          <React.Fragment key={"react-frag" + i}>
             <Form.Label key={"row-label-" + i}>Closed on {day}</Form.Label>
             <Row
-              key={"row" + i}
+              key={"biz-field-row-1" + i}
               style={{
                 display: "flex",
                 height: "1vh",
@@ -706,7 +717,7 @@ const BusinessFieldset = (props) => {
             >
               <Col
                 xs={2}
-                key={"col" + i}
+                key={"biz-field-col-1" + i}
                 style={{
                   display: "flex",
                   height: "1vh",
@@ -716,19 +727,21 @@ const BusinessFieldset = (props) => {
               >
                 <Form.Check
                   type="checkbox"
-                  key={i + "-closed"}
+                  key={"closing-check" + i}
                   name={i + "-closed"}
-                  value={schedule[i].isClosed}
+                  checked={schedule[i].isClosed}
                   onChange={(e) => handleScheduleChange(e)}
                 />
               </Col>
             </Row>
 
-            <Form.Label>{day} opening time</Form.Label>
+            <Form.Label key={"biz-field-opening-label-1" + i}>
+              {day} opening time
+            </Form.Label>
 
             <Form.Control
               type="time"
-              key={i + "-open"}
+              key={"open-" + i}
               name={i + "-open"}
               className="mb-3"
               required={!schedule[i].isClosed}
@@ -739,10 +752,12 @@ const BusinessFieldset = (props) => {
               onChange={(e) => handleScheduleChange(e)}
             />
 
-            <Form.Label>Closing time</Form.Label>
+            <Form.Label key={"biz-field-closing-label-1" + i}>
+              Closing time
+            </Form.Label>
             <Form.Control
               type="time"
-              key={i + "-closing"}
+              key={"close-" + i}
               name={i + "-closing"}
               className="mb-3"
               required={!schedule[i].isClosed}
@@ -751,13 +766,14 @@ const BusinessFieldset = (props) => {
               value={schedule[i].closingTime}
               onChange={(e) => handleScheduleChange(e)}
             />
-          </>
+          </React.Fragment>
         ))}
-        <Form.Label>Address</Form.Label>
+        <Form.Label key={"biz-field-address-1"}>Address</Form.Label>
         <SearchLocationInput onUpdate={(address) => setAddress(address)} />
-        <Row>
+        <Row key={"biz-field-row-2"}>
           <Col
             sm={12}
+            key={"biz-field-col-2"}
             id="payoutSetup"
             style={{ justifyContent: "center", display: "flex" }}
           >
@@ -841,6 +857,7 @@ const Signup = () => {
       false,
       true
     );
+
     const confirmed_new_business = new Business(
       responseBody.confirmed_new_business
     );
@@ -880,8 +897,8 @@ const Signup = () => {
     <>
       <Navbar />
       {/* <!-- multistep form -->*/}
-      <div className="signupBody">
-        <div id="msform">
+      <div className="signupBody" key={"signup-body-1"}>
+        <div id="msform" key={"msform-1"}>
           {/* <!-- progressbar --> */}
           <ProgressBar i={currentFieldsetIndex}></ProgressBar>
           {/* <!-- fieldsets --> */}

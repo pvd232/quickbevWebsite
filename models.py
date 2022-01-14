@@ -381,12 +381,35 @@ class Order_Tip(db.Model):
 
 class Order_Drink(db.Model):
     __tablename__ = 'order_drink'
-    id = db.Column(UUID(as_uuid=True), default=uuid.uuid4, primary_key=True,
+    id = db.Column(UUID(as_uuid=True), primary_key=True,
                    unique=True, nullable=False)
     order_id = db.Column(UUID(as_uuid=True), db.ForeignKey(
         'order.id'), nullable=False)
     drink_id = db.Column(UUID(as_uuid=True), db.ForeignKey(
         'drink.id'), nullable=False)
+    quantity = db.Column(db.Integer(), nullable=False)
+    order_drink_instance = relationship(
+        "Order_Drink_Instance", lazy=True, backref="order_drink", uselist=True)
+    # did not set foriegn key here because there is no unique constraint on drink name thus i cant identify which drink name i am referecing. however i don't care which drink i am exactly referencing as long as the name exists
+
+    @property
+    def serialize(self):
+        attribute_names = list(self.__dict__.keys())
+        attributes = list(self.__dict__.values())
+        serialized_attributes = {}
+        for i in range(len(attributes)):
+            serialized_attributes[attribute_names[i]] = attributes[i]
+        return serialized_attributes
+    
+class Order_Drink_Instance(db.Model):
+    __tablename__ = 'order_drink_instance'
+    id = db.Column(UUID(as_uuid=True),default=uuid.uuid4, primary_key=True,
+                   unique=True, nullable=False)
+    order_drink_id = db.Column(UUID(as_uuid=True), db.ForeignKey(
+        'order_drink.id'), nullable=False)
+    was_stolen = db.Column(db.Boolean(), default=False, nullable=False)
+    was_picked_up = db.Column(db.Boolean(), default=False, nullable=False)
+ 
     # did not set foriegn key here because there is no unique constraint on drink name thus i cant identify which drink name i am referecing. however i don't care which drink i am exactly referencing as long as the name exists
 
     @property

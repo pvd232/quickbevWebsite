@@ -152,14 +152,8 @@ const Bouncers = (props) => {
           );
           setMappedBouncers((prevMapppedBouncers) => {
             // if the merchant had 0 bouncers then the mappedBouncers array will have 1 single dummy merchant bouncer. so we want to remove this once a real merchant emplyee is added
-            if (prevMapppedBouncers[0].id === "") {
-              const newMappedBouncers = [];
-              newMappedBouncers.unshift(newBouncer);
-              return newMappedBouncers;
-            } else {
-              prevMapppedBouncers.unshift(newBouncer);
-              return prevMapppedBouncers;
-            }
+            prevMapppedBouncers.unshift(newBouncer);
+            return prevMapppedBouncers;
           });
           setCsvData(makeCSVData());
           setModalOpen((prevModalOpen) => !prevModalOpen);
