@@ -96,6 +96,7 @@ const PayoutSetup = (props) => {
               handleConnect().then((merchantStripeId) =>
                 props.onSubmit(eventTarget, merchantStripeId).then((result) => {
                   if (!result) {
+                    setIsSpinning(false);
                     return;
                   }
                   LocalStorageManager.shared.setItem("first_login", true);
