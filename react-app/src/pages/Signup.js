@@ -479,16 +479,6 @@ const PromoteYourMenuFieldset = (props) => {
             </Card.Body>
           </Card>
         </Row>
-        {/* <Button
-          name="previous"
-          className="previous action-button"
-          required
-          onClick={() => {
-            props.onClick("previous");
-          }}
-        >
-          Previous
-        </Button> */}
         <Button type="submit" name="next" className="next action-button">
           Next
         </Button>

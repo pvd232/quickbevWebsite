@@ -533,6 +533,7 @@ class Business_Domain(object):
         self.at_capacity = False
         self.schedule = []
         self.service_fee_percentage = service_fee_percentage
+        self.merchant_stripe_status = ""
         if business_object:
             self.id = business_object.id
             self.merchant_id = business_object.merchant_id

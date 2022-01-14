@@ -424,9 +424,7 @@ export class Business {
     this.schedule = businessObject.schedule;
     this.isActive = businessObject.is_active;
     this.imageUrl = businessObject.image_url;
-    if (LocalStorageManager.shared.currentMerchant.isAdministrator === true) {
-      this.merchantStripeStatus = businessObject.merchant_stripe_status;
-    }
+    this.merchantStripeStatus = businessObject.merchant_stripe_status;
   }
   get formattedName() {
     return formatName(this.name);
