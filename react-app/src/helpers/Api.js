@@ -246,6 +246,46 @@ class Client {
       return false;
     }
   };
+  checkBouncerStatus = async (bouncerId) => {
+    // the merchant bouncer username i
+    this.url = this.baseUrl + `/bouncer/validate?bouncer_id=${bouncerId}`;
+
+    const requestParams = {
+      method: "GET",
+      mode: this.mode,
+      cache: "default",
+    };
+    // will uncomment this when i have added menu for new businesses
+    const response = await fetch(this.url, requestParams);
+    if (response.status === 200) {
+      return 0;
+    } else if (response.status === 204) {
+      return 1;
+    } else {
+      return 2;
+    }
+  };
+  checkMerchantEmployeeStatus = async (merchantEmployeeId) => {
+    // the merchant bouncer username i
+    this.url =
+      this.baseUrl +
+      `/merchant_employee?merchant_employee_id=${merchantEmployeeId}`;
+
+    const requestParams = {
+      method: "GET",
+      mode: this.mode,
+      cache: "default",
+    };
+    // will uncomment this when i have added menu for new businesses
+    const response = await fetch(this.url, requestParams);
+    if (response.status === 200) {
+      return 0;
+    } else if (response.status === 204) {
+      return 1;
+    } else {
+      return 2;
+    }
+  };
   getBusinesses = async () => {
     this.url =
       this.baseUrl + "/business/" + LocalStorageManager.shared.sessionToken;

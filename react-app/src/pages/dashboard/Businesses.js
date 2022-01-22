@@ -234,7 +234,7 @@ const Businesses = (props) => {
         false, // no headers
         true // it is a form
       ).then((response) => {
-        if (response.status === 200) {
+        if (response) {
           const confirmedNewBusiness = new Business(
             response.confirmed_new_business
           );

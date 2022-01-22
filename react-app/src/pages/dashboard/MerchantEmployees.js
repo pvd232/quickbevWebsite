@@ -134,12 +134,9 @@ const MerchantEmployees = (props) => {
     var newErrorMsgState = {};
     newErrorMsgState["emailDisplay"] = "none";
     if (validate(form)) {
-      API.makeRequest(
-        "GET",
-        `/merchant_employee?merchant_employee_id=${formValue.email}`
-      ).then((response) => {
+      API.checkMerchantEmployeeStatus().then((response) => {
         // the merchant employee username is not taken by either a real or staged merchant employee
-        if (response.status === 200) {
+        if (response === 0) {
           // create the merchant employee with a null parameter assigns pending to the status property of the staged merchant employee
           const newMerchantEmployee = new MerchantEmployee(null);
           newMerchantEmployee.id = formValue.email;
@@ -163,7 +160,7 @@ const MerchantEmployees = (props) => {
           });
 
           // the requested username is already assigned to a staged merchant employee
-        } else if (response.status === 204) {
+        } else if (response === 1) {
           // otherwise it will be false
           newErrorMsgState["emailErrorMsg"] =
             "* Email already associated with a pending account";
@@ -173,7 +170,7 @@ const MerchantEmployees = (props) => {
           return false;
         }
         // the requested username is already assigned to a real merchant employee
-        else if (response.status === 400) {
+        else if (response === 2) {
           // otherwise it will be false
           newErrorMsgState["emailErrorMsg"] =
             "* Email already associated with a confirmed account";

@@ -55,7 +55,7 @@ const DeactivateBusiness = () => {
         false,
         false
       );
-      if (response.status !== 200) {
+      if (!response) {
         alert("A server error occured. Tell Peter.");
         setIsSpinning(false);
         setIsDisabled(false);

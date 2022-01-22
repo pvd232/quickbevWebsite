@@ -59,7 +59,9 @@ const MenuBuilder = () => {
         false,
         true
       );
-      if (response.status !== 200) {
+      console.log("response", response);
+
+      if (!response) {
         alert("A server error occured. Tell Peter.");
       } else {
         alert("Menu successfully uploaded!");
@@ -192,12 +194,14 @@ const MenuBuilder = () => {
         spacing={0}
         justifyContent="center"
         key={"grid-1-" + props.k}
+        style={{ marginLeft: "auto", marginRight: "auto" }}
       >
         <div className={classes.root} key={"asdf-" + props.k}>
           <Grid
             key={"grid-1-1-" + props.k}
             item
             xs={12}
+            justifyContent="center"
             style={{
               textAlign: "center",
               marginBottom: "20px",

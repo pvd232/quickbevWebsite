@@ -137,12 +137,9 @@ const Bouncers = (props) => {
 
     newErrorMsgState["emailDisplay"] = "none";
     if (validate(form)) {
-      API.makeRequest(
-        "GET",
-        `/bouncer/validate?bouncer_id=${formValue.id}`
-      ).then((response) => {
+      API.checkBouncerStatus().then((response) => {
         // the merchant bouncer username is not taken by either a real or staged merchant bouncer
-        if (response.status === 200) {
+        if (response === 0) {
           // create the merchant bouncer with a null parameter assigns pending to the status property of the staged merchant bouncer
           const newBouncer = new Bouncer(formValue, true);
           API.makeRequest(
@@ -160,7 +157,7 @@ const Bouncers = (props) => {
           setErrorMsg(newErrorMsgState);
           return true;
           // the requested username is already assigned to a staged merchant bouncer
-        } else if (response.status === 204) {
+        } else if (response === 1) {
           // otherwise it will be false
           newErrorMsgState["emailErrorMsg"] =
             "* Email already associated with a pending account";
@@ -169,7 +166,7 @@ const Bouncers = (props) => {
           return false;
         }
         // the requested username is already assigned to a real merchant bouncer
-        else if (response.status === 400) {
+        else if (response === 2) {
           // otherwise it will be false
           newErrorMsgState["emailErrorMsg"] =
             "* Email already associated with a confirmed account";
