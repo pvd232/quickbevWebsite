@@ -94,7 +94,7 @@ const CreateYourAccountFieldset = (props) => {
         const headers = { email: newMerchant.id };
         API.makeRequest("GET", "/merchant/validate", false, headers).then(
           (response) => {
-            if (response.status === 200) {
+            if (response) {
               // if the username is available the response from the API will be true
               props.onClick("next", "merchant", newMerchant);
             } else {
@@ -479,6 +479,16 @@ const PromoteYourMenuFieldset = (props) => {
             </Card.Body>
           </Card>
         </Row>
+        {/* <Button
+          name="previous"
+          className="previous action-button"
+          required
+          onClick={() => {
+            props.onClick("previous");
+          }}
+        >
+          Previous
+        </Button> */}
         <Button type="submit" name="next" className="next action-button">
           Next
         </Button>

@@ -108,6 +108,9 @@ def b():
 @app.route("/c")
 def c():
     deactivate_db()
+    ETag_Service().update_etag("business")
+    ETag_Service().update_etag("drink")
+
     return Response(status=200)
 
 # will need to link this to web interface and add session_token (grabbed from LocalStorage) for better security

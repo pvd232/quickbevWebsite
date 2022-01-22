@@ -1,5 +1,5 @@
 import Button from "@material-ui/core/Button";
-import React, { useState, useReducer } from "react";
+import React, { useState, useReducer, useEffect } from "react";
 import { TextField } from "@material-ui/core";
 import Form from "react-bootstrap/Form";
 import API from "../../helpers/Api.js";
@@ -113,6 +113,34 @@ const MenuBuilder = () => {
         selectedFile: "",
       }
     );
+    useEffect(() => {
+      // for some reason formValues gets reset when changing numRows, but the values in the rows are cached, so need to send the values back up the formValues
+      props.updateValue({
+        name: "drinkName",
+        value: formValue.drinkName,
+        index: props.k,
+      });
+      props.updateValue({
+        name: "drinkDescription",
+        value: formValue.drinkName,
+        index: props.k,
+      });
+      props.updateValue({
+        name: "drinkPrice",
+        value: formValue.drinkPrice,
+        index: props.k,
+      });
+      props.updateValue({
+        name: "drinkPrice",
+        value: formValue.drinkPrice,
+        index: props.k,
+      });
+      props.updateValue({
+        name: "selectedFile",
+        value: formValue.selectedFile,
+        index: props.k,
+      });
+    });
     const formChangeHandler = (event) => {
       if (event.target.name === "selectedFile") {
         const newFileObject = {
@@ -277,7 +305,7 @@ const MenuBuilder = () => {
     );
   };
   const BuildPage = (props) => {
-    var formValues = {
+    const formValues = {
       drinkName: [],
       drinkDescription: [],
       drinkPrice: [],
@@ -294,6 +322,7 @@ const MenuBuilder = () => {
         for (var i = 0; i < difference; i++) {
           formValues.drinkName.pop();
           formValues.drinkDescription.pop();
+          formValues.drinkPrice.pop();
           formValues.selectedFile.pop();
           formValues.selectedFileName.pop();
         }
@@ -301,19 +330,21 @@ const MenuBuilder = () => {
         const difference = newNumRows - numRows;
         for (var j = 0; j < difference; j++) {
           formValues.drinkName.push("");
-          formValues.drinkDescription.pop("");
-          formValues.selectedFile.pop("");
-          formValues.selectedFileName.pop("");
+          formValues.drinkDescription.push("");
+          formValues.drinkPrice.push("");
+          formValues.selectedFile.push("");
+          formValues.selectedFileName.push("");
         }
       }
       setNumRows(newNumRows);
       return;
     };
     // set initial values
-    if (formValues.drinkName.length !== numRows) {
+    if (numRows === 1) {
       for (let i = 0; i < numRows; i++) {
         formValues.drinkName.push("");
         formValues.drinkDescription.push("");
+        formValues.drinkPrice.push("");
         formValues.selectedFile.push("");
         formValues.selectedFileName.push("");
       }

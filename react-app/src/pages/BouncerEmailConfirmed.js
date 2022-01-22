@@ -5,7 +5,7 @@ import Container from "react-bootstrap/Container";
 import { useParams } from "react-router-dom";
 import MailOutlineIcon from "@material-ui/icons/MailOutline";
 import Col from "react-bootstrap/Col";
-const MerchantEmployeePayoutSetupComplete = () => {
+const BouncerEmailConfirmed = () => {
   let { sessionToken } = useParams();
   useEffect(() => {
     let mounted = true;
@@ -91,4 +91,4 @@ const MerchantEmployeePayoutSetupComplete = () => {
   );
 };
 
-export default MerchantEmployeePayoutSetupComplete;
+export default BouncerEmailConfirmed;

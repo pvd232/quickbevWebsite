@@ -39,7 +39,7 @@ class Client {
 
       if (response) {
         if (response.status === 500) {
-          return response.status;
+          return false;
         }
 
         var responseContent = {};
@@ -48,6 +48,7 @@ class Client {
             responseContent = await response.json();
           } catch (err) {
             console.log("err", err);
+            return true;
           }
         }
         const headers = {};
