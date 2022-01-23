@@ -493,8 +493,7 @@ const MenuBuilder = () => {
             justifyContent="center"
             style={{
               marginTop: "3vh",
-              marginLeft: "auto",
-              marginRight: "auto",
+              justifyContent: "center",
             }}
           >
             <Title>Menu Builder</Title>
