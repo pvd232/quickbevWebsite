@@ -433,7 +433,7 @@ const MenuBuilder = () => {
           xs={12}
           spacing={0}
           justifyContent="center"
-          style={{ marginTop: "3vh" }}
+          style={{ marginTop: "3vh", justifyContent: "center" }}
         >
           <Button
             onClick={(e) => handleSubmit(e)}
@@ -491,7 +491,11 @@ const MenuBuilder = () => {
             xs={8}
             spacing={0}
             justifyContent="center"
-            style={{ marginTop: "3vh" }}
+            style={{
+              marginTop: "3vh",
+              marginLeft: "auto",
+              marginRight: "auto",
+            }}
           >
             <Title>Menu Builder</Title>
           </Grid>
