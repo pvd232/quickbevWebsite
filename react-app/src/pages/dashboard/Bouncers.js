@@ -65,11 +65,10 @@ const Bouncers = (props) => {
   );
   const rowHeaders = new Bouncer();
 
-  const [mappedBouncers, setMappedBouncers] = useState(
-    props.bouncers.map((bouncerJSON) => {
-      return new Bouncer(bouncerJSON, false);
-    })
-  );
+  const mappedBouncers = props.bouncers.map((bouncerJSON) => {
+    return new Bouncer(bouncerJSON, false);
+  });
+
   const [csvData, setCsvData] = useState(() => makeCSVData());
   const [errorMsg, setErrorMsg] = useReducer(
     (state, newState) => ({ ...state, ...newState }),
@@ -119,17 +118,12 @@ const Bouncers = (props) => {
       "PUT",
       `/bouncer/staging/${LocalStorageManager.shared.sessionToken}`,
       data
-    ).then(
-      setMappedBouncers((prevMapppedBouncers) => {
-        prevMapppedBouncers.splice(index, 1);
-        const newMappedBouncers = [];
-        for (var i in prevMapppedBouncers) {
-          newMappedBouncers.push(prevMapppedBouncers[i]);
-        }
-        return newMappedBouncers;
-      })
-    );
+    ).then(() => {
+      mappedBouncers.splice(index, 1);
+      props.onUpdate(mappedBouncers);
+    });
   };
+
   const handleAddPerson = (event) => {
     event.preventDefault();
     const form = event.target.closest("form");
@@ -147,11 +141,9 @@ const Bouncers = (props) => {
             `/bouncer/staging/${LocalStorageManager.shared.sessionToken}`,
             newBouncer
           );
-          setMappedBouncers((prevMapppedBouncers) => {
-            // if the merchant had 0 bouncers then the mappedBouncers array will have 1 single dummy merchant bouncer. so we want to remove this once a real merchant emplyee is added
-            prevMapppedBouncers.unshift(newBouncer);
-            return prevMapppedBouncers;
-          });
+
+          mappedBouncers.unshift(newBouncer);
+          props.onUpdate(mappedBouncers);
           setCsvData(makeCSVData());
           setModalOpen((prevModalOpen) => !prevModalOpen);
           setErrorMsg(newErrorMsgState);

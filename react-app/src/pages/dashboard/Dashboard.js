@@ -222,6 +222,9 @@ const Dashboard = (props) => {
       bouncers={props.bouncers}
       fixedHeightPaper={fixedHeightPaper}
       classes={classes}
+      onUpdate={(newBouncer) =>
+        props.updateBouncers(newBouncer)
+      }
     />,
     <Orders fixedHeightPaper={fixedHeightPaper} classes={classes} />,
     <Menu fixedHeightPaper={fixedHeightPaper} classes={classes}></Menu>,

@@ -401,8 +401,6 @@ const Businesses = (props) => {
             onChange={(event) => onFileChange(event)}
             label={selectedFileName}
             noValidate
-
-            // value={selectedFile}
           />
 
           <div className={classes.content}>

@@ -17,6 +17,9 @@ const Home = () => {
   const handleMerchantEmployeeUpdate = (newMerchantEmployeees) => {
     setMerchantEmployees(newMerchantEmployeees);
   };
+  const handleBouncerUpdate = (newBouncers) => {
+    setBouncers(newBouncers);
+  };
   useEffect(() => {
     let mounted = true;
     API.checkStripeStatus().then((value) => {
@@ -95,6 +98,9 @@ const Home = () => {
         customers={customers}
         merchantEmployees={merchantEmployees}
         bouncers={bouncers}
+        updateBouncers={(newBouncers) =>
+          handleBouncerUpdate(newBouncers)
+        }
         updateBusinesses={(newBusinesses) =>
           handleBusinessUpdate(newBusinesses)
         }
