@@ -29,6 +29,10 @@ function SearchLocationInput(props) {
 
   return (
     <Form.Control
+      autoComplete={"" + Math.random()}
+      onFocus={(event) => {
+        event.target.setAttribute("autocomplete", "off");
+      }}
       type="search"
       name="address"
       ref={autoCompleteRef}
@@ -38,7 +42,6 @@ function SearchLocationInput(props) {
       placeholder="1234 Main St"
       required
       value={query}
-      autoComplete="off"
       style={{ marginBottom: "2%" }}
     />
   );

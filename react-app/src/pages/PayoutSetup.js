@@ -95,11 +95,11 @@ const PayoutSetup = (props) => {
               const eventTarget = event.target;
               handleConnect().then((merchantStripeId) =>
                 props.onSubmit(eventTarget, merchantStripeId).then((result) => {
+                  setIsSpinning(false);
                   if (!result) {
                     return;
                   }
                   LocalStorageManager.shared.setItem("first_login", true);
-                  setIsSpinning(false);
                   setRedirect(redirectUrl);
                 })
               );

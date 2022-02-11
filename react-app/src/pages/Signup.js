@@ -47,6 +47,7 @@ const CreateYourAccountFieldset = (props) => {
       lastName: "",
       phoneNumber: "",
       id: "",
+      confirmId: "",
       password: "",
       confirmPassword: "",
     }
@@ -55,6 +56,7 @@ const CreateYourAccountFieldset = (props) => {
     (state, newState) => ({ ...state, ...newState }),
     {
       confirmPasswordErrorMsg: "",
+      confirmEmailErrorMsg: "",
       emailErrorMsg: "",
     }
   );
@@ -82,11 +84,17 @@ const CreateYourAccountFieldset = (props) => {
     if (validate(form)) {
       var newErrorMsgState = {
         confirmPwdDisplay: "none",
+        confirmEmailDisplay: "none",
       };
       if (formValue.password !== formValue.confirmPassword) {
         newErrorMsgState["confirmPasswordErrorMsg"] =
           "* Your passwords do not match";
         newErrorMsgState["confirmPwdDisplay"] = "inline-block";
+        setErrorMsg(newErrorMsgState);
+        return false;
+      } else if (formValue.id !== formValue.confirmId) {
+        newErrorMsgState["confirmEmailErrorMsg"] = "* Your emails do not match";
+        newErrorMsgState["confirmEmailDisplay"] = "inline-block";
         setErrorMsg(newErrorMsgState);
         return false;
       } else {
@@ -118,6 +126,11 @@ const CreateYourAccountFieldset = (props) => {
   };
   const emailErrorMsgStyle = {
     display: errorMsg ? errorMsg.emailDisplay : "none",
+    textAlign: "left",
+    marginTop: "0",
+  };
+  const confirmEmailErrorMsgStyle = {
+    display: errorMsg ? errorMsg.confirmEmailDisplay : "none",
     textAlign: "left",
     marginTop: "0",
   };
@@ -158,6 +171,21 @@ const CreateYourAccountFieldset = (props) => {
         </Row>
         <Row>
           <Col>
+            <Form.Label>Phone number (no dashes)</Form.Label>
+            <Form.Control
+              type="tel"
+              name="phoneNumber"
+              required
+              pattern="[0-9]{10}"
+              onChange={(e) => {
+                formChangeHandler(e);
+              }}
+              value={formValue.phoneNumber}
+            />
+          </Col>
+        </Row>
+        <Row>
+          <Col>
             <div className="invalid-feedback" style={emailErrorMsgStyle}>
               {errorMsg.emailErrorMsg}
             </div>
@@ -175,16 +203,18 @@ const CreateYourAccountFieldset = (props) => {
         </Row>
         <Row>
           <Col>
-            <Form.Label>Phone number (no dashes)</Form.Label>
+            <div className="invalid-feedback" style={confirmEmailErrorMsgStyle}>
+              {errorMsg.confirmEmailErrorMsg}
+            </div>
+            <Form.Label>Confirm email</Form.Label>
             <Form.Control
-              type="tel"
-              name="phoneNumber"
+              type="email"
+              name="confirmId"
               required
-              pattern="[0-9]{10}"
               onChange={(e) => {
                 formChangeHandler(e);
               }}
-              value={formValue.phoneNumber}
+              value={formValue.confirmId}
             />
           </Col>
         </Row>
@@ -339,7 +369,6 @@ const PromoteYourMenuFieldset = (props) => {
               }}
               value={formValue.menuUrl}
               noValidate
-              // required={formValue.selectedFile ? false : true}
             />
           </Form.Group>
         </Row>

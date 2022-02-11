@@ -130,6 +130,7 @@ const Businesses = (props) => {
   };
   const handleScheduleChange = (event) => {
     const name = event.target.name;
+    let value = event.target.value;
     const dayIndex = parseInt(name.split("-")[0]);
     const isOpenOrClosed = name.split("-")[1];
     // must create new date object outside the scope of the setSchedule callback or the state doesnt update
@@ -143,10 +144,10 @@ const Businesses = (props) => {
       if (isOpenOrClosed === "closed") {
         newDateObject.isClosed = !prevSchedule[dayIndex].isClosed;
       } else if (isOpenOrClosed === "open") {
-        newDateObject.openingTime = event.target.value;
+        newDateObject.openingTime = value;
         newDateObject.closingTime = prevSchedule[dayIndex].closingTime;
       } else if (isOpenOrClosed === "closing") {
-        newDateObject.closingTime = event.target.value;
+        newDateObject.closingTime = value;
         newDateObject.openingTime = prevSchedule[dayIndex].openingTime;
       }
       // creating new object makes setState func work for some reason
@@ -312,13 +313,14 @@ const Businesses = (props) => {
         Add new business
       </h4>
 
-      <Form autoComplete="off">
+      <Form autoComplete="not-off">
         <fieldset>
           <Form.Label>Address</Form.Label>
           <SearchLocationInput onUpdate={(address) => setAddress(address)} />
           <Form.Label>Name</Form.Label>
           <Form.Control
             type="text"
+            autoComplete="nah"
             className="mb-3"
             name="name"
             placeholder="Business Name"
@@ -331,6 +333,7 @@ const Businesses = (props) => {
           <Form.Label>Phone Number</Form.Label>
           <Form.Control
             type="tel"
+            autoComplete="nah"
             name="phoneNumber"
             className="mb-3"
             required
@@ -363,6 +366,7 @@ const Businesses = (props) => {
           </div>
           <Form.Control
             type="url"
+            autoComplete="nah"
             name="menuUrl"
             placeholder="https://yourwebsite.com"
             onChange={(e) => {
@@ -370,7 +374,6 @@ const Businesses = (props) => {
             }}
             value={formValue.menuUrl}
             noValidate
-            // required={formValue.selectedFile ? false : true}
           />
           <Row>
             <Col
@@ -430,7 +433,7 @@ const Businesses = (props) => {
                     </Col>
                   </Row>
 
-                  <Form.Label>Closed all day</Form.Label>
+                  <Form.Label>Closed</Form.Label>
                   <Row
                     key={"row" + i}
                     style={{

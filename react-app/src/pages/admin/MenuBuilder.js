@@ -124,12 +124,7 @@ const MenuBuilder = () => {
       });
       props.updateValue({
         name: "drinkDescription",
-        value: formValue.drinkName,
-        index: props.k,
-      });
-      props.updateValue({
-        name: "drinkPrice",
-        value: formValue.drinkPrice,
+        value: formValue.drinkDescription,
         index: props.k,
       });
       props.updateValue({
@@ -142,12 +137,17 @@ const MenuBuilder = () => {
         value: formValue.selectedFile,
         index: props.k,
       });
+      props.updateValue({
+        name: "selectedFileName",
+        value: formValue.selectedFileName,
+        index: props.k,
+      });
     });
     const formChangeHandler = (event) => {
       if (event.target.name === "selectedFile") {
         const newFileObject = {
           selectedFile: event.target.files[0],
-          selectedFileName: event.target.files[0].name,
+          selectedFileName: event.target.files[0].name.replace(/ /g, "-"),
         };
         setFormValue(newFileObject);
         const propsFileObject = {
@@ -375,6 +375,7 @@ const MenuBuilder = () => {
         } else {
           const newFileArray = [];
           for (var i = 0; i < formValues.selectedFile.length; i++) {
+            // this is a boolean flag that tells the backend if there is a photo associated with the drink, super jank and should replace it in the future
             if (formValues.selectedFile[i] !== "") {
               newFileArray.push(true);
             } else {
@@ -382,10 +383,14 @@ const MenuBuilder = () => {
             }
           }
           newForm.append(String(key), JSON.stringify(newFileArray));
-
+          var j = 0;
           formValues[key].forEach((value) => {
             if (value !== "") {
-              newForm.append(String(key), value, value.fileName);
+              newForm.append(
+                String(key),
+                value,
+                formValues.selectedFileName[j]
+              );
             }
           });
         }
