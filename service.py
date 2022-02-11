@@ -442,6 +442,10 @@ class Bouncer_Service(object):
                 bouncer_object=Bouncer_Repository().get_bouncer(session=session, bouncer_id=bouncer_id))
             return bouncer_domain
 
+    def register_subscription_token(self, bouncer_id: str, subscription_token: str):
+        with session_scope() as session:
+            return Bouncer_Repository().register_subscription_token(session=session, bouncer_id=bouncer_id)
+
 
 class Merchant_Employee_Service(object):
     def get_stripe_account(self, merchant_employee_id: str):
@@ -545,13 +549,14 @@ class Business_Service(object):
                 business_domain = Business_Domain(business_object=business)
                 response.append(business_domain)
             return response
-        
+
     def get_administrator_businesses(self):
         with session_scope() as session:
             response = []
             for business in Business_Repository().get_administrator_businesses(session):
                 business_domain = Business_Domain(business_object=business)
-                business_domain.merchant_stripe_status = Merchant_Repository().authenticate_merchant_stripe(business_domain.merchant_stripe_id)
+                business_domain.merchant_stripe_status = Merchant_Repository(
+                ).authenticate_merchant_stripe(business_domain.merchant_stripe_id)
                 response.append(business_domain)
             return response
 
@@ -631,7 +636,6 @@ class ETag_Service(object):
     def validate_etag(self, etag: dict):
         with session_scope() as session:
             etag_domain = ETag_Domain(etag_json=etag)
-            print('etag_domain', etag_domain.dto_serialize())
             return ETag_Repository().validate_etag(session=session, etag=etag_domain)
 
     def update_etag(self, category: str):
@@ -795,6 +799,7 @@ class Quick_Pass_Service(object):
             business = Business_Repository().get_business(
                 session, quick_pass_domain.business_id)
             new_queue = business.quick_pass_queue + 1
+            
             Business_Repository().update_quick_pass_queue(
                 session=session, business_id=business.id, queue=new_queue)
             price = business.quick_pass_price

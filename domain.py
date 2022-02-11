@@ -135,14 +135,15 @@ class Order_Domain(object):
             # unique_drinks_ids = []
             for order_drink in order_object.order_drink:
                 # if order_drink.drink_id not in unique_drinks_ids:
-                    # unique_drinks_ids.append(order_drink.drink_id)
-                new_order_drink = Order_Drink_Domain(order_drink_object=order_drink)
+                # unique_drinks_ids.append(order_drink.drink_id)
+                new_order_drink = Order_Drink_Domain(
+                    order_drink_object=order_drink)
                 self.order_drink.append(new_order_drink)
                 # else:
-                    # for previous_order_drink in self.order_drink:
-                        # if previous_order_drink.drink_id == order_drink.drink_id:
-                            # previous_order_drink.quantity += 1
-                            # break
+                # for previous_order_drink in self.order_drink:
+                # if previous_order_drink.drink_id == order_drink.drink_id:
+                # previous_order_drink.quantity += 1
+                # break
             self.completed = order_object.completed
             self.refunded = order_object.refunded
             self.payment_intent_id = order_object.payment_intent_id
@@ -178,14 +179,14 @@ class Order_Domain(object):
             for order_drink in order_result.Order.order_drink:
                 # if order_drink.drink_id not in unique_drinks_ids:
                 #     unique_drinks_ids.append(order_drink.drink_id)
-                    new_order_drink = Order_Drink_Domain(
-                        order_drink_object=order_drink)
-                    self.order_drink.append(new_order_drink)
+                new_order_drink = Order_Drink_Domain(
+                    order_drink_object=order_drink)
+                self.order_drink.append(new_order_drink)
                 # else:
-                    # for previous_order_drink in self.order_drink:
-                        # if previous_order_drink.drink_id == order_drink.drink_id:
-                            # previous_order_drink.quantity += 1
-                            # break
+                # for previous_order_drink in self.order_drink:
+                # if previous_order_drink.drink_id == order_drink.drink_id:
+                # previous_order_drink.quantity += 1
+                # break
             self.completed = order_result.Order.completed
             self.refunded = order_result.Order.refunded
             self.payment_intent_id = order_result.Order.payment_intent_id

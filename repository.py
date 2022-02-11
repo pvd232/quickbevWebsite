@@ -531,9 +531,15 @@ class Bouncer_Repository(object):
         return new_staged_bouncer
 
     def remove_staged_bouncer(self, session: scoped_session, bouncer_id: str):
-        staged_bouncer_to_remove = session.query(Staged_Bouncer).filter(
+        session.query(Staged_Bouncer).filter(
             Staged_Bouncer.id == bouncer_id).delete()
         return
+    
+    def register_subscription_token(self, session: scoped_session, bouncer_id: str, subscription_token:str):
+        bouncer = session.query(Staged_Bouncer).filter(
+            Staged_Bouncer.id == bouncer_id).first()
+        bouncer.subscription_token = subscription_token
+        
 
 
 class Merchant_Employee_Repository(object):
@@ -632,6 +638,7 @@ class Merchant_Employee_Repository(object):
     def get_servers(self, session: scoped_session, business_id: uuid.UUID):
         servers = session.query(Merchant_Employee).filter(
             Merchant_Employee.business_id == business_id, Merchant_Employee.logged_in == True).all()
+        
         return servers
 
 
@@ -657,7 +664,6 @@ class ETag_Repository(object):
     def validate_etag(self, session: scoped_session, etag: ETag_Domain):
         validation = session.query(ETag).filter(
             ETag.category == etag.category, ETag.id == etag.id).first()
-        print('validation', validation)
         if validation:
             return True
         else:

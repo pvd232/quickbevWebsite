@@ -25,7 +25,7 @@ const SplashHeader = () => {
         <Col xs={8} style={{ justifySelf: "center", alignSelf: "center" }}>
           <Row>
             <Col sm={12}>
-              <h1>We all deserve a drink in 2022</h1>
+              <h1>We all deserve a drink in {new Date().getFullYear()}</h1>
             </Col>
           </Row>
           <Row>
