@@ -222,9 +222,7 @@ const Dashboard = (props) => {
       bouncers={props.bouncers}
       fixedHeightPaper={fixedHeightPaper}
       classes={classes}
-      onUpdate={(newBouncer) =>
-        props.updateBouncers(newBouncer)
-      }
+      onUpdate={(newBouncer) => props.updateBouncers(newBouncer)}
     />,
     <Orders fixedHeightPaper={fixedHeightPaper} classes={classes} />,
     <Menu fixedHeightPaper={fixedHeightPaper} classes={classes}></Menu>,
@@ -356,6 +354,9 @@ const Dashboard = (props) => {
                     <MenuList autoFocusItem={settingsOpen} id="menu-list-grow">
                       <Link to="/">
                         <MenuItem>Logout</MenuItem>
+                      </Link>
+                      <Link to="/push-notification-demo">
+                        <MenuItem>Push Notification Demo</MenuItem>
                       </Link>
                     </MenuList>
                   </ClickAwayListener>
