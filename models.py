@@ -264,8 +264,7 @@ class Customer(db.Model):
                    unique=True, nullable=False)
     stripe_id = db.Column(db.String(80), db.ForeignKey('stripe_customer.id'), unique=True,
                           nullable=False)
-    apple_id = db.Column(db.String(200),
-                         unique=True, nullable=True)
+    apple_id = db.Column(db.String(200), nullable=True)
     password = db.Column(db.String(200), nullable=False)
     first_name = db.Column(db.String(80), nullable=False)
     last_name = db.Column(db.String(80), nullable=False)
@@ -400,16 +399,17 @@ class Order_Drink(db.Model):
         for i in range(len(attributes)):
             serialized_attributes[attribute_names[i]] = attributes[i]
         return serialized_attributes
-    
+
+
 class Order_Drink_Instance(db.Model):
     __tablename__ = 'order_drink_instance'
-    id = db.Column(UUID(as_uuid=True),default=uuid.uuid4, primary_key=True,
+    id = db.Column(UUID(as_uuid=True), default=uuid.uuid4, primary_key=True,
                    unique=True, nullable=False)
     order_drink_id = db.Column(UUID(as_uuid=True), db.ForeignKey(
         'order_drink.id'), nullable=False)
     was_stolen = db.Column(db.Boolean(), default=False, nullable=False)
     was_picked_up = db.Column(db.Boolean(), default=False, nullable=False)
- 
+
     # did not set foriegn key here because there is no unique constraint on drink name thus i cant identify which drink name i am referecing. however i don't care which drink i am exactly referencing as long as the name exists
 
     @property

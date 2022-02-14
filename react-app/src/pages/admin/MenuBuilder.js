@@ -392,6 +392,7 @@ const MenuBuilder = () => {
                 formValues.selectedFileName[j]
               );
             }
+            j = j + 1;
           });
         }
       });
