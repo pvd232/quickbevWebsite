@@ -113,8 +113,6 @@ def c():
 
     return Response(status=200)
 
-# will need to link this to web interface and add session_token (grabbed from LocalStorage) for better security
-
 
 @app.route("/drink/deactivate/<string:session_token>", methods=['POST'])
 def deactivate_drink(session_token):
@@ -122,10 +120,10 @@ def deactivate_drink(session_token):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
     drink_id = request.args.get('drink_id')
     drink_uuid = uuid.UUID(drink_id)
-    Drink_Service().deactivate_drink(drink_id=drink_uuid)
+    status = Drink_Service().deactivate_drink(drink_id=drink_uuid)
+    if status == True:
+        ETag_Service().update_etag("drink")
     return Response(status=200)
-
-# will need to link this to web interface and add session_token (grabbed from LocalStorage) for better security
 
 
 @app.route("/business/deactivate/<string:session_token>", methods=['POST'])
@@ -135,8 +133,11 @@ def deactivate_business(session_token):
 
     business_id = request.args.get('business_id')
     business_uuid = uuid.UUID(business_id)
-    Business_Service().deactivate_business(business_id=business_uuid)
-    Drink_Service().deactivate_drinks(business_id=business_id)
+    status = Business_Service().deactivate_business(business_id=business_uuid)
+    if status == True:
+        Drink_Service().deactivate_drinks(business_id=business_id)
+        ETag_Service().update_etag("business")
+        ETag_Service().update_etag("drink")
     return Response(status=200)
 
 
@@ -690,7 +691,7 @@ def send_password_reset_email(jwt_token, entity):
 def customer(session_token):
     response = {}
     headers = {}
-    
+
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
     if request.method == 'OPTIONS':
@@ -719,7 +720,7 @@ def customer(session_token):
             headers["jwt-token"] = jwt_token
             send_confirmation_email(
                 jwt_token=jwt_token, email_type="customer_confirmation", user=generated_new_customer)
-     
+
             status = 200
             return Response(response=json.dumps(generated_new_customer.dto_serialize()), status=status, headers=headers)
         else:
@@ -763,12 +764,12 @@ def validate_customer():
     customer_id = request.headers.get('user-id')
     status = Customer_Service().get_customer(customer_id=customer_id)
     jwt_token = jwt.encode(
-            {"sub": customer_id}, key=secret, algorithm="HS256")
+        {"sub": customer_id}, key=secret, algorithm="HS256")
     headers = {"jwt-token": jwt_token}
     if status:
         response = {}
         response["customer"] = status.dto_serialize()
-       
+
         return Response(status=201, response=json.dumps(response), headers=headers)
     else:
         return Response(status=200, headers=headers)
@@ -1449,8 +1450,8 @@ def business_capacity(session_token):
     data = json.loads(request.data)
     capacity = data['capacity']
     business_id = data['business_id']
-    Business_Service().update_business_capacity(business_id=
-        business_id, capacity=capacity)
+    Business_Service().update_business_capacity(
+        business_id=business_id, capacity=capacity)
     new_e_tag = ETag_Service().update_etag("business")
     ETag_Service().update_merchant_etag(business_id=business_id, e_tag=new_e_tag)
     return Response(status=200)

@@ -42,7 +42,8 @@ class Drink_Repository(object):
             Drink).filter(Drink.id == drink_id).first()
         if drink_to_deativate != None:
             drink_to_deativate.is_active = False
-        return
+            return True
+        return False
 
     def deactivate_drinks(self, session: scoped_session, business_id: uuid.UUID):
         drinks_to_deactivate = session.query(
@@ -421,7 +422,8 @@ class Business_Repository(object):
             Business.id == business_id).first()
         if business_to_deativate != None:
             business_to_deativate.is_active = False
-        return
+            return True
+        return False
 
     def update_business_image_url(self, session: scoped_session, business_id: uuid.UUID, image_url: str):
         business = session.query(Business).filter(
