@@ -12,7 +12,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { LocalStorageManager } from "../../Models.js";
 import { useSearchParams } from "react-router-dom";
 
-const MenuBuilder = () => {
+const MenuBuilder = (props) => {
   const useStyles = makeStyles((theme) => ({
     root: {
       width: "100vw",
@@ -32,7 +32,9 @@ const MenuBuilder = () => {
   const classes = useStyles();
 
   const [searchParams, setSearchParams] = useSearchParams();
-  var businessId = searchParams.get("business_id") ?? "";
+  var businessId =
+    searchParams.get("business_id") ??
+    LocalStorageManager.shared.getItem("menu_builder_business_id");
   const [isSpinning, setIsSpinning] = useState(null);
   const Spinner = () => (
     <FontAwesomeIcon icon={faSpinner} className="fa-spin" />
@@ -59,10 +61,11 @@ const MenuBuilder = () => {
         false,
         true
       );
-      console.log("response", response);
 
       if (!response) {
-        alert("A server error occured. Tell Peter.");
+        alert(
+          "A server error occured. We are currently working on a solution."
+        );
       } else {
         alert("Menu successfully uploaded!");
       }
@@ -83,7 +86,7 @@ const MenuBuilder = () => {
           textAlign: "center",
           marginBottom: "20px",
           marginTop: "20px",
-          paddingLeft: "4vw",
+          paddingLeft: "2.3vw",
         }}
         key={"grid-3"}
       >
@@ -203,7 +206,6 @@ const MenuBuilder = () => {
             xs={12}
             justifyContent="center"
             style={{
-              textAlign: "center",
               marginBottom: "20px",
               marginTop: "20px",
             }}
@@ -408,7 +410,7 @@ const MenuBuilder = () => {
           spacing={0}
           style={{
             marginTop: "3vh",
-            marginRight: "6vw",
+            marginRight: "4vw",
             paddingRight: "3vw",
           }}
         >
@@ -468,7 +470,7 @@ const MenuBuilder = () => {
     return formRowArray;
   };
   return (
-    <Paper className={classes.content} key={"getthtpaper"}>
+    <Paper className={props.classes.paper} key={"getthtpaper"}>
       <form
         autoComplete="off"
         key={"bbbb"}

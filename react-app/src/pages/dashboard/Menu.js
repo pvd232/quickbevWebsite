@@ -18,6 +18,9 @@ import InputLabel from "@material-ui/core/InputLabel";
 import { useState } from "react";
 import { BusinessItem, DrinkItem, LocalStorageManager } from "../../Models";
 import Grid from "@material-ui/core/Grid";
+import EditIcon from "@material-ui/icons/Edit";
+import AddIcon from "@material-ui/icons/Add";
+import IconButton from "@material-ui/core/IconButton";
 
 const Menu = (props) => {
   const useStyles = makeStyles((theme) => ({
@@ -71,6 +74,31 @@ const Menu = (props) => {
                   </Select>
                 </FormControl>
               </Col>
+              <Col
+                xs={"auto"}
+                style={{
+                  justifyContent: "center",
+                  alignItems: "center",
+                  display: "flex",
+                  backgroundColor: "white",
+                }}
+              >
+                <IconButton
+                  color="inherit"
+                  onClick={() => {
+                    LocalStorageManager.shared.setItem(
+                      "menu_builder_business_id",
+                      businessItems[businessIndex].id
+                    );
+                    props.handleMenuClick();
+                  }}
+                >
+                  <AddIcon></AddIcon>
+                  <h6 style={{ marginBottom: "0", marginLeft: "1vw" }}>
+                    Add to menu
+                  </h6>
+                </IconButton>
+              </Col>
             </Form.Row>
           </FormGroup>
         </Form>
@@ -100,19 +128,23 @@ const Menu = (props) => {
                       className={classes.root}
                       style={{ backgroundColor: "white" }}
                     >
-                      <CardActionArea
-                        style={{ height: "100%" }}
-                        onClick={() => {
-                          if (
-                            LocalStorageManager.shared.currentMerchant
-                              .isAdministrator === true
-                          ) {
-                            window.location.assign(
-                              `/deactivate-drink?drink_id=${menuDrink.id}`
-                            );
-                          }
-                        }}
-                      >
+                      <CardActionArea >
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "flex-end",
+                          }}
+                        >
+                           <IconButton
+                  color="inherit"
+                  onClick={() => {
+           
+                  }}
+                >
+                  <EditIcon></EditIcon>
+                
+                </IconButton>
+                        </div>
                         <div
                           style={{ display: "flex", justifyContent: "center" }}
                         >

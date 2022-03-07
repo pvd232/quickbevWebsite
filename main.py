@@ -1,10 +1,10 @@
+from re import sub
 from flask import Response, request, render_template
 from models import app, instantiate_db_connection, deactivate_db
 from service import *
 import json
 import stripe
 import os
-import base64
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -12,16 +12,41 @@ import jwt
 from pushjack_http2_mod import APNSHTTP2Client, APNSHTTP2SandboxClient, APNSAuthToken
 from werkzeug.datastructures import MultiDict
 from pushjack_http2_mod import GCMClient
+from pywebpush import webpush, WebPushException
 import random
 import string
 stripe.api_key = "sk_test_51I0xFxFseFjpsgWvh9b1munh6nIea6f5Z8bYlIDfmKyNq6zzrgg8iqeKEHwmRi5PqIelVkx4XWcYHAYc1omtD7wz00JiwbEKzj"
 secret = '3327aa0ee1f61998369e815c17b1dc5eaf7e728bca14f6fe557af366ee6e20f9'
 ip_address = "192.168.1.71"
-env = "production"
-apns = "production"
+env = "debug"
+apns = "debug"
+
 
 # theme color RGB = rgb(134,130,230), hex = #8682E6
 # nice seafoam color #19cca3
+
+DER_BASE64_ENCODED_PRIVATE_KEY_FILE_PATH = os.path.join(
+    os.getcwd(), "private_key.txt")
+DER_BASE64_ENCODED_PUBLIC_KEY_FILE_PATH = os.path.join(
+    os.getcwd(), "public_key.txt")
+
+VAPID_PRIVATE_KEY = open(
+    DER_BASE64_ENCODED_PRIVATE_KEY_FILE_PATH, "r+").readline().strip("\n")
+VAPID_PUBLIC_KEY = open(
+    DER_BASE64_ENCODED_PUBLIC_KEY_FILE_PATH, "r+").read().strip("\n")
+
+VAPID_CLAIMS = {
+    "sub": "mailto:develop@raturi.in"
+}
+
+
+def send_web_push(subscription_information, message_body):
+    return webpush(
+        subscription_info=subscription_information,
+        data=message_body,
+        vapid_private_key=VAPID_PRIVATE_KEY,
+        vapid_claims=VAPID_CLAIMS
+    )
 
 
 def send_apn(device_token, action, order_id: UUID = None):
@@ -54,7 +79,7 @@ def send_apn(device_token, action, order_id: UUID = None):
         client.send(
             ids=[device_token],
             title="Order Completed",
-            message="Your order is ready for pickup!",
+            message="Your order has been completed",
             category=action,
             extra={"order_id": str(order_id)}
         )
@@ -62,7 +87,7 @@ def send_apn(device_token, action, order_id: UUID = None):
         client.send(
             ids=[device_token],
             title="Order Refunded",
-            message="Items in your order are out of stock. We refunded you.",
+            message="Items in your order are out of stock, you've been refunded",
             category=action,
             extra={"order_id": str(order_id)}
         )
@@ -89,14 +114,15 @@ def send_fcm(device_token: str, new_order: Order_Domain = False):
     # client.send([registration_id], alert, **options)
 
 
-@app.route("/")
-def my_index():
-    return render_template("index.html", flask_token="Hello world")
+# @app.route("/")
+# def my_index():
+
+#     return render_template("index.html", flask_token="Hello world")
 
 
-@app.errorhandler(404)
-def not_found(e):
-    return render_template('index.html')
+# @app.errorhandler(404)
+# def not_found(e):
+#     return render_template('index.html')
 
 
 @app.route("/b")
@@ -108,9 +134,21 @@ def b():
 @app.route("/c")
 def c():
     deactivate_db()
-    ETag_Service().update_etag("business")
-    ETag_Service().update_etag("drink")
+    return Response(status=200)
 
+
+@app.route("/d")
+def d():
+    # order_id = request.args.get("order_id")
+    # Order_Service().get_order(order_id)
+    device_token = Customer_Service().get_device_token('c')
+    send_apn(device_token, 'order_completed')
+    return Response(status=200)
+
+
+@app.route("/e")
+def e():
+    ETag_Service().update_etag("business")
     return Response(status=200)
 
 
@@ -128,6 +166,7 @@ def deactivate_drink(session_token):
 
 @app.route("/business/deactivate/<string:session_token>", methods=['POST'])
 def deactivate_business(session_token):
+    print('session_token',session_token)
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
 
@@ -140,15 +179,20 @@ def deactivate_business(session_token):
         ETag_Service().update_etag("drink")
     return Response(status=200)
 
+@app.route("/business/activate/<string:session_token>", methods=['POST'])
+def activate_business(session_token):
+    print('session_token',session_token)
+    if not jwt.decode(session_token, secret, algorithms=["HS256"]):
+        return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
 
-@app.route("/d")
-def d():
-    order_id = request.args.get("order_id")
-    Order_Service().get_order(order_id)
-    device_token = Customer_Service().get_device_token('c')
-    send_apn(device_token, 'order_completed')
+    business_id = request.args.get('business_id')
+    business_uuid = uuid.UUID(business_id)
+    status = Business_Service().activate_business(business_id=business_uuid)
+    if status == True:
+        Drink_Service().activate_drinks(business_id=business_id)
+        ETag_Service().update_etag("business")
+        ETag_Service().update_etag("drink")
     return Response(status=200)
-
 
 @app.route('/test_token/<string:business_id>', methods=["GET"])
 def test_token(business_id):
@@ -306,9 +350,7 @@ def drink(session_token):
 
         # dart drinks
         elif client_etag and is_business:
-            print("dart drinks")
             if not ETag_Service().validate_business_etag(business_id=is_business, e_tag=client_etag):
-                print("not validated")
                 status = 200
                 drinks = Drink_Service().get_business_drinks(business_id=is_business)
                 for drink in drinks:
@@ -399,7 +441,7 @@ def orders(session_token):
             send_apn(device_token, 'order_completed', order_to_update["id"])
         return Response(status=200)
     elif request.method == 'POST':
-        new_order = request.json
+        new_order = json.loads(request.data)
         updated_order = Order_Service().create_order(new_order)
         business_device_token = Business_Service(
         ).get_device_token(new_order["business_id"])
@@ -422,11 +464,11 @@ def orders(session_token):
 def send_info_email(jwt_token, email_type, user=None):
     host = request.headers.get('Host')
     if email_type == "quick_pass_link":
-        # host = '192.168.1.192:3000'
         if env == "production":
-            button_url = f"https://{host}/bouncer-quick-pass/{jwt_token}/{user.business_id}"
+            button_url = f"https://{host}/bouncer-quick-pass/{jwt_token}/{user.business_id}/{user.id}"
         else:
-            button_url = f"http://localhost:3000/bouncer-quick-pass/{jwt_token}/{user.business_id}"
+            host = ip_address + ":3000"
+            button_url = f"http://{host}/bouncer-quick-pass/{jwt_token}/{user.business_id}/{user.id}"
 
         logo = "https://storage.googleapis.com/my-new-quickbev-bucket/landscape-logo-purple.png"
 
@@ -440,7 +482,7 @@ def send_info_email(jwt_token, email_type, user=None):
         # Setup the MIME
         message = MIMEMultipart()
         message['From'] = sender_address
-        message['To'] = user.id
+        message['To'] = email
 
         message['Subject'] = 'QuickPass Page Link'  # The subject line
 
@@ -767,9 +809,7 @@ def validate_customer():
         {"sub": customer_id}, key=secret, algorithm="HS256")
     headers = {"jwt-token": jwt_token}
     if status:
-        response = {}
-        response["customer"] = status.dto_serialize()
-
+        response = {"customer": status.dto_serialize()}
         return Response(status=201, response=json.dumps(response), headers=headers)
     else:
         return Response(status=200, headers=headers)
@@ -995,6 +1035,12 @@ def create_payment_intent(session_token):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
     response = {}
     request_data = json.loads(request.data)
+    business_id = uuid.UUID(request_data["order"]["business_id"]) 
+    order_business = Business_Service().get_business(business_id=business_id)
+    # if the business has been deactivated and the user was using the app while the deactivation occured this response will update the business in the client
+    if order_business.is_active == False:
+            return Response(status=409)
+        
     client_secret = Order_Service().create_stripe_payment_intent(request_data)
     response["secret"] = client_secret["secret"]
     response["payment_intent_id"] = client_secret["payment_intent_id"]
@@ -1387,8 +1433,8 @@ def merchant():
             headers["token"] = jwt.encode(
                 {"sub": str(new_merchant.id)}, key=secret, algorithm="HS256")
 
-            send_confirmation_email(
-                jwt_token=headers["token"], email_type="merchant_confirmation", user=new_merchant, business=new_business)
+            # send_confirmation_email(
+            #     jwt_token=headers["token"], email_type="merchant_confirmation", user=new_merchant, business=new_business)
             stripe_account_status = Merchant_Service(
             ).authenticate_merchant_stripe(new_merchant.stripe_id)
             send_confirmation_email(
@@ -1559,11 +1605,18 @@ def quick_pass(session_token):
         quick_pass = Quick_Pass_Service().get_business_quick_pass(
             business_id=business_id, customer_id=customer_id)
         if quick_pass:
-            # quick_pass.sold_out = True
             response["quick_pass"] = quick_pass.dto_serialize()
             return Response(status=200, response=json.dumps(response), headers=headers)
         else:
             return Response(status=400)
+
+
+@app.route('/quick_pass/display/<string:session_token>', methods=['GET'])
+def quick_pass_display(session_token):
+    if not jwt.decode(session_token, secret, algorithms=["HS256"]):
+        return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
+    response = {"status": should_display_quick_pass}
+    return Response(status=200, response=json.dumps(response))
 
 # get quickpasses for the bouncer to validate at the door. goes to front end page with list of active passes
 
@@ -1606,6 +1659,39 @@ def quick_pass_payment_intent(session_token):
     response["secret"] = client_secret["secret"]
     response["payment_intent_id"] = client_secret["payment_intent_id"]
     return Response(status=200, response=json.dumps(response))
+
+
+@app.route("/subscription/", methods=["GET", "POST"])
+def subscription():
+    """
+        POST creates a subscription
+        GET returns vapid public key which clients uses to send around push notification
+    """
+
+    if request.method == "GET":
+        return Response(response=json.dumps({"public_key": VAPID_PUBLIC_KEY}),
+                        headers={"Access-Control-Allow-Origin": "*"}, content_type="application/json")
+
+    subscription_token = request.get_json("subscription_token")
+    Bouncer_Service().register_subscription_token(
+        subscription_token=subscription_token)
+    return Response(status=201, mimetype="application/json")
+
+
+@app.route("/push_v1/", methods=['POST'])
+def push_v1():
+    message = "Push Test v1"
+    if not request.json or not request.json.get('sub_token'):
+        return json.dumps({'failed': 1})
+
+    token = request.json.get('sub_token')
+    try:
+        token = json.loads(token)
+        send_web_push(token, message)
+        return json.dumps({'success': 1})
+    except Exception as e:
+        print("error", e)
+        return json.dumps({'failed': str(e)})
 
 
 if __name__ == '__main__':

@@ -10,9 +10,6 @@ import List from "@material-ui/core/List";
 import Typography from "@material-ui/core/Typography";
 import Divider from "@material-ui/core/Divider";
 import IconButton from "@material-ui/core/IconButton";
-import SmokeFreeIcon from "@material-ui/icons/SmokeFree";
-import BusinessIcon from "@material-ui/icons/Business";
-import LocalDrinkIcon from "@material-ui/icons/LocalDrink";
 
 import HelpIcon from "@material-ui/icons/Help";
 import SettingsIcon from "@material-ui/icons/Settings";
@@ -41,6 +38,7 @@ import Paper from "@material-ui/core/Paper";
 import Popper from "@material-ui/core/Popper";
 import MenuList from "@material-ui/core/MenuList";
 import { LocalStorageManager } from "../../Models";
+import MenuBuilder from "../admin/MenuBuilder";
 function Copyright() {
   return (
     <Typography variant="body2" color="textSecondary" align="center">
@@ -166,6 +164,10 @@ const Dashboard = (props) => {
     LocalStorageManager.shared.setItem("first_login", false);
     setModalOpen(false);
   };
+
+  const displayMenuBuilder = () => {
+    setCurrentPageIndex(7);
+  };
   const settingsAnchorRef = useRef(null);
   const helpAnchorRef = useRef(null);
 
@@ -225,12 +227,20 @@ const Dashboard = (props) => {
       onUpdate={(newBouncer) => props.updateBouncers(newBouncer)}
     />,
     <Orders fixedHeightPaper={fixedHeightPaper} classes={classes} />,
-    <Menu fixedHeightPaper={fixedHeightPaper} classes={classes}></Menu>,
+    <Menu
+      fixedHeightPaper={fixedHeightPaper}
+      classes={classes}
+      handleMenuClick={displayMenuBuilder}
+    ></Menu>,
     <Businesses
       fixedHeightPaper={fixedHeightPaper}
       classes={classes}
       onUpdate={(newBusinesses) => props.updateBusinesses(newBusinesses)}
     />,
+    <MenuBuilder
+      fixedHeightPaper={fixedHeightPaper}
+      classes={classes}
+    ></MenuBuilder>,
   ];
 
   const handleDrawerOpen = () => {
@@ -309,22 +319,6 @@ const Dashboard = (props) => {
           >
             Dashboard
           </Typography>
-          {LocalStorageManager.shared.currentMerchant.isAdministrator ===
-          true ? (
-            <>
-              <IconButton color="inherit" href="/menu-builder">
-                <SmokeFreeIcon></SmokeFreeIcon>
-              </IconButton>
-
-              <IconButton color="inherit" href="/deactivate-drink">
-                <LocalDrinkIcon></LocalDrinkIcon>
-              </IconButton>
-
-              <IconButton color="inherit" href="/deactivate-business">
-                <BusinessIcon></BusinessIcon>
-              </IconButton>
-            </>
-          ) : null}
           <IconButton
             color="inherit"
             onClick={handleSettingsToggle}

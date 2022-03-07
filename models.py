@@ -169,6 +169,8 @@ class Bouncer(db.Model):
                    unique=True, nullable=False)
     first_name = db.Column(db.String(80), nullable=False)
     last_name = db.Column(db.String(80), nullable=False)
+    last_name = db.Column(db.String(80), nullable=False)
+    subscription_token = db.Column(db.String(200), nullable=True)
     is_active = db.Column(db.Boolean(), default=True, nullable=False)
     logged_in = db.Column(db.Boolean(), default=False, nullable=False)
     business_id = db.Column(UUID(as_uuid=True), db.ForeignKey(
@@ -318,6 +320,9 @@ class Order(db.Model):
     card_information = db.Column(db.String(80), nullable=False)
     completed = db.Column(db.Boolean(), default=False, nullable=True)
     refunded = db.Column(db.Boolean(), default=False, nullable=True)
+
+    active_order_count = db.Column(db.Integer(), nullable=False)
+
     order_drink = relationship(
         "Order_Drink", lazy=True, backref="order", uselist=True)
 

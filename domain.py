@@ -108,8 +108,9 @@ class Order_Domain(object):
         self.completed = False
         self.refunded = False
         self.order_drink = []
-        self.formatted_date_time = datetime.now().strftime(
-            "%m/%d/%Y")
+        self.formatted_date_time = datetime.now().strftime("%m/%d/%Y")
+
+        self.active_order_count = 0
 
         if order_object and is_customer_order == True:
             self.id = order_object.id
@@ -127,26 +128,23 @@ class Order_Domain(object):
             self.net_service_fee_total = order_object.net_service_fee_total
             self.net_stripe_application_fee_total = order_object.net_stripe_application_fee_total
             self.card_information = order_object.card_information
+
             # formatted date string
             self.formatted_date_time = order_object.date_time.strftime(
                 "%m/%d/%Y")
             self.date_time = order_object.date_time
             self.merchant_stripe_id = order_object.merchant_stripe_id
-            # unique_drinks_ids = []
+
             for order_drink in order_object.order_drink:
-                # if order_drink.drink_id not in unique_drinks_ids:
-                # unique_drinks_ids.append(order_drink.drink_id)
                 new_order_drink = Order_Drink_Domain(
                     order_drink_object=order_drink)
                 self.order_drink.append(new_order_drink)
-                # else:
-                # for previous_order_drink in self.order_drink:
-                # if previous_order_drink.drink_id == order_drink.drink_id:
-                # previous_order_drink.quantity += 1
-                # break
+
             self.completed = order_object.completed
             self.refunded = order_object.refunded
             self.payment_intent_id = order_object.payment_intent_id
+
+            self.active_order_count = order_object.active_order_count
 
         # dart orders need customer name
         elif order_result:
@@ -170,26 +168,23 @@ class Order_Domain(object):
             self.net_service_fee_total = order_result.Order.net_service_fee_total
             self.net_stripe_application_fee_total = order_result.Order.net_stripe_application_fee_total
             self.card_information = order_result.Order.card_information
+
             # formatted date string
             self.formatted_date_time = order_result.Order.date_time.strftime(
                 "%m/%d/%Y")
             self.date_time = order_result.Order.date_time
             self.merchant_stripe_id = order_result.Order.merchant_stripe_id
-            # unique_drinks_ids = []
+
             for order_drink in order_result.Order.order_drink:
-                # if order_drink.drink_id not in unique_drinks_ids:
-                #     unique_drinks_ids.append(order_drink.drink_id)
                 new_order_drink = Order_Drink_Domain(
                     order_drink_object=order_drink)
                 self.order_drink.append(new_order_drink)
-                # else:
-                # for previous_order_drink in self.order_drink:
-                # if previous_order_drink.drink_id == order_drink.drink_id:
-                # previous_order_drink.quantity += 1
-                # break
+
             self.completed = order_result.Order.completed
             self.refunded = order_result.Order.refunded
             self.payment_intent_id = order_result.Order.payment_intent_id
+
+            self.active_order_count = order_result.Order.active_order_count
         elif order_json:
             # an order received as order_json will be an order sent from an iOS device, thus service fee is not included as a value because it is calculated in the backend
             self.id = uuid.UUID(order_json["id"])
@@ -212,6 +207,8 @@ class Order_Domain(object):
             self.refunded = order_json["refunded"]
             self.payment_intent_id = order_json["payment_intent_id"]
             self.card_information = order_json["card_information"]
+
+            # self.active_order_count is set in service layer, using data in the database
 
     def dto_serialize(self):
         serialized_attributes = {}

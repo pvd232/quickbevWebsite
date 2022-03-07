@@ -11,7 +11,10 @@ from models import instantiate_db_connection, stripe_fee_percentage, service_fee
 from repository import *
 import inspect
 from werkzeug.datastructures import FileStorage
+
+# static values that determine UI optional displays
 should_diplay_expiration_time = True
+should_display_quick_pass = False
 
 
 username = "postgres"
@@ -82,6 +85,10 @@ class Drink_Service(object):
     def deactivate_drinks(self, business_id: uuid.UUID):
         with session_scope() as session:
             return Drink_Repository().deactivate_drinks(session=session, business_id=business_id)
+
+    def activate_drinks(self, business_id: uuid.UUID):
+        with session_scope() as session:
+            return Drink_Repository().activate_drinks(session=session, business_id=business_id)
 
 
 class Order_Service(object):
@@ -160,6 +167,10 @@ class Order_Service(object):
         new_order_domain.net_stripe_application_fee_total = net_stripe_application_fee_total
         new_order_domain.net_service_fee_total = net_service_fee_total
 
+        # get order queue and set the property in the order_domain
+        active_order_count = self.get_active_order_count(
+            business_id=new_order_domain.business_id)
+        new_order_domain.active_order_count = active_order_count
         with session_scope() as session:
             return Order_Repository().create_order(session=session, order=new_order_domain)
 
@@ -270,6 +281,10 @@ class Order_Service(object):
         new_order_domain = Order_Domain(
             order_json=order, is_customer_order=False)
         return Order_Repository().refund_stripe_order(new_order_domain)
+
+    def get_active_order_count(self, business_id: uuid.UUID):
+        with session_scope() as session:
+            return Order_Repository().get_active_order_count(session=session, business_id=business_id)
 
 
 class Customer_Service(object):
@@ -550,6 +565,10 @@ class Business_Service(object):
                 response.append(business_domain)
             return response
 
+    def get_business(self, business_id: uuid.UUID):
+        with session_scope() as session:
+            return Business_Domain(business_object=Business_Repository().get_business(session=session, business_id=business_id))
+
     def get_administrator_businesses(self):
         with session_scope() as session:
             response = []
@@ -614,6 +633,10 @@ class Business_Service(object):
     def deactivate_business(self, business_id: uuid.UUID):
         with session_scope() as session:
             return Business_Repository().deactivate_business(session=session, business_id=business_id)
+
+    def activate_business(self, business_id: uuid.UUID):
+        with session_scope() as session:
+            return Business_Repository().activate_business(session=session, business_id=business_id)
 
 
 class Tab_Service(object):
@@ -799,7 +822,7 @@ class Quick_Pass_Service(object):
             business = Business_Repository().get_business(
                 session, quick_pass_domain.business_id)
             new_queue = business.quick_pass_queue + 1
-            
+
             Business_Repository().update_quick_pass_queue(
                 session=session, business_id=business.id, queue=new_queue)
             price = business.quick_pass_price

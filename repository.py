@@ -38,10 +38,10 @@ class Drink_Repository(object):
         return True
 
     def deactivate_drink(self, session: scoped_session, drink_id: uuid.UUID):
-        drink_to_deativate = session.query(
+        drink_to_deactivate = session.query(
             Drink).filter(Drink.id == drink_id).first()
-        if drink_to_deativate != None:
-            drink_to_deativate.is_active = False
+        if drink_to_deactivate != None:
+            drink_to_deactivate.is_active = False
             return True
         return False
 
@@ -51,6 +51,14 @@ class Drink_Repository(object):
         if drinks_to_deactivate != None:
             for drink in drinks_to_deactivate:
                 drink.is_active = False
+        return
+
+    def activate_drinks(self, session: scoped_session, business_id: uuid.UUID):
+        drinks_to_activate = session.query(
+            Drink).filter(Drink.business_id == business_id).all()
+        if drinks_to_activate != None:
+            for drink in drinks_to_activate:
+                drink.is_active = True
         return
 
 
@@ -75,18 +83,18 @@ class Order_Repository(object):
 
     def create_order(self, session: scoped_session, order: Order_Domain):
         new_order = Order(id=order.id, customer_id=order.customer_id, merchant_stripe_id=order.merchant_stripe_id,
-                          business_id=order.business_id, tip_percentage=order.tip_percentage, sales_tax_percentage=order.sales_tax_percentage, service_fee_percentage=order.service_fee_percentage, stripe_fee_percentage=order.stripe_fee_percentage, subtotal=order.subtotal, tip_total=order.tip_total, sales_tax_total=order.sales_tax_total, stripe_application_fee_total=order.stripe_application_fee_total, service_fee_total=order.service_fee_total,  total=order.total, stripe_fee_total=order.stripe_fee_total, net_stripe_application_fee_total=order.net_stripe_application_fee_total, net_service_fee_total=order.net_service_fee_total, payment_intent_id=order.payment_intent_id, card_information=order.card_information, refunded=order.refunded, completed=order.completed)
+                          business_id=order.business_id, tip_percentage=order.tip_percentage, sales_tax_percentage=order.sales_tax_percentage, service_fee_percentage=order.service_fee_percentage, stripe_fee_percentage=order.stripe_fee_percentage, subtotal=order.subtotal, tip_total=order.tip_total, sales_tax_total=order.sales_tax_total, stripe_application_fee_total=order.stripe_application_fee_total, service_fee_total=order.service_fee_total,  total=order.total, stripe_fee_total=order.stripe_fee_total, net_stripe_application_fee_total=order.net_stripe_application_fee_total, net_service_fee_total=order.net_service_fee_total, payment_intent_id=order.payment_intent_id, card_information=order.card_information, refunded=order.refunded, completed=order.completed, active_order_count=order.active_order_count)
         session.add(new_order)
         for each_order_drink in order.order_drink:
             # create a unique instance of Order_Drink for the number of each type of drink that were ordered. the uuid for the Order_Drink is generated in the database
-            new_order_drink = Order_Drink( id = each_order_drink.id,
-                order_id=each_order_drink.order_id, drink_id=each_order_drink.drink_id, quantity = each_order_drink.quantity)
+            new_order_drink = Order_Drink(id=each_order_drink.id,
+                                          order_id=each_order_drink.order_id, drink_id=each_order_drink.drink_id, quantity=each_order_drink.quantity)
             session.add(new_order_drink)
-            
+
             for _ in range(each_order_drink.quantity):
-                new_order_drink_instance = Order_Drink_Instance(order_drink_id = each_order_drink.id)
+                new_order_drink_instance = Order_Drink_Instance(
+                    order_drink_id=each_order_drink.id)
                 session.add(new_order_drink_instance)
-                
 
         # get the list of merchant_employees that are clocked in when the sale was made and give them each an equal part of the tip
         servers = session.query(Merchant_Employee).filter(
@@ -164,6 +172,11 @@ class Order_Repository(object):
                 stripe.Transfer.create_reversal(
                     transfer["id"], amount=transfer["amount"])
         return True
+
+    def get_active_order_count(self, session: scoped_session, business_id: uuid.UUID):
+        number_of_active_orders = len(session.query(Order).filter(
+            Order.business_id == business_id, Order.completed == False, Order.refunded == False).all())
+        return number_of_active_orders
 
 
 class Customer_Repository(object):
@@ -299,6 +312,11 @@ class Business_Repository(object):
                 businesses_to_return.append(business)
         return businesses_to_return
 
+    def get_business(self, session: scoped_session, business_id: uuid.UUID):
+        requested_business = session.query(Business).filter(
+            Business.id == business_id).first()
+        return requested_business
+
     def get_administrator_businesses(self, session: scoped_session) -> list[Business]:
         businesses = session.query(Business).all()
         return businesses
@@ -418,10 +436,18 @@ class Business_Repository(object):
         return
 
     def deactivate_business(self, session: scoped_session, business_id: uuid.UUID):
-        business_to_deativate = session.query(Business).filter(
+        business_to_deactivate = session.query(Business).filter(
             Business.id == business_id).first()
-        if business_to_deativate != None:
-            business_to_deativate.is_active = False
+        if business_to_deactivate != None:
+            business_to_deactivate.is_active = False
+            return True
+        return False
+
+    def activate_business(self, session: scoped_session, business_id: uuid.UUID):
+        business_to_activate = session.query(Business).filter(
+            Business.id == business_id).first()
+        if business_to_activate != None:
+            business_to_activate.is_active = True
             return True
         return False
 
@@ -536,12 +562,11 @@ class Bouncer_Repository(object):
         session.query(Staged_Bouncer).filter(
             Staged_Bouncer.id == bouncer_id).delete()
         return
-    
-    def register_subscription_token(self, session: scoped_session, bouncer_id: str, subscription_token:str):
+
+    def register_subscription_token(self, session: scoped_session, bouncer_id: str, subscription_token: str):
         bouncer = session.query(Staged_Bouncer).filter(
             Staged_Bouncer.id == bouncer_id).first()
         bouncer.subscription_token = subscription_token
-        
 
 
 class Merchant_Employee_Repository(object):
@@ -640,7 +665,7 @@ class Merchant_Employee_Repository(object):
     def get_servers(self, session: scoped_session, business_id: uuid.UUID):
         servers = session.query(Merchant_Employee).filter(
             Merchant_Employee.business_id == business_id, Merchant_Employee.logged_in == True).all()
-        
+
         return servers
 
 

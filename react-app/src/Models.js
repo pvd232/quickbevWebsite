@@ -590,7 +590,6 @@ export class Bouncer {
       merchant_id: this.merchantId,
       business_id: this.businessId,
     };
-
     return data;
   }
 }
