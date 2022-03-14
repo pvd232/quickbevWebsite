@@ -96,6 +96,10 @@ const Businesses = (props) => {
 
   const [selectedFile, setSelectedFile] = useState(null);
   const [selectedFileName, setSelectedFileName] = useState("");
+
+  const [selectedLogo, setSelectedLogo] = useState(null);
+  const [selectedLogoName, setSelectedLogoName] = useState("");
+
   const [errorMsg, setErrorMsg] = useReducer(
     (state, newState) => ({ ...state, ...newState }),
     {
@@ -105,6 +109,8 @@ const Businesses = (props) => {
   const resetFormState = () => {
     setSelectedFile(null);
     setSelectedFileName("");
+    setSelectedLogo(null);
+    setSelectedLogoName("");
     setFormValue({
       name: "",
       phoneNumber: "",
@@ -174,13 +180,19 @@ const Businesses = (props) => {
     setSelectedFile(event.target.files[0]);
     setSelectedFileName(event.target.files[0].name);
   };
+
+  const onLogoChange = (event) => {
+    setSelectedLogo(event.target.files[0]);
+    setSelectedLogoName(event.target.files[0].name);
+  };
+
   const handleFormChange = (event) => {
     let name = event.target.name;
     let value = event.target.value;
     if (typeof value === "string" && name !== "name") {
       setFormValue({ [name]: value.trim().toLowerCase() });
     } else if (typeof value === "string" && name === "name") {
-      setFormValue({ [name]: value.toLowerCase() });
+      setFormValue({ [name]: value.trim() });
     } else {
       setFormValue({ [name]: value });
     }
@@ -219,15 +231,31 @@ const Businesses = (props) => {
 
       copyOfFormValue.schedule = schedule;
       const newBusiness = new Business(copyOfFormValue);
-      // newBusiness.menu_url = copyOfFormValue.menu_url;
+
+      const logoDataObject = {
+        logoFile: selectedFile,
+        logoFileName: selectedFileName,
+      };
+
       newBusiness.merchantId = LocalStorageManager.shared.currentMerchant.id;
       newBusiness.merchantStripeId =
         LocalStorageManager.shared.currentMerchant.stripeId;
+
       const newForm = new FormData();
       newForm.append("business", JSON.stringify(newBusiness));
+
       if (selectedFile && selectedFileName) {
         newForm.append("file", selectedFile, selectedFileName);
       }
+
+      if (selectedLogo && selectedLogoName) {
+        newForm.append(
+          "logo_file",
+          logoDataObject.logoFile,
+          logoDataObject.logoFileName
+        );
+      }
+
       API.makeRequest(
         "POST",
         `/business/${LocalStorageManager.shared.sessionToken}`,
@@ -406,6 +434,48 @@ const Businesses = (props) => {
             noValidate
           />
 
+          <Form.Group
+            as={Col}
+            style={{ paddingLeft: "5px" }}
+            id="fileInputCol"
+            key={"file-input-body-1"}
+          >
+            <Form.Label
+              key={"biz-field-logo-label-1"}
+              style={{ marginTop: "5%" }}
+            >
+              Business Logo
+            </Form.Label>
+            <Form.Label
+              style={{
+                paddingLeft: "15px",
+                paddingRight: "5px",
+              }}
+              key={"logo-biz"}
+            >
+              Your logo will be displayed as a square image with rounded corners
+              in the app. If you do not have a logo, we will display the
+              QuickBev logo in its place.
+            </Form.Label>
+            <Form.File
+              id="fileInput"
+              name="logoFile"
+              key={"biz-logo"}
+              type="file"
+              custom
+              style={{
+                border: "none",
+                borderRadius: "3px",
+                fontFamily: "montserrat",
+                fontSize: "12px",
+                height: "4vh",
+                padding: "0",
+              }}
+              onChange={(event) => onLogoChange(event)}
+              label={selectedLogoName}
+              noValidate
+            />
+          </Form.Group>
           <div className={classes.content}>
             <Row>
               <Col

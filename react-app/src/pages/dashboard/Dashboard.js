@@ -39,6 +39,8 @@ import Popper from "@material-ui/core/Popper";
 import MenuList from "@material-ui/core/MenuList";
 import { LocalStorageManager } from "../../Models";
 import MenuBuilder from "../admin/MenuBuilder";
+import DeactivateDrink from "../admin/DeactivateDrink";
+import DeactivateBusiness from "../admin/DeactivateBusiness";
 function Copyright() {
   return (
     <Typography variant="body2" color="textSecondary" align="center">
@@ -168,6 +170,12 @@ const Dashboard = (props) => {
   const displayMenuBuilder = () => {
     setCurrentPageIndex(7);
   };
+  const displayDrinkEditPage = () => {
+    setCurrentPageIndex(8);
+  };
+  const displayBusinessEditPage = () => {
+    setCurrentPageIndex(9);
+  };
   const settingsAnchorRef = useRef(null);
   const helpAnchorRef = useRef(null);
 
@@ -231,6 +239,8 @@ const Dashboard = (props) => {
       fixedHeightPaper={fixedHeightPaper}
       classes={classes}
       handleMenuClick={displayMenuBuilder}
+      handleDrinkEditClick = {displayDrinkEditPage}
+      handleBusinessEditClick = {displayBusinessEditPage}
     ></Menu>,
     <Businesses
       fixedHeightPaper={fixedHeightPaper}
@@ -241,6 +251,14 @@ const Dashboard = (props) => {
       fixedHeightPaper={fixedHeightPaper}
       classes={classes}
     ></MenuBuilder>,
+    <DeactivateDrink
+    fixedHeightPaper={fixedHeightPaper}
+      classes={classes}
+    ></DeactivateDrink>,
+    <DeactivateBusiness
+    fixedHeightPaper={fixedHeightPaper}
+      classes={classes}
+    ></DeactivateBusiness>
   ];
 
   const handleDrawerOpen = () => {
@@ -348,9 +366,6 @@ const Dashboard = (props) => {
                     <MenuList autoFocusItem={settingsOpen} id="menu-list-grow">
                       <Link to="/">
                         <MenuItem>Logout</MenuItem>
-                      </Link>
-                      <Link to="/push-notification-demo">
-                        <MenuItem>Push Notification Demo</MenuItem>
                       </Link>
                     </MenuList>
                   </ClickAwayListener>

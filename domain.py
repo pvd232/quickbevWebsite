@@ -30,7 +30,8 @@ class Drink_Domain(object):
         self.description = ''
         self.price = ''
         self.business_id: uuid = ''
-        self.image_url = ''
+        self.image_url = ""
+        self.parent_drink_id = ""
         if drink_object:
             self.id = drink_object.id
             self.name = drink_object.name
@@ -39,7 +40,7 @@ class Drink_Domain(object):
             self.business_id = drink_object.business_id
             self.is_active = drink_object.is_active
             self.image_url = drink_object.image_url
-
+            self.parent_drink_id = drink_object.parent_drink_id
             if drink_object.image_url != None:
                 # the drink image url will always follow this pattern
                 self.image_url = drink_object.image_url
@@ -47,12 +48,19 @@ class Drink_Domain(object):
                 self.image_url = "https://storage.googleapis.com/my-new-quickbev-bucket/original.png"
         elif init == True and drink_json:
             # this is the initialization for creating the menu and adding the menu drinks to the database
+            self.id = uuid.uuid4()
             self.name = drink_json["name"]
             self.description = drink_json["description"]
             self.price = drink_json["price"]
             self.has_image = drink_json["has_image"]
+            self.business_id = drink_json["business_id"]
+            self.parent_drink_id = drink_json["parent_drink_id"]
             # only use this for attaching the file to the drink when uploading it to google cloud
             self.file = ''
+
+            # if the drink is being modified but does not have a new image, the drink will retain the parent's image url supplied to it during initialization
+            if self.has_image == False:
+                self.image_url = drink_json["image_url"]
         elif drink_json:
             # no need to receive image_url from the front end
             self.id = drink_json["id"]
@@ -60,6 +68,8 @@ class Drink_Domain(object):
             self.description = drink_json["description"]
             self.price = drink_json["price"]
             self.business_id = uuid.UUID(drink_json["business_id"])
+            if 'parent_drink_id' in drink_json:
+                self.parent_drink_id = drink_json["parent_drink_id"]
 
     def set_image_url(self, file_name: str):
         self.image_url = f'https://storage.googleapis.com/my-new-quickbev-bucket/business/{str(self.business_id)}/menu-images/' + \
@@ -72,7 +82,7 @@ class Drink_Domain(object):
         attributes = list(self.__dict__.values())
         serialized_attributes = {}
         for i in range(len(attributes)):
-            if attribute_names[i] == 'id' or attribute_names[i] == 'order_drink_id' or attribute_names[i] == 'business_id':
+            if attribute_names[i] == 'id' or attribute_names[i] == 'order_drink_id' or attribute_names[i] == 'business_id' or attribute_names[i] == 'parent_drink_id':
                 serialized_attributes[attribute_names[i]] = str(attributes[i])
             else:
                 serialized_attributes[attribute_names[i]] = attributes[i]
@@ -532,6 +542,9 @@ class Business_Domain(object):
         self.schedule = []
         self.service_fee_percentage = service_fee_percentage
         self.merchant_stripe_status = ""
+        self.image_url = None
+        self.is_active = True
+        self.deactivated = False
         if business_object:
             self.id = business_object.id
             self.merchant_id = business_object.merchant_id

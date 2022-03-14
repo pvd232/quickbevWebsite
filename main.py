@@ -1,3 +1,4 @@
+from operator import mod
 from re import sub
 from flask import Response, request, render_template
 from models import app, instantiate_db_connection, deactivate_db
@@ -12,7 +13,6 @@ import jwt
 from pushjack_http2_mod import APNSHTTP2Client, APNSHTTP2SandboxClient, APNSAuthToken
 from werkzeug.datastructures import MultiDict
 from pushjack_http2_mod import GCMClient
-from pywebpush import webpush, WebPushException
 import random
 import string
 stripe.api_key = "sk_test_51I0xFxFseFjpsgWvh9b1munh6nIea6f5Z8bYlIDfmKyNq6zzrgg8iqeKEHwmRi5PqIelVkx4XWcYHAYc1omtD7wz00JiwbEKzj"
@@ -24,30 +24,6 @@ apns = "production"
 
 # theme color RGB = rgb(134,130,230), hex = #8682E6
 # nice seafoam color #19cca3
-
-DER_BASE64_ENCODED_PRIVATE_KEY_FILE_PATH = os.path.join(
-    os.getcwd(), "private_key.txt")
-DER_BASE64_ENCODED_PUBLIC_KEY_FILE_PATH = os.path.join(
-    os.getcwd(), "public_key.txt")
-
-VAPID_PRIVATE_KEY = open(
-    DER_BASE64_ENCODED_PRIVATE_KEY_FILE_PATH, "r+").readline().strip("\n")
-VAPID_PUBLIC_KEY = open(
-    DER_BASE64_ENCODED_PUBLIC_KEY_FILE_PATH, "r+").read().strip("\n")
-
-VAPID_CLAIMS = {
-    "sub": "mailto:develop@raturi.in"
-}
-
-
-def send_web_push(subscription_information, message_body):
-    return webpush(
-        subscription_info=subscription_information,
-        data=message_body,
-        vapid_private_key=VAPID_PRIVATE_KEY,
-        vapid_claims=VAPID_CLAIMS
-    )
-
 
 def send_apn(device_token, action, order_id: UUID = None):
     team_id = '6YGH9XK378'
@@ -114,15 +90,15 @@ def send_fcm(device_token: str, new_order: Order_Domain = False):
     # client.send([registration_id], alert, **options)
 
 
-# @app.route("/")
-# def my_index():
+@app.route("/")
+def my_index():
 
-#     return render_template("index.html", flask_token="Hello world")
+    return render_template("index.html", flask_token="Hello world")
 
 
-# @app.errorhandler(404)
-# def not_found(e):
-#     return render_template('index.html')
+@app.errorhandler(404)
+def not_found(e):
+    return render_template('index.html')
 
 
 @app.route("/b")
@@ -136,24 +112,8 @@ def c():
     deactivate_db()
     return Response(status=200)
 
-
-@app.route("/d")
-def d():
-    # order_id = request.args.get("order_id")
-    # Order_Service().get_order(order_id)
-    device_token = Customer_Service().get_device_token('c')
-    send_apn(device_token, 'order_completed')
-    return Response(status=200)
-
-
-@app.route("/e")
-def e():
-    ETag_Service().update_etag("business")
-    return Response(status=200)
-
-
 @app.route("/drink/deactivate/<string:session_token>", methods=['POST'])
-def deactivate_drink(session_token):
+def deactivate_drink(session_token: str):
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
     drink_id = request.args.get('drink_id')
@@ -165,8 +125,7 @@ def deactivate_drink(session_token):
 
 
 @app.route("/business/deactivate/<string:session_token>", methods=['POST'])
-def deactivate_business(session_token):
-    print('session_token',session_token)
+def deactivate_business(session_token: str):
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
 
@@ -179,9 +138,10 @@ def deactivate_business(session_token):
         ETag_Service().update_etag("drink")
     return Response(status=200)
 
+
 @app.route("/business/activate/<string:session_token>", methods=['POST'])
-def activate_business(session_token):
-    print('session_token',session_token)
+def activate_business(session_token: str):
+    print('session_token', session_token)
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
 
@@ -193,6 +153,7 @@ def activate_business(session_token):
         ETag_Service().update_etag("business")
         ETag_Service().update_etag("drink")
     return Response(status=200)
+
 
 @app.route('/test_token/<string:business_id>', methods=["GET"])
 def test_token(business_id):
@@ -215,7 +176,7 @@ def apn_token(customer_id, session_token):
 
 
 @app.route('/fcm_token/<string:session_token>', methods=["POST"])
-def fcm_token(session_token):
+def fcm_token(session_token: str):
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
     else:
@@ -253,8 +214,8 @@ def login():
         return Response(status=404, response=json.dumps(response))
 
 
-@app.route('/drink/<string:session_token>', methods=['GET', 'OPTIONS', 'POST'])
-def drink(session_token):
+@app.route('/drink/<string:session_token>', methods=['GET', 'PUT', 'OPTIONS', 'POST'])
+def drink(session_token: str):
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
 
@@ -266,6 +227,52 @@ def drink(session_token):
     headers["Access-Control-Expose-Headers"] = "*"
 
     if request.method == 'OPTIONS':
+        return Response(status=200, headers=headers)
+
+    elif request.method == 'PUT':
+        business_id = json.loads(request.form.get("drinkBusinessId"))
+        drink_id_to_deactivate = json.loads(request.form.get("drinkIdToDeactivate"))
+        # if the drink is being modified, we create a new drink in the backend, associate it with the parent drink using the parent_drink_id, and deactivate the parent drink
+        drink_data = {"name": json.loads(request.form.get("drinkName")), "description": json.loads(request.form.get("drinkDescription")), "price": json.loads(request.form.get("drinkPrice")), "image_url": json.loads(request.form.get("selectedFileName")), "business_id": business_id, "parent_drink_id": json.loads(request.form.get(
+            "parentDrinkId")), "has_image": json.loads(request.form.get("hasImage"))}
+        
+        print('drink_data',drink_data)
+        
+        # if the user did not change the drink image then it will have the same imageUrl as the parent drink
+        if drink_data["has_image"] == False:
+            drink_data["image_url"] = json.loads(request.form.get("imageUrl"))
+        
+        # the image url will be passed into the drink during initialization
+        modified_drink = Drink_Service().modify_drink(drink=drink_data, drink_id_to_deactivate=drink_id_to_deactivate)
+        
+        files = request.files
+        # if selectedFile is not present in files then no image file was uploaded for the drink, and the new drink will have the quickbev logo
+        if 'selectedFile' in files:
+            multi_dict_file = MultiDict(files).getlist('selectedFile')
+
+            # only one drink image file will be sent if the drink is being edited
+            file = multi_dict_file[0]
+            modified_drink.file = file
+            
+            # if the drink was supplied a new image, then the image_url must be created based on the file name
+            modified_drink.set_image_url(file.filename)
+            
+            # upload the new drink image file to the cloud
+            Google_Cloud_Storage_Service().upload_drink_image_file(modified_drink)
+            
+            # utilize drink service method update drink, which is expecting a list as a parameter
+            modified_drink_list = []
+            modified_drink_list.append(modified_drink)
+            Drink_Service().update_drinks(modified_drink_list)
+            
+        # update e_tag to trigger client refresh
+        new_drink_e_tag = ETag_Service().update_etag("drink")
+        ETag_Service().update_merchant_etag(
+            business_id=modified_drink.business_id, e_tag=new_drink_e_tag)
+        
+        # update tablet drinks
+        device_token = Business_Service().get_device_token(business_id=business_id)
+        send_fcm(device_token=device_token, new_order=False)
         return Response(status=200, headers=headers)
 
     elif request.method == 'POST':
@@ -284,14 +291,11 @@ def drink(session_token):
             drink["description"] = drink_descriptions[i]
             drink["price"] = float(drink_prices[i])
             drink["has_image"] = drink_image_file_exists[i]
+            drink["business_id"] = business_id
+            drink["parent_drink_id"] = None
 
         added_drinks = Drink_Service().add_drinks(business_id, new_drinks)
-        new_drink_e_tag = ETag_Service().update_etag("drink")
-        ETag_Service().update_merchant_etag(
-            business_id=business_id, e_tag=new_drink_e_tag)
-
-        device_token = Business_Service().get_device_token(business_id=business_id)
-        send_fcm(device_token=device_token, new_order=False)
+       
 
         files = request.files
         drinks_with_images = [
@@ -308,10 +312,13 @@ def drink(session_token):
                 Google_Cloud_Storage_Service().upload_drink_image_file(drink)
                 response["msg"] = "File successfully uploaded!"
             Drink_Service().update_drinks(drinks_with_images)
-            return Response(status=200, response=json.dumps(response), headers=headers)
+            
+        new_drink_e_tag = ETag_Service().update_etag("drink")
+        ETag_Service().update_merchant_etag(business_id=business_id, e_tag=new_drink_e_tag)
 
-        response = Response(status=200, headers=headers)
-        return response
+        device_token = Business_Service().get_device_token(business_id=business_id)
+        send_fcm(device_token=device_token, new_order=False)
+        return Response(status=200, headers=headers)
 
     elif request.method == 'GET':
         drink_list = []
@@ -322,7 +329,7 @@ def drink(session_token):
         # swift drinks
         if client_etag and not is_merchant:
             if not ETag_Service().validate_etag(client_etag):
-                drinks = Drink_Service().get_drinks()
+                drinks = Drink_Service().get_customer_drinks()
                 for drink in drinks:
                     drinkDTO = {}
                     drinkDTO['drink'] = drink.dto_serialize()
@@ -352,7 +359,7 @@ def drink(session_token):
         elif client_etag and is_business:
             if not ETag_Service().validate_business_etag(business_id=is_business, e_tag=client_etag):
                 status = 200
-                drinks = Drink_Service().get_business_drinks(business_id=is_business)
+                drinks = Drink_Service().get_business_drinks(business_id=business_id)
                 for drink in drinks:
                     drinkDTO = {}
                     drinkDTO['drink'] = drink.dto_serialize()
@@ -376,7 +383,7 @@ def drink(session_token):
 
 
 @app.route('/customer/order/<string:session_token>', methods=['GET'])
-def sync_customer_orders(session_token):
+def sync_customer_orders(session_token: str):
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
     response = {}
@@ -389,7 +396,7 @@ def sync_customer_orders(session_token):
 
 
 @app.route('/merchant_employee/order/<string:session_token>', methods=['GET'])
-def get_merchant_employee_orders(session_token):
+def get_merchant_employee_orders(session_token: str):
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
     headers = {}
@@ -412,7 +419,7 @@ def get_merchant_employee_orders(session_token):
 
 
 @app.route('/order/<string:session_token>', methods=['POST', 'GET', 'OPTIONS', 'PUT'])
-def orders(session_token):
+def orders(session_token: str):
     headers = {}
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
@@ -730,7 +737,7 @@ def send_password_reset_email(jwt_token, entity):
 
 
 @app.route('/customer/<string:session_token>', methods=['POST', 'GET', 'PUT', 'OPTIONS'])
-def customer(session_token):
+def customer(session_token: str):
     response = {}
     headers = {}
 
@@ -791,7 +798,7 @@ def customer(session_token):
 
 
 @app.route("/customer/device_token/<string:session_token>", methods=["GET"])
-def update_device_token(session_token):
+def update_device_token(session_token: str):
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
     device_token = request.headers.get("device-token")
@@ -843,7 +850,7 @@ def set_customer_apple_id():
 
 
 @app.route("/customer/email/verify/<string:session_token>")
-def verify_email(session_token):
+def verify_email(session_token: str):
     status = jwt.decode(session_token, secret, algorithms=["HS256"])
     if not status:
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
@@ -894,7 +901,7 @@ def reset_password(entity_id):
 
 
 @app.route('/business/<string:session_token>', methods=['GET', 'POST', 'OPTIONS'])
-def business(session_token):
+def business(session_token: str):
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
     response = {}
@@ -919,7 +926,7 @@ def business(session_token):
         headers["Access-Control-Expose-Headers"] = "Access-Control-Allow-Credentials"
         headers["Access-Control-Expose-Headers"] = "Access-Control-Allow-Headers"
 
-        business_list = []
+        business_list : list[Business_Domain] = []
         merchant_id = request.headers.get('merchant-id')
 
         # javascript businesses
@@ -934,24 +941,23 @@ def business(session_token):
 
             merchant = Merchant_Service().get_merchant(merchant_id=merchant_id)
             if merchant.is_administrator:
-                businesses = Business_Service().get_administrator_businesses()
+                business_list = Business_Service().get_administrator_businesses()
             else:
-                businesses = Business_Service().get_merchant_businesses(merchant_id=merchant_id)
-
+                business_list = Business_Service().get_merchant_businesses(merchant_id=merchant_id)                    
+            
             response["businesses"] = [x.dto_serialize()
-                                      for x in businesses]
+                                      for x in business_list]
 
             # this means a business has been added since the merchant last logged on, or a drink has been added thus updating the menu property of the business
-
             return Response(status=200, response=json.dumps(response), headers=headers)
 
         # swift businesses
         else:
-            businesses = Business_Service().get_businesses()
+            business_list = Business_Service().get_customer_businesses()
             customer_etag = json.loads(request.headers.get("If-None-Match"))
             if customer_etag:
                 if not ETag_Service().validate_etag(customer_etag):
-                    for business in businesses:
+                    for business in business_list:
                         # turn into dictionaries
                         businessDTO = {}
                         businessDTO['business'] = business.dto_serialize()
@@ -1017,7 +1023,7 @@ def tabs():
 
 
 @app.route('/customer/stripe/ephemeral_key/<string:session_token>', methods=['POST'])
-def ephemeral_keys(session_token):
+def ephemeral_keys(session_token: str):
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
     request_data = json.loads(request.data)
@@ -1030,17 +1036,17 @@ def ephemeral_keys(session_token):
 
 
 @app.route('/customer/stripe/payment_intent/<string:session_token>', methods=['POST'])
-def create_payment_intent(session_token):
+def create_payment_intent(session_token: str):
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
     response = {}
     request_data = json.loads(request.data)
-    business_id = uuid.UUID(request_data["order"]["business_id"]) 
+    business_id = uuid.UUID(request_data["order"]["business_id"])
     order_business = Business_Service().get_business(business_id=business_id)
     # if the business has been deactivated and the user was using the app while the deactivation occured this response will update the business in the client
-    if order_business.is_active == False:
-            return Response(status=409)
-        
+    if order_business.deactivated == True:
+        return Response(status=409)
+
     client_secret = Order_Service().create_stripe_payment_intent(request_data)
     response["secret"] = client_secret["secret"]
     response["payment_intent_id"] = client_secret["payment_intent_id"]
@@ -1108,7 +1114,7 @@ def validate_merchant_employee_stripe():
 
 
 @app.route('/merchant_employee/<string:session_token>', methods=['POST', 'OPTIONS', 'GET', 'PUT'])
-def merchant_employee(session_token):
+def merchant_employee(session_token: str):
     headers = {}
     response = {}
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
@@ -1167,7 +1173,7 @@ def validate_merchant_employee():
 
 
 @app.route('/bouncer/<string:session_token>', methods=['POST', 'OPTIONS', 'GET'])
-def bouncer(session_token):
+def bouncer(session_token: str):
     headers = {}
     response = {}
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
@@ -1230,7 +1236,7 @@ def validate_bouncer():
 
 
 @app.route('/bouncer/staging/<string:session_token>', methods=['POST', 'PUT', 'GET', 'OPTIONS'])
-def add_staged_bouncer(session_token):
+def add_staged_bouncer(session_token: str):
     headers = {}
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
@@ -1259,7 +1265,7 @@ def add_staged_bouncer(session_token):
 
 
 @app.route('/merchant_employee/staging/<string:session_token>', methods=['POST', 'PUT', 'GET', 'OPTIONS'])
-def add_staged_merchant_employee(session_token):
+def add_staged_merchant_employee(session_token: str):
     headers = {}
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
@@ -1291,7 +1297,7 @@ def add_staged_merchant_employee(session_token):
 
 
 @app.route('/merchant_employee/pin/validate/<string:session_token>', methods=['POST'])
-def validate_pin(session_token):
+def validate_pin(session_token: str):
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
     headers = {}
@@ -1309,7 +1315,7 @@ def validate_pin(session_token):
 
 
 @app.route('/business/authenticate/<string:session_token>', methods=['POST'])
-def authenticate_business(session_token):
+def authenticate_business(session_token: str):
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
 
@@ -1478,7 +1484,7 @@ def validate_merchant():
 
 
 @app.route('/merchant/pin/<string:session_token>', methods=['POST'])
-def authenticate_merchant_pin(session_token):
+def authenticate_merchant_pin(session_token: str):
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
     data = json.loads(request.data)
@@ -1490,7 +1496,7 @@ def authenticate_merchant_pin(session_token):
 
 
 @app.route('/business/capacity/<string:session_token>', methods=['POST'])
-def business_capacity(session_token):
+def business_capacity(session_token: str):
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
     data = json.loads(request.data)
@@ -1570,7 +1576,7 @@ def validate_merchant_stripe_account():
 
 
 @app.route('/quick_pass/<string:session_token>', methods=['POST', 'PUT', 'GET', 'OPTIONS'])
-def quick_pass(session_token):
+def quick_pass(session_token: str):
     response = {}
     headers = {}
     headers["Access-Control-Allow-Origin"] = request.origin
@@ -1612,7 +1618,7 @@ def quick_pass(session_token):
 
 
 @app.route('/quick_pass/display/<string:session_token>', methods=['GET'])
-def quick_pass_display(session_token):
+def quick_pass_display(session_token: str):
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
     response = {"status": should_display_quick_pass}
@@ -1648,7 +1654,7 @@ def verify_bouncer_jwt():
 
 
 @app.route('/quick_pass/payment_intent/<string:session_token>', methods=['POST', 'PUT', 'GET'])
-def quick_pass_payment_intent(session_token):
+def quick_pass_payment_intent(session_token: str):
     response = {}
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
@@ -1659,40 +1665,6 @@ def quick_pass_payment_intent(session_token):
     response["secret"] = client_secret["secret"]
     response["payment_intent_id"] = client_secret["payment_intent_id"]
     return Response(status=200, response=json.dumps(response))
-
-
-@app.route("/subscription/", methods=["GET", "POST"])
-def subscription():
-    """
-        POST creates a subscription
-        GET returns vapid public key which clients uses to send around push notification
-    """
-
-    if request.method == "GET":
-        return Response(response=json.dumps({"public_key": VAPID_PUBLIC_KEY}),
-                        headers={"Access-Control-Allow-Origin": "*"}, content_type="application/json")
-
-    subscription_token = request.get_json("subscription_token")
-    Bouncer_Service().register_subscription_token(
-        subscription_token=subscription_token)
-    return Response(status=201, mimetype="application/json")
-
-
-@app.route("/push_v1/", methods=['POST'])
-def push_v1():
-    message = "Push Test v1"
-    if not request.json or not request.json.get('sub_token'):
-        return json.dumps({'failed': 1})
-
-    token = request.json.get('sub_token')
-    try:
-        token = json.loads(token)
-        send_web_push(token, message)
-        return json.dumps({'success': 1})
-    except Exception as e:
-        print("error", e)
-        return json.dumps({'failed': str(e)})
-
 
 if __name__ == '__main__':
     app.run(host=ip_address, port=5000, debug=True)

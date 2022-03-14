@@ -52,10 +52,15 @@ def session_scope():
 
 
 class Drink_Service(object):
-    def get_drinks(self):
+    def get_business_drinks(self, business_id: uuid.UUID):
+        with session_scope() as session:
+            return [Drink_Domain(drink_object=x) for x in Drink_Repository().get_business_drinks(session=session, business_id=business_id)]
+        
+        
+    def get_customer_drinks(self):
         response = []
         with session_scope() as session:
-            for drink in Drink_Repository().get_drinks(session):
+            for drink in Drink_Repository().get_customer_drinks(session=session):
                 drink_domain = Drink_Domain(drink_object=drink)
                 response.append(drink_domain)
             return response
@@ -63,15 +68,15 @@ class Drink_Service(object):
     def get_merchant_drinks(self, merchant_id: str):
         with session_scope() as session:
             return [Drink_Domain(drink_object=x) for x in Drink_Repository().get_merchant_drinks(session=session, merchant_id=merchant_id)]
+    
+    def get_active_merchant_drinks(self, merchant_id: str):
+        with session_scope() as session:
+            return [Drink_Domain(drink_object=x) for x in Drink_Repository().get_active_merchant_drinks(session=session, merchant_id=merchant_id)]
 
     def add_drinks(self, business_id: uuid.UUID, drinks: list[dict]):
         with session_scope() as session:
             new_drink_list = [Drink_Domain(
                 drink_json=x, init=True) for x in drinks]
-            for drink in new_drink_list:
-                drink.business_id = business_id
-                id = uuid.uuid4()
-                drink.id = id
             return Drink_Repository().add_drinks(session=session, drink_list=new_drink_list)
 
     def update_drinks(self, drinks: list[Drink_Domain]):
@@ -89,6 +94,11 @@ class Drink_Service(object):
     def activate_drinks(self, business_id: uuid.UUID):
         with session_scope() as session:
             return Drink_Repository().activate_drinks(session=session, business_id=business_id)
+
+    def modify_drink(self, drink: dict, drink_id_to_deactivate: uuid.UUID):
+        with session_scope() as session:
+            drink_domain = Drink_Domain(drink_json=drink, init=True)
+            return Drink_Repository().modify_drink(session=session, drink=drink_domain, drink_id_to_deactivate=drink_id_to_deactivate)
 
 
 class Order_Service(object):
@@ -457,10 +467,6 @@ class Bouncer_Service(object):
                 bouncer_object=Bouncer_Repository().get_bouncer(session=session, bouncer_id=bouncer_id))
             return bouncer_domain
 
-    def register_subscription_token(self, bouncer_id: str, subscription_token: str):
-        with session_scope() as session:
-            return Bouncer_Repository().register_subscription_token(session=session, bouncer_id=bouncer_id)
-
 
 class Merchant_Employee_Service(object):
     def get_stripe_account(self, merchant_employee_id: str):
@@ -557,10 +563,18 @@ class Business_Service(object):
         with session_scope() as session:
             return Business_Repository().get_device_token(session=session, business_id=business_id)
 
-    def get_businesses(self):
+    def get_customer_businesses(self):
         with session_scope() as session:
-            response = []
-            for business in Business_Repository().get_businesses(session):
+            response: list[Business_Domain] = []
+            for business in Business_Repository().get_customer_businesses(session=session):
+                business_domain = Business_Domain(business_object=business)
+                response.append(business_domain)
+            return response
+        
+    def get_active_businesses(self):
+        with session_scope() as session:
+            response: list[Business_Domain] = []
+            for business in Business_Repository().get_active_businesses(session=session):
                 business_domain = Business_Domain(business_object=business)
                 response.append(business_domain)
             return response
@@ -571,13 +585,14 @@ class Business_Service(object):
 
     def get_administrator_businesses(self):
         with session_scope() as session:
-            response = []
-            for business in Business_Repository().get_administrator_businesses(session):
+            response: list[Business_Domain] = []
+            for business in Business_Repository().get_administrator_businesses(session=session):
                 business_domain = Business_Domain(business_object=business)
                 business_domain.merchant_stripe_status = Merchant_Repository(
                 ).authenticate_merchant_stripe(business_domain.merchant_stripe_id)
                 response.append(business_domain)
             return response
+        
 
     def add_business(self, business: uuid.UUID):
         with session_scope() as session:

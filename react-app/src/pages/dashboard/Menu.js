@@ -1,7 +1,6 @@
 import { makeStyles } from "@material-ui/core/styles";
 import Card from "@material-ui/core/Card";
 import CardActionArea from "@material-ui/core/CardActionArea";
-// import CardActions from "@material-ui/core/CardActions";
 import CardContent from "@material-ui/core/CardContent";
 import CardMedia from "@material-ui/core/CardMedia";
 import Typography from "@material-ui/core/Typography";
@@ -84,7 +83,6 @@ const Menu = (props) => {
                 }}
               >
                 <IconButton
-                  color="inherit"
                   onClick={() => {
                     LocalStorageManager.shared.setItem(
                       "menu_builder_business_id",
@@ -92,6 +90,7 @@ const Menu = (props) => {
                     );
                     props.handleMenuClick();
                   }}
+                  color="primary"
                 >
                   <AddIcon></AddIcon>
                   <h6 style={{ marginBottom: "0", marginLeft: "1vw" }}>
@@ -112,79 +111,81 @@ const Menu = (props) => {
           {businesses.length > 0 ? (
             businesses[businessIndex].menu.map((drink, i) => {
               const menuDrink = new DrinkItem(drink);
-              return (
-                <Grid
-                  container
-                  align="center"
-                  direction="row"
-                  xs={3}
-                  key={i}
-                  alignItems="stretch"
-                  item={true}
-                >
-                  <Grid item xs={12} key={i}>
-                    <Card
-                      key={i}
-                      className={classes.root}
-                      style={{ backgroundColor: "white" }}
-                    >
-                      <CardActionArea >
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "flex-end",
-                          }}
-                        >
-                           <IconButton
-                  color="inherit"
-                  onClick={() => {
-           
-                  }}
-                >
-                  <EditIcon></EditIcon>
-                
-                </IconButton>
-                        </div>
-                        <div
-                          style={{ display: "flex", justifyContent: "center" }}
-                        >
-                          <CardMedia
+              if (menuDrink.isActive === true) {
+                return (
+                  <Grid
+                    container
+                    align="center"
+                    direction="row"
+                    xs={3}
+                    key={i}
+                    alignItems="stretch"
+                    item={true}
+                  >
+                    <Grid item xs={12} key={i}>
+                      <Card
+                        key={i}
+                        className={classes.root}
+                        style={{ backgroundColor: "white" }}
+                      >
+                        <CardActionArea>
+                          <div
                             style={{
-                              width: "auto",
-                              maxHeight: "16vh",
-                              marginTop: "2vh",
+                              display: "flex",
+                              justifyContent: "flex-end",
                             }}
-                            component="img"
-                            src={menuDrink.imageUrl}
-                            title="Contemplative Reptile"
-                          />
-                        </div>
-                        <CardContent>
-                          <Typography gutterBottom variant="h5" component="h2">
-                            {menuDrink.formattedName}
-                          </Typography>
+                          >
+                            <IconButton
+                              onClick={() => {
+                                LocalStorageManager.shared.editDrinkId =
+                                  menuDrink.id;
+                                props.handleDrinkEditClick();
+                              }}
+                            >
+                              <EditIcon></EditIcon>
+                            </IconButton>
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "center",
+                            }}
+                          >
+                            <CardMedia
+                              style={{
+                                width: "auto",
+                                maxHeight: "16vh",
+                                marginTop: "2vh",
+                              }}
+                              component="img"
+                              src={menuDrink.imageUrl}
+                              title="Contemplative Reptile"
+                            />
+                          </div>
+                          <CardContent>
+                            <Typography gutterBottom variant="body1">
+                              {menuDrink.formattedName}
+                            </Typography>
 
-                          <Typography
-                            variant="body2"
-                            color="black"
-                            component="p"
-                          >
-                            {menuDrink.description}
-                          </Typography>
-                          <Typography
-                            variant="body2"
-                            color="black"
-                            component="p"
-                            style={{ marginTop: "1vh" }}
-                          >
-                            {`$${menuDrink.price}`}
-                          </Typography>
-                        </CardContent>
-                      </CardActionArea>
-                    </Card>
+                            <Typography variant="body2" component="p">
+                              {menuDrink.description}
+                            </Typography>
+                            <Typography
+                              variant="body2"
+                              component="p"
+                              style={{ marginTop: "1vh" }}
+                            >
+                              {`$${menuDrink.price}`}
+                            </Typography>
+                          </CardContent>
+                        </CardActionArea>
+                      </Card>
+                    </Grid>
                   </Grid>
-                </Grid>
-              );
+                );
+              } else {
+                return <></>;
+              }
             })
           ) : (
             <></>

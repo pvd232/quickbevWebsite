@@ -10,7 +10,6 @@ import Grid from "@material-ui/core/Grid";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { LocalStorageManager } from "../../Models.js";
-import { useSearchParams } from "react-router-dom";
 
 const MenuBuilder = (props) => {
   const useStyles = makeStyles((theme) => ({
@@ -28,21 +27,25 @@ const MenuBuilder = (props) => {
       overflow: "auto",
     },
   }));
+  const [redirect, setRedirect] = useState(null);
 
+  useEffect(() => {
+    //had to do this because memory leak due to component not unmounting properly
+    let mount = true;
+    if (mount && redirect) {
+      window.location.assign(redirect);
+    }
+
+    return () => (mount = false);
+  }, [redirect]);
   const classes = useStyles();
 
-  const [searchParams, setSearchParams] = useSearchParams();
-  var businessId =
-    searchParams.get("business_id") ??
-    LocalStorageManager.shared.getItem("menu_builder_business_id");
+  const businessId = LocalStorageManager.shared.menuBuilderBusinessId;
   const [isSpinning, setIsSpinning] = useState(null);
   const Spinner = () => (
     <FontAwesomeIcon icon={faSpinner} className="fa-spin" />
   );
 
-  const updateBusinessId = (newBusinessId) => {
-    businessId = newBusinessId;
-  };
   const validate = (form) => {
     form.classList.add("was-validated");
     return form.checkValidity();
@@ -74,7 +77,7 @@ const MenuBuilder = (props) => {
         "Upload failed due to missing menu data. Please fill out all the required form values."
       );
     }
-    window.location.reload();
+    setRedirect("/home");
   };
   const BusinessIdInput = (props) => {
     const [businessId, setbusinessId] = useState(props.businessId);
@@ -103,6 +106,7 @@ const MenuBuilder = (props) => {
             setbusinessId(businessId);
             props.updateBusinessId(businessId);
           }}
+          disabled={true}
         />
       </Grid>
     );
@@ -387,6 +391,7 @@ const MenuBuilder = (props) => {
           newForm.append(String(key), JSON.stringify(newFileArray));
           var j = 0;
           formValues[key].forEach((value) => {
+            // because of the third parameter this flags that the value is a form value
             if (value !== "") {
               newForm.append(
                 String(key),
@@ -487,9 +492,6 @@ const MenuBuilder = (props) => {
         >
           <BusinessIdInput
             businessId={businessId}
-            updateBusinessId={(newBusinessId) =>
-              updateBusinessId(newBusinessId)
-            }
             key={"asdfz"}
           ></BusinessIdInput>
           <Grid

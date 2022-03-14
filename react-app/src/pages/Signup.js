@@ -508,16 +508,6 @@ const PromoteYourMenuFieldset = (props) => {
             </Card.Body>
           </Card>
         </Row>
-        {/* <Button
-          name="previous"
-          className="previous action-button"
-          required
-          onClick={() => {
-            props.onClick("previous");
-          }}
-        >
-          Previous
-        </Button> */}
         <Button type="submit" name="next" className="next action-button">
           Next
         </Button>
@@ -700,7 +690,7 @@ const BusinessFieldset = (props) => {
           key={"file-input-body-1"}
         >
           <Form.Label key={"biz-field-logo-label-1"}>Business Logo</Form.Label>
-          <h5
+          <Form.Label
             className="fs-subtitle"
             style={{
               paddingLeft: "15px",
@@ -711,7 +701,7 @@ const BusinessFieldset = (props) => {
             Your logo will be displayed as a square image with rounded corners
             in the app. If you do not have a logo, we will display the QuickBev
             logo in its place.
-          </h5>
+          </Form.Label>
           <Form.File
             id="fileInput"
             name="logoFile"

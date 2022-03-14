@@ -57,6 +57,8 @@ class Drink(db.Model):
     is_active = db.Column(db.Boolean(), default=True, nullable=False)
     business_id = db.Column(UUID(as_uuid=True), db.ForeignKey(
         'business.id'), nullable=False)
+    parent_drink_id = db.Column(
+        UUID(as_uuid=True), db.ForeignKey("drink.id"), nullable=True)
     order_drink = relationship('Order_Drink', lazy=True)
 
     @property
@@ -106,6 +108,7 @@ class Business(db.Model):
         db.DateTime(), default=datetime.now, nullable=False)
     sales_tax_rate = db.Column(db.Float(), nullable=False)
     is_active = db.Column(db.Boolean(), default=True, nullable=False)
+    deactivated = db.Column(db.Boolean(), default=True, nullable=False)
     device_token = db.Column(db.String(200), nullable=True)
     phone_number = db.Column(db.BigInteger(), nullable=False)
     drink_e_tag_id = db.Column(db.BigInteger(), nullable=True)
@@ -123,6 +126,8 @@ class Business(db.Model):
     quick_pass_queue = db.Column(db.Integer(), default=0, nullable=True)
     quick_pass_queue_hour = db.Column(db.Integer(), default=0, nullable=True)
     image_url = db.Column(db.String(200), nullable=True)
+    parent_business_id = db.Column(
+        UUID(as_uuid=True), db.ForeignKey("business.id"), nullable=True)
     schedule = relationship(
         "Business_Schedule_Day", lazy=True,  uselist=True)
     merchant_employee = relationship(

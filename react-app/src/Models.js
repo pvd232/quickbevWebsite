@@ -119,6 +119,21 @@ export class LocalStorageManager {
   get firstLogin() {
     return this.getItem("first_login");
   }
+  get menuBuilderBusinessId() {
+    return this.getItem("menu_builder_business_id");
+  }
+
+  set menuBuilderBusinessId(newBusinessId) {
+    this.setItem("menu_builder_business_id", newBusinessId);
+  }
+
+  get editDrinkId() {
+    return this.getItem("edit_drink_drink_id");
+  }
+
+  set editDrinkId(newDrinkId) {
+    this.setItem("edit_drink_drink_id", newDrinkId);
+  }
   get currentMerchant() {
     return new Merchant("json", this.getItem("merchant"));
   }
@@ -182,6 +197,44 @@ export class Customer {
 export class Drink {
   constructor(drinkObject = null) {
     if (drinkObject) {
+      console.log("drinkObject", drinkObject);
+      this.id = drinkObject.id;
+      this.name = drinkObject.name;
+      this.price = drinkObject.price;
+      this.quantity = drinkObject.quantity;
+      this.description = drinkObject.description;
+      this.businessId = drinkObject.business_id;
+      this.imageUrl = drinkObject.image_url;
+      this.isActive = drinkObject.is_active;
+      this.parentDrinkId = drinkObject.parent_drink_id;
+    } else {
+      this.id = "";
+      this.name = "";
+      this.price = "";
+      this.quantity = "";
+      this.description = "";
+      this.businessId = "";
+      this.imageUrl = "";
+      this.parentDrinkId = "";
+    }
+  }
+  toJSON() {
+    const data = {
+      id: this.id,
+      name: this.name,
+      price: this.price,
+      quantity: this.quantity,
+      description: this.description,
+      business_id: this.businessId,
+      image_url: this.imageUrl,
+      parent_drink_id: this.parentDrinkId,
+    };
+    return data;
+  }
+}
+export class DrinkItem {
+  constructor(drinkObject = null) {
+    if (drinkObject) {
       this.id = drinkObject.id;
       this.name = drinkObject.name;
       this.price = drinkObject.price;
@@ -198,6 +251,7 @@ export class Drink {
       this.description = "";
       this.businessId = "";
       this.imageUrl = "";
+      this.isActive = "";
     }
   }
   toJSON() {
@@ -212,38 +266,8 @@ export class Drink {
     };
     return data;
   }
-}
-export class DrinkItem {
-  constructor(drinkObject = null) {
-    if (drinkObject) {
-      this.id = drinkObject.id;
-      this.name = drinkObject.name;
-      this.price = drinkObject.price;
-      this.quantity = drinkObject.quantity;
-      this.description = drinkObject.description;
-      this.businessId = drinkObject.business_id;
-      this.imageUrl = drinkObject.image_url;
-    } else {
-      this.id = "";
-      this.name = "";
-      this.price = "";
-      this.quantity = "";
-      this.description = "";
-      this.businessId = "";
-      this.imageUrl = "";
-    }
-  }
-  toJSON() {
-    const data = {
-      id: this.id,
-      name: this.name,
-      price: this.price,
-      quantity: this.quantity,
-      description: this.description,
-      business_id: this.businessId,
-      image_url: this.imageUrl,
-    };
-    return data;
+  get formattedName() {
+    return formatName(this.name);
   }
 }
 export class OrderDrinkItem {

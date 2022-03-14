@@ -2,8 +2,8 @@ import { Merchant, LocalStorageManager } from "../Models.js";
 
 class Client {
   constructor() {
-    this.baseUrl = "https://quickbev.us";
-    // this.mode = "cors";
+    this.baseUrl = "https://quickbev/us";
+    this.mode = "cors";
   }
   async makeRequest(
     method,
@@ -26,11 +26,9 @@ class Client {
       const response = await fetch(request, {
         method: method,
         body:
-          method === "POST" && !isForm && data
+          !isForm && data
             ? JSON.stringify(requestData)
-            : method === "PUT" && !isForm && data
-            ? JSON.stringify(requestData)
-            : method === "POST" && isForm && data
+            : isForm && data
             ? requestData
             : null,
         headers: headersParam ? requestHeaders : {},
