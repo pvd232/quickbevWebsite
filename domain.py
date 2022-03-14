@@ -59,7 +59,7 @@ class Drink_Domain(object):
             self.file = ''
 
             # if the drink is being modified but does not have a new image, the drink will retain the parent's image url supplied to it during initialization
-            if self.has_image == False:
+            if self.has_image == False and 'image_url' in drink_json:
                 self.image_url = drink_json["image_url"]
         elif drink_json:
             # no need to receive image_url from the front end
