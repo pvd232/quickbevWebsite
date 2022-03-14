@@ -108,7 +108,7 @@ class Business(db.Model):
         db.DateTime(), default=datetime.now, nullable=False)
     sales_tax_rate = db.Column(db.Float(), nullable=False)
     is_active = db.Column(db.Boolean(), default=True, nullable=False)
-    deactivated = db.Column(db.Boolean(), default=True, nullable=False)
+    deactivated = db.Column(db.Boolean(), default=False, nullable=False)
     device_token = db.Column(db.String(200), nullable=True)
     phone_number = db.Column(db.BigInteger(), nullable=False)
     drink_e_tag_id = db.Column(db.BigInteger(), nullable=True)

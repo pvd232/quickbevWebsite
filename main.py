@@ -92,7 +92,6 @@ def send_fcm(device_token: str, new_order: Order_Domain = False):
 
 @app.route("/")
 def my_index():
-
     return render_template("index.html", flask_token="Hello world")
 
 
