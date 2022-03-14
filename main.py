@@ -111,6 +111,7 @@ def c():
     deactivate_db()
     return Response(status=200)
 
+
 @app.route("/drink/deactivate/<string:session_token>", methods=['POST'])
 def deactivate_drink(session_token: str):
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
@@ -230,20 +231,22 @@ def drink(session_token: str):
 
     elif request.method == 'PUT':
         business_id = json.loads(request.form.get("drinkBusinessId"))
-        drink_id_to_deactivate = json.loads(request.form.get("drinkIdToDeactivate"))
+        drink_id_to_deactivate = json.loads(
+            request.form.get("drinkIdToDeactivate"))
         # if the drink is being modified, we create a new drink in the backend, associate it with the parent drink using the parent_drink_id, and deactivate the parent drink
         drink_data = {"name": json.loads(request.form.get("drinkName")), "description": json.loads(request.form.get("drinkDescription")), "price": json.loads(request.form.get("drinkPrice")), "image_url": json.loads(request.form.get("selectedFileName")), "business_id": business_id, "parent_drink_id": json.loads(request.form.get(
             "parentDrinkId")), "has_image": json.loads(request.form.get("hasImage"))}
-        
-        print('drink_data',drink_data)
-        
+
+        print('drink_data', drink_data)
+
         # if the user did not change the drink image then it will have the same imageUrl as the parent drink
         if drink_data["has_image"] == False:
             drink_data["image_url"] = json.loads(request.form.get("imageUrl"))
-        
+
         # the image url will be passed into the drink during initialization
-        modified_drink = Drink_Service().modify_drink(drink=drink_data, drink_id_to_deactivate=drink_id_to_deactivate)
-        
+        modified_drink = Drink_Service().modify_drink(
+            drink=drink_data, drink_id_to_deactivate=drink_id_to_deactivate)
+
         files = request.files
         # if selectedFile is not present in files then no image file was uploaded for the drink, and the new drink will have the quickbev logo
         if 'selectedFile' in files:
@@ -252,23 +255,23 @@ def drink(session_token: str):
             # only one drink image file will be sent if the drink is being edited
             file = multi_dict_file[0]
             modified_drink.file = file
-            
+
             # if the drink was supplied a new image, then the image_url must be created based on the file name
             modified_drink.set_image_url(file.filename)
-            
+
             # upload the new drink image file to the cloud
             Google_Cloud_Storage_Service().upload_drink_image_file(modified_drink)
-            
+
             # utilize drink service method update drink, which is expecting a list as a parameter
             modified_drink_list = []
             modified_drink_list.append(modified_drink)
             Drink_Service().update_drinks(modified_drink_list)
-            
+
         # update e_tag to trigger client refresh
         new_drink_e_tag = ETag_Service().update_etag("drink")
         ETag_Service().update_merchant_etag(
             business_id=modified_drink.business_id, e_tag=new_drink_e_tag)
-        
+
         # update tablet drinks
         device_token = Business_Service().get_device_token(business_id=business_id)
         send_fcm(device_token=device_token, new_order=False)
@@ -294,7 +297,6 @@ def drink(session_token: str):
             drink["parent_drink_id"] = None
 
         added_drinks = Drink_Service().add_drinks(business_id, new_drinks)
-       
 
         files = request.files
         drinks_with_images = [
@@ -311,9 +313,10 @@ def drink(session_token: str):
                 Google_Cloud_Storage_Service().upload_drink_image_file(drink)
                 response["msg"] = "File successfully uploaded!"
             Drink_Service().update_drinks(drinks_with_images)
-            
+
         new_drink_e_tag = ETag_Service().update_etag("drink")
-        ETag_Service().update_merchant_etag(business_id=business_id, e_tag=new_drink_e_tag)
+        ETag_Service().update_merchant_etag(
+            business_id=business_id, e_tag=new_drink_e_tag)
 
         device_token = Business_Service().get_device_token(business_id=business_id)
         send_fcm(device_token=device_token, new_order=False)
@@ -925,7 +928,7 @@ def business(session_token: str):
         headers["Access-Control-Expose-Headers"] = "Access-Control-Allow-Credentials"
         headers["Access-Control-Expose-Headers"] = "Access-Control-Allow-Headers"
 
-        business_list : list[Business_Domain] = []
+        business_list: list[Business_Domain] = []
         merchant_id = request.headers.get('merchant-id')
 
         # javascript businesses
@@ -942,8 +945,8 @@ def business(session_token: str):
             if merchant.is_administrator:
                 business_list = Business_Service().get_administrator_businesses()
             else:
-                business_list = Business_Service().get_merchant_businesses(merchant_id=merchant_id)                    
-            
+                business_list = Business_Service().get_merchant_businesses(merchant_id=merchant_id)
+
             response["businesses"] = [x.dto_serialize()
                                       for x in business_list]
 
@@ -956,12 +959,8 @@ def business(session_token: str):
             customer_etag = json.loads(request.headers.get("If-None-Match"))
             if customer_etag:
                 if not ETag_Service().validate_etag(customer_etag):
-                    for business in business_list:
-                        # turn into dictionaries
-                        businessDTO = {}
-                        businessDTO['business'] = business.dto_serialize()
-                        business_list.append(businessDTO)
-                    response['businesses'] = business_list
+                    response["businesses"] = [
+                        {"business": x.dto_serialize()} for x in business_list]
 
                     etag = ETag_Service().get_etag("business")
                     headers["e-tag-category"] = etag.category
@@ -1664,6 +1663,7 @@ def quick_pass_payment_intent(session_token: str):
     response["secret"] = client_secret["secret"]
     response["payment_intent_id"] = client_secret["payment_intent_id"]
     return Response(status=200, response=json.dumps(response))
+
 
 if __name__ == '__main__':
     app.run(host=ip_address, port=5000, debug=True)

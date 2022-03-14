@@ -574,6 +574,7 @@ class Business_Domain(object):
                     business_schedule_day_object=day_object)
                 self.schedule.append(new_day_domain)
             self.is_active = business_object.is_active
+            self.deactivated = business_object.deactivated
             self.quick_pass_price = business_object.quick_pass_price
             self.quick_pass_queue = business_object.quick_pass_queue
             self.quick_pass_queue_hour = business_object.quick_pass_queue_hour
