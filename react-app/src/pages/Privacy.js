@@ -24,7 +24,7 @@ const PrivacyHeader = () => {
           <Row>
             <Col sm={12}>
               <h4 style={{ lineHeight: 2.0 }}>
-                Information that is gathered from visitors In common with other
+                Information that is gathered from visitors in common with other
                 websites, log files are stored on the web server saving details
                 such as the visitor's IP address, browser type, referring page
                 and time of visit. Cookies may be used to remember visitor
@@ -45,12 +45,7 @@ const PrivacyHeader = () => {
                 your preferences to be recorded when visiting the website. Also
                 they may be used to track your return visits to the website. 3rd
                 party advertising companies may also use cookies for tracking
-                purposes. Google Ads Google, as a third party vendor, uses
-                cookies to serve ads. Google's use of the DART cookie enables it
-                to serve ads to visitors based on their visit to sites they
-                visit on the Internet. Website visitors may opt out of the use
-                of the DART cookie by visiting the Google ad and content network
-                privacy policy.
+                purposes.
               </h4>
             </Col>
           </Row>

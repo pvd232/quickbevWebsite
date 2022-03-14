@@ -4,8 +4,10 @@ import { Routes, Route } from "react-router-dom";
 import Home from "./pages/Home.js";
 import Signup from "./pages/Signup.js";
 import Privacy from "./pages/Privacy.js";
+import DataDeletion from "./pages/DataDeletion.js";
 import Signin from "./pages/Signin.js";
 import Splash from "./pages/Splash.js";
+import PushNotificationDemo from "./pages/PushNotificationDemo.js";
 import PayoutSetupCallback from "./pages/PayoutSetupCallback.js";
 import MerchantEmployeePayoutSetup from "./pages/MerchantEmployeePayoutSetup.js";
 import MerchantEmployeePayoutSetupCallback from "./pages/MerchantEmployeePayoutSetupCallback.js";
@@ -24,8 +26,13 @@ const Main = () => {
       <Routes>
         {/* The Routes decides which element to show based on the current URL.*/}
         <Route path="/privacy" element={<Privacy />}></Route>
+        <Route path="/data-deletion" element={<DataDeletion />}></Route>
         <Route path="/home" element={<Home />}></Route>
         <Route path="/signup" element={<Signup />}></Route>
+        <Route
+          path="/push-notification-demo"
+          element={<PushNotificationDemo />}
+        ></Route>
         <Route
           exact
           path="/password-reset-email-form"
@@ -50,7 +57,7 @@ const Main = () => {
         <Route path="/deactivate-drink" element={<DeactivateDrink />}></Route>
         <Route path="/" element={<Splash />}></Route>
         <Route
-          path="/bouncer-quick-pass/:sessionToken/:businessId"
+          path="/bouncer-quick-pass/:sessionToken/:businessId/:bouncerId"
           element={<BouncerQuickPass />}
         />
         <Route
