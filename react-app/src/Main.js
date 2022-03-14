@@ -7,7 +7,6 @@ import Privacy from "./pages/Privacy.js";
 import DataDeletion from "./pages/DataDeletion.js";
 import Signin from "./pages/Signin.js";
 import Splash from "./pages/Splash.js";
-import PushNotificationDemo from "./pages/PushNotificationDemo.js";
 import PayoutSetupCallback from "./pages/PayoutSetupCallback.js";
 import MerchantEmployeePayoutSetup from "./pages/MerchantEmployeePayoutSetup.js";
 import MerchantEmployeePayoutSetupCallback from "./pages/MerchantEmployeePayoutSetupCallback.js";
@@ -29,10 +28,6 @@ const Main = () => {
         <Route path="/data-deletion" element={<DataDeletion />}></Route>
         <Route path="/home" element={<Home />}></Route>
         <Route path="/signup" element={<Signup />}></Route>
-        <Route
-          path="/push-notification-demo"
-          element={<PushNotificationDemo />}
-        ></Route>
         <Route
           exact
           path="/password-reset-email-form"
