@@ -715,8 +715,8 @@ def send_password_reset_email(jwt_token, entity):
     logo = "https://storage.googleapis.com/my-new-quickbev-bucket/landscape-logo-purple.png"
 
     verify_button = f'<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="margin-right: auto; margin-top:5vh; margin-left:auto;   border-collapse:separate;line-height:100%;"><tr><td><div><!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="http://www.activecampaign.com" style="height:40px;v-text-anchor:middle;width:130px;" arcsize="5%" strokecolor="#8682E6" fillcolor="#8682E6;width: 130;"><w:anchorlock/><center style="color:#ffffff;font-family:Helvetica, sans-serif;font-size:18px; font-weight: 600;">Click here!</center></v:roundrect><![endif]--><a href={button_url} style="display: inline-block; mso-hide:all; background-color: #8682E6; color: #FFFFFF; border:1px solid #8682E6; border-radius: 6px; line-height: 220%; width: 200px; font-family: Helvetica, sans-serif; font-size:18px; font-weight:600; text-align: center; text-decoration: none; -webkit-text-size-adjust:none;" target="_blank">Reset passsword</a></a></div></td></tr></table>'
-    mail_body_text = f'<p style="margin-top: 3vh;margin-bottom: 15px;">Hey {entity.first_name.capitalize()},</p><p style="margin-top: 15px;margin-bottom: 15px;">Having trouble logging in?</p><p style="margin-top: 15px;margin-bottom: 15px;">No worries. Click the button below to reset your password.</p><br /><p style="margin-top: 15px;margin-bottom: 15px;">Keep calm and carry on,</p><p style="margin-top: 15px;margin-bottom: 15px;">—The QuickBev Team</p></div><div style="width:100%">{verify_button}</div>'
-    mail_body = f'<div style="height: 100%;"><div style="width: 100%;height: 100%;background-color: #e8e8e8;"><div style="width: 100%;max-width: 500px;height: 80vh; margin-top: 0%;margin-bottom: 10%; margin-right:auto; margin-left:auto; background-color: #e8e8e8;"><tr style="width:100%;height:5vh;"></tr><div style="width:calc(100% - 30px); height:45vh; padding:30px 30px 30px 30px; background-color:white; margin-top:auto; margin-bottom:auto"><div style="display: flex; width:100%; text-align:center;"><img src="" style="width:50%; height:12%" alt="img" /></div><div  style="margin-top: 30px;">{mail_body_text}</div><tr style="width:100%;height:10vh;"></tr></div></div></div>'
+    mail_body_text = f'<p style="margin-top: 3vh;margin-bottom: 15px;">Hey {entity.first_name.capitalize()},</p><p style="margin-top: 15px;margin-bottom: 15px;">Having trouble logging in?</p><p style="margin-top: 15px;margin-bottom: 15px;">No worries. Click the button below to reset your password.</p><br /><p style="margin-top: 15px;margin-bottom: 15px">Keep calm and carry on,</p><p style="margin-top: 15px;margin-bottom:15px">—The QuickBev Team</p></div><div style="width:100%">{verify_button}</div>'
+    mail_body = f'<div style="height: 100%"><div style="width:100%;height:100%;background-color:#e8e8e8"><div style="width:100%;max-width:500px;height:80vh;margin-top:0%;margin-bottom:10%;margin-right:auto;margin-left:auto; background-color:#e8e8e8"><tr style="width:100%;height:5vh;"></tr><div style="width:calc(100% - 30px);height:45vh;padding:30px 30px 30px 30px;background-color:white;margin-top:auto;margin-bottom:auto"><div style="display:flex;width:100%;justify-content:center;align-items:center"><img src={logo} style="width:50%;height:12%;margin-left:auto;margin-right:auto" alt="img" /></div><div style="margin-top:30px;">{mail_body_text}</div><tr style="width:100%;height:10vh;"></tr></div></div></div>'
 
     sender_address = 'confirmation@quickbev.us'
     email = entity.id
@@ -732,8 +732,8 @@ def send_password_reset_email(jwt_token, entity):
     # The body and the attachments for the mail
     message.attach(MIMEText(mail_content, 'html'))
     s = smtplib.SMTP('smtp.mailgun.org', 587)
-    s.login('postmaster@sandbox471ef3a89bf64e819540bc75206062f2.mailgun.org',
-            '44603d9d0e3864edd01989602e0db876-e49cc42c-7570439d')
+    s.login('postmaster@quickbev.us',
+            '77bf9d60999ee72f1f72f98dd1a57152-1f1bd6a9-a4533d5f')
     s.sendmail(message['From'], message['To'], message.as_string())
     s.quit()
 
