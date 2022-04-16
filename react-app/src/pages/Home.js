@@ -9,6 +9,7 @@ const Home = () => {
   const [merchantEmployees, setMerchantEmployees] = useState(null);
   const [bouncers, setBouncers] = useState(null);
   const [drinks, setDrinks] = useState(null);
+  const [drinkCategories, setDrinkCategories] = useState(null);
   const [validated, setValidated] = useState(null);
 
   const handleBusinessUpdate = (newBusinesses) => {
@@ -30,22 +31,38 @@ const Home = () => {
         setValidated(true);
       }
     });
+    API.getDrinkCategories().then((items) => {
+      if (mounted && items) {
+        LocalStorageManager.shared.drinkCategories = items.drink_categories;
+        console.log(
+          "LocalStorageManager.shared.drinkCategories",
+          LocalStorageManager.shared.drinkCategories
+        );
+        setDrinkCategories(items.drink_categories);
+      }
+    });
     API.getOrders().then((items) => {
-      if (typeof items.orders !== "undefined") {
-        if (mounted && items) {
+      if (mounted && items) {
+        // if the eTag matches then the backend will not return any data
+        if (typeof items.orders !== "undefined") {
           LocalStorageManager.shared.orders = items.orders;
           setOrders(items.orders);
+        } else {
+          setOrders(LocalStorageManager.shared.orders);
         }
-      } else {
-        setOrders(LocalStorageManager.shared.orders);
       }
     });
     API.getCustomers().then((items) => {
       if (mounted && items) {
-        LocalStorageManager.shared.setItem("customers", items.customers);
-        setCustomers(items.customers);
+        if (typeof items.customers !== "undefined") {
+          LocalStorageManager.shared.setItem("customers", items.customers);
+          setCustomers(items.customers);
+        } else {
+          setOrders(LocalStorageManager.shared.orders);
+        }
       }
     });
+
     API.getBusinesses().then((items) => {
       if (mounted && items) {
         if (typeof items.businesses !== "undefined") {
@@ -72,13 +89,13 @@ const Home = () => {
       }
     });
     API.getDrinks().then((items) => {
-      if (typeof items.drinks !== "undefined") {
-        if (mounted && items) {
+      if (mounted && items) {
+        if (typeof items.drinks !== "undefined") {
           LocalStorageManager.shared.drinks = items.drinks;
           setDrinks(items.drinks);
+        } else {
+          setDrinks(LocalStorageManager.shared.drinks);
         }
-      } else {
-        setDrinks(LocalStorageManager.shared.drinks);
       }
     });
 
@@ -98,9 +115,7 @@ const Home = () => {
         customers={customers}
         merchantEmployees={merchantEmployees}
         bouncers={bouncers}
-        updateBouncers={(newBouncers) =>
-          handleBouncerUpdate(newBouncers)
-        }
+        updateBouncers={(newBouncers) => handleBouncerUpdate(newBouncers)}
         updateBusinesses={(newBusinesses) =>
           handleBusinessUpdate(newBusinesses)
         }

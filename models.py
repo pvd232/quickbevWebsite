@@ -59,7 +59,27 @@ class Drink(db.Model):
         'business.id'), nullable=False)
     parent_drink_id = db.Column(
         UUID(as_uuid=True), db.ForeignKey("drink.id"), nullable=True)
+    category = db.Column(db.String(80), db.ForeignKey(
+        "drink_category.id"), nullable=False)
+
     order_drink = relationship('Order_Drink', lazy=True)
+
+    @property
+    def serialize(self):
+        attribute_names = list(self.__dict__.keys())
+        attributes = list(self.__dict__.values())
+        serialized_attributes = {}
+        for i in range(len(attributes)):
+            serialized_attributes[attribute_names[i]] = attributes[i]
+        return serialized_attributes
+
+
+class Drink_Category(db.Model):
+    __tablename__ = 'drink_category'
+    id = db.Column(db.String(80), primary_key=True,
+                   unique=True, nullable=False)
+
+    drink = relationship("Drink", lazy=True)
 
     @property
     def serialize(self):

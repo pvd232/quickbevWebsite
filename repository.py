@@ -2,15 +2,17 @@ from sqlalchemy.orm import query
 from sqlalchemy.orm.scoping import scoped_session
 from sqlalchemy.sql.sqltypes import Boolean
 from models import *
-from domain import Bouncer_Domain, Business_Domain, Customer_Domain, Drink_Domain, ETag_Domain, Merchant_Domain, Merchant_Employee_Domain, Order_Domain, Quick_Pass_Domain, Tab_Domain
+from domain import Bouncer_Domain, Business_Domain, Customer_Domain, Drink_Domain, ETag_Domain, Merchant_Domain, Merchant_Employee_Domain, Order_Domain, Quick_Pass_Domain, Tab_Domain, Drink_Category_Domain
 import stripe
 from werkzeug.security import generate_password_hash, check_password_hash
 from typing import Optional
+
 
 class Drink_Repository(object):
     def get_business_drinks(self, session: scoped_session, business_id: uuid.UUID):
         drinks = session.query(Drink).filter(Drink.business_id == business_id)
         return drinks
+
     def get_customer_drinks(self, session):
         drinks = session.query(Drink)
         return drinks
@@ -28,7 +30,8 @@ class Drink_Repository(object):
 
     def add_drinks(self, session: scoped_session, drink_list: list[Drink_Domain]):
         for drink in drink_list:
-            new_drink = Drink(id=drink.id, name=drink.name, description=drink.description,
+            print('drink', drink.dto_serialize())
+            new_drink = Drink(id=drink.id, name=drink.name, category=drink.category, description=drink.description,
                               price=drink.price, business_id=drink.business_id)
             session.add(new_drink)
         return drink_list
@@ -63,14 +66,19 @@ class Drink_Repository(object):
             for drink in drinks_to_activate:
                 drink.is_active = True
         return
-    
+
     def modify_drink(self, session: scoped_session, drink: Drink_Domain, drink_id_to_deactivate: uuid.UUID):
-        drink_to_deactivate = session.query(Drink).filter(Drink.id == drink_id_to_deactivate).first()
+        drink_to_deactivate = session.query(Drink).filter(
+            Drink.id == drink_id_to_deactivate).first()
         drink_to_deactivate.is_active = False
-        new_drink = Drink(id=drink.id, name=drink.name, description=drink.description,
-                              price=drink.price, business_id=drink.business_id, parent_drink_id = drink.parent_drink_id, image_url= drink.image_url)
+        new_drink = Drink(id=drink.id, name=drink.name, category=drink.category, description=drink.description,
+                          price=drink.price, business_id=drink.business_id, parent_drink_id=drink.parent_drink_id, image_url=drink.image_url)
         session.add(new_drink)
         return drink
+
+    def get_drink_categories(self, session: scoped_session):
+        drink_categories = session.query(Drink_Category)
+        return drink_categories
 
 
 class Order_Repository(object):
@@ -322,8 +330,7 @@ class Business_Repository(object):
             if Merchant_Repository().authenticate_merchant_stripe(business.merchant_stripe_id) == True:
                 businesses_to_return.append(business)
         return businesses_to_return
-    
-    
+
     def get_businesses(self, session: scoped_session) -> list[Business]:
         businesses = session.query(Business).all()
         businesses_to_return = []
@@ -336,12 +343,10 @@ class Business_Repository(object):
         businesses = session.query(Business).all()
         return businesses
 
-
     def get_merchant_businesses(self, session: scoped_session, merchant_id: str):
         businesses = session.query(Business).filter(
             Business.merchant_id == merchant_id).all()
         return businesses
-    
 
     def get_business(self, session: scoped_session, business_id: uuid.UUID) -> Optional[Business]:
         business = session.query(Business).filter(
@@ -373,7 +378,6 @@ class Business_Repository(object):
                     business_id=new_business.id, day=day, opening_time=business.schedule[i].opening_time, closing_time=business.schedule[i].closing_time, is_closed=business.schedule[i].is_closed)
             session.add(new_business_schedule_day)
         return business
-
 
     def get_menu(self, session: scoped_session, business_id: uuid.UUID):
         business = session.query(Business).filter(

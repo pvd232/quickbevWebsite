@@ -55,8 +55,7 @@ class Drink_Service(object):
     def get_business_drinks(self, business_id: uuid.UUID):
         with session_scope() as session:
             return [Drink_Domain(drink_object=x) for x in Drink_Repository().get_business_drinks(session=session, business_id=business_id)]
-        
-        
+
     def get_customer_drinks(self):
         response = []
         with session_scope() as session:
@@ -68,7 +67,7 @@ class Drink_Service(object):
     def get_merchant_drinks(self, merchant_id: str):
         with session_scope() as session:
             return [Drink_Domain(drink_object=x) for x in Drink_Repository().get_merchant_drinks(session=session, merchant_id=merchant_id)]
-    
+
     def get_active_merchant_drinks(self, merchant_id: str):
         with session_scope() as session:
             return [Drink_Domain(drink_object=x) for x in Drink_Repository().get_active_merchant_drinks(session=session, merchant_id=merchant_id)]
@@ -99,6 +98,12 @@ class Drink_Service(object):
         with session_scope() as session:
             drink_domain = Drink_Domain(drink_json=drink, init=True)
             return Drink_Repository().modify_drink(session=session, drink=drink_domain, drink_id_to_deactivate=drink_id_to_deactivate)
+
+    def get_drink_categories(self):
+        with session_scope() as session:
+            drink_category_domains = [Drink_Category_Domain(
+                drink_category_object=x) for x in Drink_Repository().get_drink_categories(session=session)]
+            return drink_category_domains
 
 
 class Order_Service(object):
@@ -570,7 +575,7 @@ class Business_Service(object):
                 business_domain = Business_Domain(business_object=business)
                 response.append(business_domain)
             return response
-        
+
     def get_active_businesses(self):
         with session_scope() as session:
             response: list[Business_Domain] = []
@@ -592,7 +597,6 @@ class Business_Service(object):
                 ).authenticate_merchant_stripe(business_domain.merchant_stripe_id)
                 response.append(business_domain)
             return response
-        
 
     def add_business(self, business: uuid.UUID):
         with session_scope() as session:

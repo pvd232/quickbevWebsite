@@ -3,7 +3,6 @@ import { Merchant, LocalStorageManager } from "../Models.js";
 class Client {
   constructor() {
     this.baseUrl = "https://quickbev.us";
-    this.mode = "cors";
   }
   async makeRequest(
     method,
@@ -96,6 +95,15 @@ class Client {
       LocalStorageManager.shared.setItem("session_token", headers["jwt-token"]);
       return true;
     }
+  };
+  getDrinkCategories = async () => {
+    this.url =
+      this.baseUrl +
+      "/drink/category/" +
+      LocalStorageManager.shared.sessionToken;
+    return fetch(this.url, {
+      credentials: "include",
+    }).then((data) => data.json());
   };
   getOrders = async () => {
     this.url =

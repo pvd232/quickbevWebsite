@@ -111,6 +111,22 @@ export class LocalStorageManager {
     // if drinks are being set then they have been received from the backend
     this.setItem("businesses", newBusinessesArray);
   }
+  get drinkCategories() {
+    const drinkCategories = [];
+    if (this.getItem("drink_categories")) {
+      for (const drinkCategory of this.getItem("drink_categories")) {
+        drinkCategories.push(drinkCategory);
+      }
+      return drinkCategories;
+    } else {
+      // this should never happen, either drinks are not set in localStorage because the merchant is logging in for the first time, thus drinks will be set before they are requested, or drinks will already exist in local storage
+      return [];
+    }
+  }
+  set drinkCategories(newDrinkCategoryArray) {
+    // if drinks are being set then they have been received from the backend
+    this.setItem("drink_categories", newDrinkCategoryArray);
+  }
   addBusiness(newBusiness) {
     const copyOfBusinessArray = [...this.businesses];
     copyOfBusinessArray.push(newBusiness);
@@ -197,9 +213,9 @@ export class Customer {
 export class Drink {
   constructor(drinkObject = null) {
     if (drinkObject) {
-      console.log("drinkObject", drinkObject);
       this.id = drinkObject.id;
       this.name = drinkObject.name;
+      this.category = drinkObject.category;
       this.price = drinkObject.price;
       this.quantity = drinkObject.quantity;
       this.description = drinkObject.description;
@@ -210,6 +226,7 @@ export class Drink {
     } else {
       this.id = "";
       this.name = "";
+      this.category = "";
       this.price = "";
       this.quantity = "";
       this.description = "";
@@ -237,6 +254,7 @@ export class DrinkItem {
     if (drinkObject) {
       this.id = drinkObject.id;
       this.name = drinkObject.name;
+      this.category = drinkObject.category;
       this.price = drinkObject.price;
       this.quantity = drinkObject.quantity;
       this.description = drinkObject.description;
@@ -246,6 +264,7 @@ export class DrinkItem {
     } else {
       this.id = "";
       this.name = "";
+      this.category = "";
       this.price = "";
       this.quantity = "";
       this.description = "";

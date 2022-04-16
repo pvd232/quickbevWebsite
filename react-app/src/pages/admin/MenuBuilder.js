@@ -1,6 +1,6 @@
 import Button from "@material-ui/core/Button";
 import React, { useState, useReducer, useEffect } from "react";
-import { TextField } from "@material-ui/core";
+import { capitalize, TextField } from "@material-ui/core";
 import Form from "react-bootstrap/Form";
 import API from "../../helpers/Api.js";
 import { makeStyles } from "@material-ui/core/styles";
@@ -77,7 +77,7 @@ const MenuBuilder = (props) => {
         "Upload failed due to missing menu data. Please fill out all the required form values."
       );
     }
-    setRedirect("/home");
+    // setRedirect("/home");
   };
   const BusinessIdInput = (props) => {
     const [businessId, setbusinessId] = useState(props.businessId);
@@ -116,6 +116,7 @@ const MenuBuilder = (props) => {
       (state, newState) => ({ ...state, ...newState }),
       {
         drinkName: "",
+        drinkCategory: "",
         drinkDescription: "",
         drinkPrice: "",
         selectedFileName: "",
@@ -127,6 +128,11 @@ const MenuBuilder = (props) => {
       props.updateValue({
         name: "drinkName",
         value: formValue.drinkName,
+        index: props.k,
+      });
+      props.updateValue({
+        name: "drinkCategory",
+        value: formValue.drinkCategory,
         index: props.k,
       });
       props.updateValue({
@@ -151,6 +157,8 @@ const MenuBuilder = (props) => {
       });
     });
     const formChangeHandler = (event) => {
+      console.log("event.target.name", event.target.name);
+      console.log("event.target.value", event.target.value);
       if (event.target.name === "selectedFile") {
         const newFileObject = {
           selectedFile: event.target.files[0],
@@ -186,6 +194,11 @@ const MenuBuilder = (props) => {
           setFormValue({ [name]: value });
           props.updateValue({ name: name, value: value, index: props.k });
         }
+      } else if (event.target.name === "drinkCategory") {
+        let name = event.target.name;
+        let value = event.target.value.toLowerCase();
+        setFormValue({ [name]: value });
+        props.updateValue({ name: name, value: value, index: props.k });
       } else {
         let name = event.target.name;
         let value = event.target.value;
@@ -219,7 +232,7 @@ const MenuBuilder = (props) => {
               key={"grid-1-1-1-" + props.k}
               item
               xs={2}
-              style={{ textAlign: "left", marginRight: "20px" }}
+              style={{ textAlign: "left", marginRight: "0px" }}
             >
               <TextField
                 fullWidth
@@ -233,9 +246,62 @@ const MenuBuilder = (props) => {
               />
             </Grid>
             <Grid
+              item
+              xs={1}
+              key={"grid-1-1-1-1-1-1--1--2" + props.k}
+              container
+              direction="row"
+              justifyContent="center"
+              alignItems="flex-end"
+              style={{ marginLeft: "0px" }}
+            >
+              <p
+                style={{
+                  marginBottom: "10px",
+                  marginRight: "0px",
+                  fontWeight: "500",
+                }}
+                key={"p-1-a-" + props.k}
+              >
+                Category
+              </p>
+            </Grid>
+
+            <Grid
+              key={"grid-1-1--1-1-1-1-1" + props.k}
+              item
+              xs={1}
+              style={{
+                textAlign: "left",
+                marginRight: "20px",
+                marginTop: "10px",
+              }}
+            >
+              <Form.Control
+                as="select"
+                required
+                custom
+                key={"grid-1-1-1-1-1--1-1-1" + props.k}
+                name="drinkCategory"
+                onChange={(event) => formChangeHandler(event)}
+                style={{
+                  paddingLeft: "15px",
+                  paddingRight: "0",
+                  paddingTop: "0",
+                  paddingBottom: "0",
+                }}
+              >
+                {LocalStorageManager.shared.drinkCategories.map(
+                  (drinkCategory) => {
+                    return <option>{capitalize(drinkCategory.id)}</option>;
+                  }
+                )}
+              </Form.Control>
+            </Grid>
+            <Grid
               key={"grid-1-1-1-1-" + props.k}
               item
-              xs={4}
+              xs={3}
               style={{ textAlign: "right" }}
             >
               <TextField
@@ -273,7 +339,7 @@ const MenuBuilder = (props) => {
             >
               <p
                 style={{
-                  marginBottom: "0px",
+                  marginBottom: "10px",
                   marginRight: "5px",
                   fontWeight: "500",
                 }}
@@ -285,7 +351,7 @@ const MenuBuilder = (props) => {
             <Grid
               item
               key={"grid-1-1-1-1-1-1-1-" + props.k}
-              xs={3}
+              xs={2}
               container
               direction="row"
               justifyContent="flex-end"
@@ -303,6 +369,7 @@ const MenuBuilder = (props) => {
                   height: "4vh",
                   padding: "0",
                   textAlign: "left",
+                  marginTop: "15px",
                 }}
                 onChange={(event) => formChangeHandler(event)}
                 label={formValue.selectedFileName}
@@ -317,6 +384,7 @@ const MenuBuilder = (props) => {
   const BuildPage = (props) => {
     const formValues = {
       drinkName: [],
+      drinkCategory: [],
       drinkDescription: [],
       drinkPrice: [],
       selectedFile: [],
@@ -331,6 +399,7 @@ const MenuBuilder = (props) => {
         const difference = numRows - newNumRows;
         for (var i = 0; i < difference; i++) {
           formValues.drinkName.pop();
+          formValues.drinkCategory.pop();
           formValues.drinkDescription.pop();
           formValues.drinkPrice.pop();
           formValues.selectedFile.pop();
@@ -340,6 +409,7 @@ const MenuBuilder = (props) => {
         const difference = newNumRows - numRows;
         for (var j = 0; j < difference; j++) {
           formValues.drinkName.push("");
+          formValues.drinkCategory.push("");
           formValues.drinkDescription.push("");
           formValues.drinkPrice.push("");
           formValues.selectedFile.push("");
@@ -353,6 +423,7 @@ const MenuBuilder = (props) => {
     if (numRows === 1) {
       for (let i = 0; i < numRows; i++) {
         formValues.drinkName.push("");
+        formValues.drinkCategory.push("");
         formValues.drinkDescription.push("");
         formValues.drinkPrice.push("");
         formValues.selectedFile.push("");
@@ -361,6 +432,7 @@ const MenuBuilder = (props) => {
     }
 
     const formChangeHandler = (newValue) => {
+      console.log("newValue", newValue);
       formValues[newValue.name][newValue.index] = newValue.value;
     };
     const formRowArray = [];
@@ -375,6 +447,7 @@ const MenuBuilder = (props) => {
     }
     const handleSubmit = (event) => {
       const newForm = new FormData();
+      console.log("formValues", formValues);
       Object.keys(formValues).forEach((key) => {
         if (key !== "selectedFile") {
           newForm.append(key, JSON.stringify(formValues[key]));
@@ -433,8 +506,8 @@ const MenuBuilder = (props) => {
     const SubmitButton = (props) => {
       const [isDisabled, setIsDisabled] = useState(false);
       const handleSubmit = (event) => {
-        setIsSpinning(true);
-        setIsDisabled(!isDisabled);
+        // setIsSpinning(true);
+        // setIsDisabled(!isDisabled);
         props.onClick(event);
       };
 

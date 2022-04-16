@@ -18,8 +18,8 @@ import string
 stripe.api_key = "sk_test_51I0xFxFseFjpsgWvh9b1munh6nIea6f5Z8bYlIDfmKyNq6zzrgg8iqeKEHwmRi5PqIelVkx4XWcYHAYc1omtD7wz00JiwbEKzj"
 secret = '3327aa0ee1f61998369e815c17b1dc5eaf7e728bca14f6fe557af366ee6e20f9'
 ip_address = "192.168.1.71"
-env = "production"
-apns = "production"
+env = "debug"
+apns = "debug"
 
 
 # theme color RGB = rgb(134,130,230), hex = #8682E6
@@ -90,14 +90,15 @@ def send_fcm(device_token: str, new_order: Order_Domain = False):
     # client.send([registration_id], alert, **options)
 
 
-@app.route("/")
-def my_index():
-    return render_template("index.html", flask_token="Hello world")
+# @app.route("/")
+# def my_index():
+
+#     return render_template("index.html", flask_token="Hello world")
 
 
-@app.errorhandler(404)
-def not_found(e):
-    return render_template('index.html')
+# @app.errorhandler(404)
+# def not_found(e):
+#     return render_template('index.html')
 
 
 @app.route("/b")
@@ -141,7 +142,6 @@ def deactivate_business(session_token: str):
 
 @app.route("/business/activate/<string:session_token>", methods=['POST'])
 def activate_business(session_token: str):
-    print('session_token', session_token)
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
 
@@ -237,8 +237,6 @@ def drink(session_token: str):
         drink_data = {"name": json.loads(request.form.get("drinkName")), "description": json.loads(request.form.get("drinkDescription")), "price": json.loads(request.form.get("drinkPrice")), "image_url": json.loads(request.form.get("selectedFileName")), "business_id": business_id, "parent_drink_id": json.loads(request.form.get(
             "parentDrinkId")), "has_image": json.loads(request.form.get("hasImage"))}
 
-        print('drink_data', drink_data)
-
         # if the user did not change the drink image then it will have the same imageUrl as the parent drink
         if drink_data["has_image"] == False:
             drink_data["image_url"] = json.loads(request.form.get("imageUrl"))
@@ -282,6 +280,8 @@ def drink(session_token: str):
         headers["Access-Control-Expose-Headers"] = "*"
 
         drink_names = json.loads(request.form.get("drinkName"))
+        drink_categories = json.loads(request.form.get("drinkCategory"))
+        print('drink_categories', drink_categories)
         drink_descriptions = json.loads(request.form.get("drinkDescription"))
         drink_prices = json.loads(request.form.get("drinkPrice"))
         drink_image_file_exists = json.loads(request.form.get("selectedFile"))
@@ -290,6 +290,7 @@ def drink(session_token: str):
         new_drinks = [{"name": x} for x in drink_names]
         for i in range(len(new_drinks)):
             drink = new_drinks[i]
+            drink["category"] = drink_categories[i]
             drink["description"] = drink_descriptions[i]
             drink["price"] = float(drink_prices[i])
             drink["has_image"] = drink_image_file_exists[i]
@@ -384,10 +385,31 @@ def drink(session_token: str):
     return Response(status=200, response=json.dumps(response), headers=headers)
 
 
+@app.route('/drink/category/<string:session_token>', methods=['GET', 'OPTIONS'])
+def drink_categories(session_token):
+    if not jwt.decode(session_token, secret, algorithms=["HS256"]):
+        return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
+
+    headers = {}
+    headers["Access-Control-Allow-Origin"] = request.origin
+    headers["Access-Control-Allow-Headers"] = request.headers.get(
+        'Access-Control-Request-Headers')
+    headers["Access-Control-Allow-Credentials"] = "true"
+    headers["Access-Control-Expose-Headers"] = "Access-Control-Allow-Origin"
+    headers["Access-Control-Expose-Headers"] = "Access-Control-Allow-Credentials"
+    headers["Access-Control-Expose-Headers"] = "Access-Control-Allow-Headers"
+
+    drink_categories = Drink_Service().get_drink_categories()
+    response = {"drink_categories": [
+        x.dto_serialize() for x in drink_categories]}
+    return Response(status=200, headers=headers, response=json.dumps(response))
+
+
 @app.route('/customer/order/<string:session_token>', methods=['GET'])
 def sync_customer_orders(session_token: str):
     if not jwt.decode(session_token, secret, algorithms=["HS256"]):
         return Response(status=401, response=json.dumps({"msg": "Inconsistent request"}))
+
     response = {}
     customer_id = request.headers.get('customer-id')
     orders_status = Order_Service().get_customer_order_status(customer_id=customer_id)
@@ -468,42 +490,6 @@ def orders(session_token: str):
                   for x in Order_Service().get_merchant_orders(username=username)]
         response['orders'] = orders
     return Response(status=200, response=json.dumps(response), headers=headers)
-
-
-def send_info_email(jwt_token, email_type, user=None):
-    host = request.headers.get('Host')
-    if email_type == "quick_pass_link":
-        if env == "production":
-            button_url = f"https://{host}/bouncer-quick-pass/{jwt_token}/{user.business_id}/{user.id}"
-        else:
-            host = ip_address + ":3000"
-            button_url = f"http://{host}/bouncer-quick-pass/{jwt_token}/{user.business_id}/{user.id}"
-
-        logo = "https://storage.googleapis.com/my-new-quickbev-bucket/landscape-logo-purple.png"
-
-        queue_page_button = f'<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="margin-right: auto; margin-top:5vh; margin-left:auto; margin-bottom:2vh;   border-collapse:separate;line-height:100%;"><tr><td><div><!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="http://www.activecampaign.com" style="height:40px;v-text-anchor:middle;width:130px;" arcsize="5%" strokecolor="#8682E6" fillcolor="#8682E6;width: 130;"><w:anchorlock/><center style="color:#ffffff;font-family:Helvetica, sans-serif;font-size:18px; font-weight: 600;">QuickPass Page</center></v:roundrect><![endif]--><a href={button_url} style="display: inline-block; mso-hide:all; background-color: #8682E6; color: #FFFFFF; border:1px solid #8682E6; border-radius: 6px; line-height: 220%; width: 200px; font-family: Helvetica, sans-serif; font-size:18px; font-weight:600; text-align: center; text-decoration: none; -webkit-text-size-adjust:none;" target="_blank">QuickPass page</a></a></div></td></tr></table>'
-        mail_body_text = f'<p style="margin-top: 3vh;margin-bottom: 15px;">Hey {user.first_name.capitalize()},</p><p style="margin-top: 15px;margin-bottom: 15px;">Click the button below to access the QuickPass page.</p><p style="margin-top: 15px;margin-bottom: 15px;">Please click the button below to verify your account.</p><br /><p style="margin-top: 15px;margin-bottom: 15px;">Let the good times begin,</p><p style="margin-top: 15px;margin-bottom: 15px;">—The QuickBev Team</p></div><div style="width:100%; height:3vh;">{queue_page_button}</div>'
-        mail_body = f'<div style="height: 100%;"><div style="width: 100%;height: 100%;background-color: #e8e8e8;"><div style="width: 100%;max-width: 500px;height: 80vh; margin-top: 0%;margin-bottom: 10%; margin-right:auto; margin-left:auto; background-color: #e8e8e8;"><tr style="width:100%;height:5vh;"></tr><div style="width:calc(100% - 30px); height:50vh; padding:30px 30px 30px 30px; background-color:white; margin-top:auto; margin-bottom:auto"><div style="width:100%; text-align:center; justify-content:center"><img src="{logo}" style="width:50%; height:12%; margin-right:auto; margin-left:auto" alt="img" /></div><div  style="margin-top: 30px;">{mail_body_text}</div><tr style="width:100%;height:5vh;"></tr></div></div></div>'
-
-        sender_address = 'confirmation@quickbev.us'
-        email = user.id
-
-        # Setup the MIME
-        message = MIMEMultipart()
-        message['From'] = sender_address
-        message['To'] = email
-
-        message['Subject'] = 'QuickPass Page Link'  # The subject line
-
-        mail_content = mail_body
-        # The body and the attachments for the mail
-        message.attach(MIMEText(mail_content, 'html'))
-        s = smtplib.SMTP('smtp.mailgun.org', 587)
-        # this password was generated ay the domain settings page on mailgun. its a really shitty confusing service.
-        s.login('postmaster@quickbev.us',
-                '77bf9d60999ee72f1f72f98dd1a57152-1f1bd6a9-a4533d5f')
-        s.sendmail(message['From'], message['To'], message.as_string())
-        s.quit()
 
 
 def send_info_email(jwt_token, email_type, user=None):
@@ -737,6 +723,7 @@ def send_confirmation_email(jwt_token, email_type, user=None, business=None, str
         s.sendmail(message['From'], message['To'], message.as_string())
         s.quit()
 
+
 def send_password_reset_email(jwt_token, entity):
     host = request.headers.get('Host')
     # host = "quickbev.us.com"
@@ -792,6 +779,7 @@ def customer(session_token: str):
     if request.method == 'POST':
         requested_new_customer = json.loads(
             request.data)
+        print('requested_new_customer', requested_new_customer)
         generated_new_customer = Customer_Service().register_new_customer(
             requested_new_customer)
         device_token = request.headers.get("device-token")

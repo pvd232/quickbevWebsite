@@ -1,7 +1,7 @@
 from datetime import datetime
 from werkzeug.security import generate_password_hash
 import uuid
-from models import Bouncer, Business, Business_Schedule_Day, Customer, Drink, ETag, Merchant, Merchant_Employee, Order, Order_Drink, Quick_Pass, Tab, service_fee_percentage
+from models import Bouncer, Business, Business_Schedule_Day, Customer, Drink, ETag, Merchant, Merchant_Employee, Order, Order_Drink, Quick_Pass, Tab, Drink_Category, service_fee_percentage
 
 
 class Customer_Order_Status(object):
@@ -27,6 +27,7 @@ class Drink_Domain(object):
         self.quantity = 1
         self.id = ''
         self.name = ''
+        self.category = ''
         self.description = ''
         self.price = ''
         self.business_id: uuid = ''
@@ -35,6 +36,7 @@ class Drink_Domain(object):
         if drink_object:
             self.id = drink_object.id
             self.name = drink_object.name
+            self.category = drink_object.category
             self.description = drink_object.description
             self.price = drink_object.price
             self.business_id = drink_object.business_id
@@ -50,6 +52,7 @@ class Drink_Domain(object):
             # this is the initialization for creating the menu and adding the menu drinks to the database
             self.id = uuid.uuid4()
             self.name = drink_json["name"]
+            self.category = drink_json["category"]
             self.description = drink_json["description"]
             self.price = drink_json["price"]
             self.has_image = drink_json["has_image"]
@@ -65,6 +68,7 @@ class Drink_Domain(object):
             # no need to receive image_url from the front end
             self.id = drink_json["id"]
             self.name = drink_json["name"]
+            self.category = drink_json["category"]
             self.description = drink_json["description"]
             self.price = drink_json["price"]
             self.business_id = uuid.UUID(drink_json["business_id"])
@@ -86,6 +90,19 @@ class Drink_Domain(object):
                 serialized_attributes[attribute_names[i]] = str(attributes[i])
             else:
                 serialized_attributes[attribute_names[i]] = attributes[i]
+        return serialized_attributes
+
+
+class Drink_Category_Domain(object):
+    def __init__(self, drink_category_object: Drink_Category):
+        self.id = drink_category_object.id
+
+    def dto_serialize(self):
+        attribute_names = list(self.__dict__.keys())
+        attributes = list(self.__dict__.values())
+        serialized_attributes = {}
+        for i in range(len(attributes)):
+            serialized_attributes[attribute_names[i]] = attributes[i]
         return serialized_attributes
 
 
