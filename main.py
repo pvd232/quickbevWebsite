@@ -18,8 +18,8 @@ import string
 stripe.api_key = "sk_test_51I0xFxFseFjpsgWvh9b1munh6nIea6f5Z8bYlIDfmKyNq6zzrgg8iqeKEHwmRi5PqIelVkx4XWcYHAYc1omtD7wz00JiwbEKzj"
 secret = '3327aa0ee1f61998369e815c17b1dc5eaf7e728bca14f6fe557af366ee6e20f9'
 ip_address = "192.168.1.71"
-env = "debug"
-apns = "debug"
+env = "production"
+apns = "production"
 
 
 # theme color RGB = rgb(134,130,230), hex = #8682E6
@@ -90,15 +90,15 @@ def send_fcm(device_token: str, new_order: Order_Domain = False):
     # client.send([registration_id], alert, **options)
 
 
-# @app.route("/")
-# def my_index():
+@app.route("/")
+def my_index():
 
-#     return render_template("index.html", flask_token="Hello world")
+    return render_template("index.html", flask_token="Hello world")
 
 
-# @app.errorhandler(404)
-# def not_found(e):
-#     return render_template('index.html')
+@app.errorhandler(404)
+def not_found(e):
+    return render_template('index.html')
 
 
 @app.route("/b")
