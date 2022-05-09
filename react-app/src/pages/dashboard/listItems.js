@@ -46,7 +46,7 @@ const MainListItems = (props) => {
         </ListItemIcon>
         <ListItemText primary="Employees" />
       </ListItem>
-      <ListItem
+      {/* <ListItem
         button
         onClick={() => {
           props.handleDashboardButtonClick(3);
@@ -56,11 +56,11 @@ const MainListItems = (props) => {
           <EmojiPeopleIcon />
         </ListItemIcon>
         <ListItemText primary="Bouncers" />
-      </ListItem>
+      </ListItem> */}
       <ListItem
         button
         onClick={() => {
-          props.handleDashboardButtonClick(4);
+          props.handleDashboardButtonClick(3);
         }}
       >
         <ListItemIcon>
@@ -71,7 +71,7 @@ const MainListItems = (props) => {
       <ListItem
         button
         onClick={() => {
-          props.handleDashboardButtonClick(5);
+          props.handleDashboardButtonClick(4);
         }}
       >
         <ListItemIcon>
@@ -82,7 +82,7 @@ const MainListItems = (props) => {
       <ListItem
         button
         onClick={() => {
-          props.handleDashboardButtonClick(6);
+          props.handleDashboardButtonClick(5);
         }}
       >
         <ListItemIcon>

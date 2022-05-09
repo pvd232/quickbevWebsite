@@ -168,13 +168,13 @@ const Dashboard = (props) => {
   };
 
   const displayMenuBuilder = () => {
-    setCurrentPageIndex(7);
+    setCurrentPageIndex(6);
   };
   const displayDrinkEditPage = () => {
-    setCurrentPageIndex(8);
+    setCurrentPageIndex(7);
   };
   const displayBusinessEditPage = () => {
-    setCurrentPageIndex(9);
+    setCurrentPageIndex(8);
   };
   const settingsAnchorRef = useRef(null);
   const helpAnchorRef = useRef(null);
@@ -228,19 +228,19 @@ const Dashboard = (props) => {
         props.updateMerchantEmployee(newMerchantEmployee)
       }
     />,
-    <Bouncers
-      bouncers={props.bouncers}
-      fixedHeightPaper={fixedHeightPaper}
-      classes={classes}
-      onUpdate={(newBouncer) => props.updateBouncers(newBouncer)}
-    />,
+    // <Bouncers
+    //   bouncers={props.bouncers}
+    //   fixedHeightPaper={fixedHeightPaper}
+    //   classes={classes}
+    //   onUpdate={(newBouncer) => props.updateBouncers(newBouncer)}
+    // />,
     <Orders fixedHeightPaper={fixedHeightPaper} classes={classes} />,
     <Menu
       fixedHeightPaper={fixedHeightPaper}
       classes={classes}
       handleMenuClick={displayMenuBuilder}
-      handleDrinkEditClick = {displayDrinkEditPage}
-      handleBusinessEditClick = {displayBusinessEditPage}
+      handleDrinkEditClick={displayDrinkEditPage}
+      handleBusinessEditClick={displayBusinessEditPage}
     ></Menu>,
     <Businesses
       fixedHeightPaper={fixedHeightPaper}
@@ -252,13 +252,13 @@ const Dashboard = (props) => {
       classes={classes}
     ></MenuBuilder>,
     <DeactivateDrink
-    fixedHeightPaper={fixedHeightPaper}
+      fixedHeightPaper={fixedHeightPaper}
       classes={classes}
     ></DeactivateDrink>,
     <DeactivateBusiness
-    fixedHeightPaper={fixedHeightPaper}
+      fixedHeightPaper={fixedHeightPaper}
       classes={classes}
-    ></DeactivateBusiness>
+    ></DeactivateBusiness>,
   ];
 
   const handleDrawerOpen = () => {

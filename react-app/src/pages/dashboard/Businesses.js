@@ -232,11 +232,6 @@ const Businesses = (props) => {
       copyOfFormValue.schedule = schedule;
       const newBusiness = new Business(copyOfFormValue);
 
-      const logoDataObject = {
-        logoFile: selectedFile,
-        logoFileName: selectedFileName,
-      };
-
       newBusiness.merchantId = LocalStorageManager.shared.currentMerchant.id;
       newBusiness.merchantStripeId =
         LocalStorageManager.shared.currentMerchant.stripeId;
@@ -249,11 +244,7 @@ const Businesses = (props) => {
       }
 
       if (selectedLogo && selectedLogoName) {
-        newForm.append(
-          "logo_file",
-          logoDataObject.logoFile,
-          logoDataObject.logoFileName
-        );
+        newForm.append("logo_file", selectedLogo, selectedLogoName);
       }
 
       API.makeRequest(

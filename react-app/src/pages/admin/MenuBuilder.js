@@ -77,7 +77,7 @@ const MenuBuilder = (props) => {
         "Upload failed due to missing menu data. Please fill out all the required form values."
       );
     }
-    // setRedirect("/home");
+    setRedirect("/home");
   };
   const BusinessIdInput = (props) => {
     const [businessId, setbusinessId] = useState(props.businessId);
@@ -116,7 +116,7 @@ const MenuBuilder = (props) => {
       (state, newState) => ({ ...state, ...newState }),
       {
         drinkName: "",
-        drinkCategory: "",
+        drinkCategory: "beer",
         drinkDescription: "",
         drinkPrice: "",
         selectedFileName: "",
@@ -157,8 +157,6 @@ const MenuBuilder = (props) => {
       });
     });
     const formChangeHandler = (event) => {
-      console.log("event.target.name", event.target.name);
-      console.log("event.target.value", event.target.value);
       if (event.target.name === "selectedFile") {
         const newFileObject = {
           selectedFile: event.target.files[0],
@@ -423,7 +421,7 @@ const MenuBuilder = (props) => {
     if (numRows === 1) {
       for (let i = 0; i < numRows; i++) {
         formValues.drinkName.push("");
-        formValues.drinkCategory.push("");
+        formValues.drinkCategory.push("beer");
         formValues.drinkDescription.push("");
         formValues.drinkPrice.push("");
         formValues.selectedFile.push("");
@@ -432,7 +430,6 @@ const MenuBuilder = (props) => {
     }
 
     const formChangeHandler = (newValue) => {
-      console.log("newValue", newValue);
       formValues[newValue.name][newValue.index] = newValue.value;
     };
     const formRowArray = [];
@@ -506,8 +503,8 @@ const MenuBuilder = (props) => {
     const SubmitButton = (props) => {
       const [isDisabled, setIsDisabled] = useState(false);
       const handleSubmit = (event) => {
-        // setIsSpinning(true);
-        // setIsDisabled(!isDisabled);
+        setIsSpinning(true);
+        setIsDisabled(!isDisabled);
         props.onClick(event);
       };
 

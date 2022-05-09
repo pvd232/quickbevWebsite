@@ -1,0 +1,1 @@
+insert into drink_category (id) values ('beer'), ('wine'), ('cocktail'), ('shot'), ('hard seltzer');
