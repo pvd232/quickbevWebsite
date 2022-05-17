@@ -58,7 +58,7 @@ const Home = () => {
           LocalStorageManager.shared.setItem("customers", items.customers);
           setCustomers(items.customers);
         } else {
-          setOrders(LocalStorageManager.shared.orders);
+          setCustomers(LocalStorageManager.shared.customers);
         }
       }
     });
